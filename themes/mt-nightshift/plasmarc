@@ -1,0 +1,21 @@
+# © Mayanktaker Computers & Web Development | https://mayanktaker.com
+# MT Nightshift Plasma Style configuration.
+# Values and intent are documented in design.md; palette is shared with ../../color-schemes/MT-Nightshift.colors.
+
+[Wallpaper]
+defaultWallpaperTheme=Next
+defaultFileSuffix=.png
+defaultWidth=1920
+defaultHeight=1080
+
+[AdaptiveTransparency]
+# Nightshift surfaces are already opaque, so there is nothing to adapt.
+enabled=false
+
+[BlurBehindEffect]
+# No translucent artwork is shipped; blurring behind it would only add haze.
+enabled=false
+
+[ContrastEffect]
+# Same reason as BlurBehindEffect: no background contrast is requested.
+enabled=false

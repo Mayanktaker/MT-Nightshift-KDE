@@ -1,0 +1,19 @@
+# © Mayanktaker Computers & Web Development | https://mayanktaker.com
+# SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development
+# SPDX-License-Identifier: LGPL-2.0-or-later
+#
+# Aurorae window decoration for the MT Nightshift desktop.
+# Plain directory theme: Aurorae discovers this file via
+# XDG_DATA_HOME or XDG_DATA_DIRS, under aurorae/themes/MTNightshift/.
+
+[Desktop Entry]
+Type=Service
+Name=MT Nightshift
+Comment=Sculpted carbon window decoration with 21px corners, a 1px frame edge and the Nightshift blue accents.
+X-KDE-PluginInfo-Author=Mayanktaker Computers & Web Development
+X-KDE-PluginInfo-Name=MTNightshift
+X-KDE-PluginInfo-Version=1.1.0
+X-KDE-PluginInfo-Category=
+X-KDE-PluginInfo-Depends=
+X-KDE-PluginInfo-License=LGPL
+X-KDE-PluginInfo-EnabledByDefault=true

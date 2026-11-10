@@ -1,0 +1,52 @@
+# © Mayanktaker Computers & Web Development | https://mayanktaker.com
+# SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development
+# SPDX-License-Identifier: LGPL-2.0-or-later
+#
+# MT Nightshift window decoration geometry.
+# Read by Aurorae v2 (decorationtheme.cpp) and the v1 QML fallback.
+# Border values are clamped by KWin's BorderSize setting: Normal -> 6px,
+# Tiny -> 4px, Large -> 6px, VeryLarge -> 8px, Huge -> 12px, VeryHuge -> 23px,
+# Oversized -> 36px. The 21px radius therefore resolves fully at Normal and
+# above; the 32px shadow carries the corner at Tiny/NoSides.
+
+[General]
+ActiveTextColor=232,235,240
+InactiveTextColor=200,206,214
+TitleAlignment=Center
+TitleVerticalAlignment=Center
+UseTextShadow=false
+HaloActive=false
+HaloInactive=false
+Animation=120
+Shadow=true
+LeftButtons=
+RightButtons=IAX
+ButtonGroupHover=false
+DecorationPosition=0
+
+[Layout]
+BorderLeft=6
+BorderRight=6
+BorderBottom=6
+BorderTop=39
+TitleEdgeTop=7
+TitleEdgeBottom=8
+TitleEdgeLeft=10
+TitleEdgeRight=10
+TitleBorderLeft=8
+TitleBorderRight=8
+TitleHeight=24
+ButtonWidth=24
+ButtonHeight=24
+ButtonSpacing=8
+ButtonMarginTop=0
+ButtonMarginTopMaximized=0
+ExplicitButtonSpacer=0
+PaddingTop=32
+PaddingBottom=32
+PaddingLeft=32
+PaddingRight=32
+TitleEdgeTopMaximized=4
+TitleEdgeBottomMaximized=4
+TitleEdgeLeftMaximized=10
+TitleEdgeRightMaximized=10

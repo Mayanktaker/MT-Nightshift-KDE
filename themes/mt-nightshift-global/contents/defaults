@@ -1,0 +1,18 @@
+# © Mayanktaker Computers & Web Development | https://mayanktaker.com
+# MT Nightshift global theme defaults for Plasma 6.8.
+# Layouts, icons, cursor, wallpaper and splash are intentionally omitted so applying
+# this theme keeps the user's current layout, Tela-circle icons, cursor, wallpaper and splash.
+
+[kdeglobals][KDE]
+widgetStyle=MTNightshift
+
+[kdeglobals][General]
+ColorScheme=MT-Nightshift
+
+[plasmarc][Theme]
+name=mt-nightshift
+
+# Aurorae decoration is provided by the MT Nightshift decoration package.
+[kwinrc][org.kde.kdecoration2]
+library=org.kde.kwin.aurorae.v2
+theme=__aurorae__svg__MTNightshift

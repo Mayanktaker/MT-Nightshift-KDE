@@ -1,0 +1,19 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Mayanktaker Computers & Web Development"
+            },
+            {
+                "Name": "KDE Visual Design Group"
+            }
+        ],
+        "Category": "",
+        "Description": "Nightshift OLED global theme for Plasma 6: selects the MT Nightshift Plasma Style, MT Nightshift color scheme and the MT Nightshift Aurorae decoration without replacing the desktop layout, icons, cursor, wallpaper or splash screen. Derived from Breeze by the KDE Visual Design Group; adaptation by Mayanktaker Computers & Web Development (https://mayanktaker.com).",
+        "Id": "com.mayanktaker.mt-nightshift.desktop",
+        "Name": "MT Nightshift",
+        "Version": "1.3.0",
+        "Website": "https://mayanktaker.com/"
+    }
+}

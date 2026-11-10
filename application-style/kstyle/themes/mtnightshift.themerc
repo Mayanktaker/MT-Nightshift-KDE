@@ -1,0 +1,10 @@
+# © Mayanktaker Computers & Web Development | https://mayanktaker.com
+# SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development <https://mayanktaker.com>
+# SPDX-License-Identifier: LGPL-2.0-or-later
+
+[Misc]
+Name=MT Nightshift
+Comment=Sculpted Nightshift widget style, drawn over Breeze
+
+[KDE]
+WidgetStyle=MTNightshift

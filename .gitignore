@@ -1,0 +1,19 @@
+# © Mayanktaker Computers & Web Development | https://mayanktaker.com
+
+# Ignore generated CMake build output and compiled artifacts.
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+*.o
+*.a
+*.so
+
+# Keep local recovery copies out of the distributable source tree.
+deleted_files_folders/
+
+# Ignore editor backup files.
+*~
+*.swp

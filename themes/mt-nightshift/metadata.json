@@ -1,0 +1,20 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "kde-artists@kde.org",
+                "Name": "KDE Visual Design Group"
+            },
+            {
+                "Name": "Mayanktaker Computers & Web Development"
+            }
+        ],
+        "Category": "",
+        "Description": "Nightshift OLED variant of Breeze Dark: near-black carbon surfaces, crisp 1px edges and restrained Breeze blue for focus, selection and active states. Derived from Breeze by the KDE Visual Design Group; adaptation by Mayanktaker Computers & Web Development.",
+        "Id": "mt-nightshift",
+        "Name": "MT Nightshift",
+        "Version": "1.2.0",
+        "Website": "https://mayanktaker.com/"
+    },
+    "X-Plasma-API": "5.0"
+}
