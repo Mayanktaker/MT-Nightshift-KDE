@@ -17,7 +17,8 @@ find_package(ECM 6.0 REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH "${ECM_MODULE_PATH}" ${CMAKE_MODULE_PATH})
 include(KDEInstallDirs)
 
-find_package(Qt6 6.11 REQUIRED COMPONENTS Widgets)
+# 6.4 keeps CI (ubuntu-24.04) able to build the plugin; no newer API is used.
+find_package(Qt6 6.4 REQUIRED COMPONENTS Widgets)
 
 add_library(mtnightshiftstyle MODULE
     src/mtnightshiftstyle.cpp

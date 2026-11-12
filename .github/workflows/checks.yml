@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: LGPL-2.0-or-later
 #
 # Runs the same checks the pre-commit hook runs, so the artwork cannot regress on a
-# clone where the hook was never installed. check-dpr2 additionally renders at 2x.
+# clone where the hook was never installed. check-dpr2 additionally renders at 2x
+# and check-style renders the whole field family offscreen through the plugin.
 name: theme checks
 
 on:
@@ -25,7 +26,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            qt6-base-dev libgl1-mesa-dev libxml2-utils cmake pkg-config
+            qt6-base-dev libgl1-mesa-dev libxml2-utils cmake pkg-config \
+            extra-cmake-modules g++
           pip install --disable-pip-version-check numpy pillow
 
       - name: Check the artwork at 1x
@@ -33,3 +35,6 @@ jobs:
 
       - name: Check the artwork at 2x
         run: make check-dpr2
+
+      - name: Check the field family renders
+        run: make check-style

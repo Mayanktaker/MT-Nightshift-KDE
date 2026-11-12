@@ -24,6 +24,9 @@
 #include <QLineEdit>
 #include <QPalette>
 #include <QPluginLoader>
+#include <QProxyStyle>
+#include <QScrollArea>
+#include <QScrollBar>
 #include <QSpinBox>
 #include <QString>
 #include <QStringList>
@@ -341,6 +344,18 @@ int main(int argc, char **argv)
     };
     meterRender(30, false, QStringLiteral("capacity-meter"));
     meterRender(55, true, QStringLiteral("progress-text"));
+
+    // Scroll bar gutter: the 12px clamp is asserted against Breeze's 21px base.
+    {
+        QScrollBar scrollbar(Qt::Vertical);
+        scrollbar.setRange(0, 100);
+        scrollbar.setPageStep(10);
+        scrollbar.resize(scrollbar.sizeHint());
+        scrollbar.grab().save(QStringLiteral("%1/scrollbar.png").arg(outdir));
+        const auto *proxy = qobject_cast<const QProxyStyle *>(app.style());
+        std::fprintf(stderr, "base style: %s\n",
+                     proxy && proxy->baseStyle() ? proxy->baseStyle()->metaObject()->className() : "(none)");
+    }
 
     // Simulate KDE's custom-element protocol exactly as KCapacityBar runs it:
     // the widget temporarily carries the element name in its objectName.

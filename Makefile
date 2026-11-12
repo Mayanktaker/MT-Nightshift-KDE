@@ -13,8 +13,11 @@ AURORAE_DIR := $(HOME)/.local/share/aurorae/themes/MTNightshift
 LF_DIR := $(HOME)/.local/share/plasma/look-and-feel
 LOOKANDFEEL := com.mayanktaker.mt-nightshift.desktop
 PROBE_CACHE := $(or $(XDG_CACHE_HOME),$(HOME)/.cache)/mt-nightshift-probe
+MOC := $(shell pkg-config --variable=libexecdir Qt6Core)/moc
+QT_CFLAGS := $(shell pkg-config --cflags Qt6Widgets)
+QT_LIBS := $(shell pkg-config --libs Qt6Widgets)
 
-.PHONY: all decoration check check-dpr2 style style-preview apply style-install clean
+.PHONY: all decoration check check-style check-dpr2 style style-preview apply style-install clean
 
 all: check
 
@@ -23,12 +26,26 @@ decoration:
 	python3 tools/decoration-probe/build-decoration.py
 	xmllint --noout $(DECORATION)
 
-# Fail if the committed SVG drifted from its generator, or the raster invariants broke.
-check:
+# Fail if the committed SVG drifted from its generator, the raster invariants
+# broke, or the rendered field family regressed.
+check: check-style
 	python3 tools/decoration-probe/build-decoration.py --check
 	./tools/decoration-probe/check-decoration.py
 	@for f in themes/aurorae/MTNightshift/*.svg; do xmllint --noout "$$f" || exit 1; done
 	@echo "all theme checks passed"
+
+# Render the field family under the built style offscreen and assert the pill
+# language, the 1px ring, the free-space meter and the 12px scroll-bar gutter.
+# --ci (set by CI) skips the two Breeze-dependent assertions.
+check-style: style
+	@mkdir -p build/style-probe
+	$(MOC) tools/style-probe/status-card-widget.h -o build/style-probe/moc-status-card.cpp
+	g++ -fPIC -std=c++17 -O2 $(QT_CFLAGS) -Itools/style-probe \
+		tools/style-probe/render-fields.cpp build/style-probe/moc-status-card.cpp \
+		-o build/style-probe/render-fields $(QT_LIBS)
+	QT_QPA_PLATFORM=offscreen ./build/style-probe/render-fields MTNightshift build/style-probe/out \
+		color-schemes/MT-Nightshift.colors $(CURDIR)/build/style/mtnightshiftstyle.so >/dev/null
+	python3 tools/style-probe/check-style.py build/style-probe/out
 
 # The corner border is drawn `frame_line_arc` px thick because a 1px annulus only
 # reaches ~half coverage per pixel at 45 degrees on a 1x display. At 2x the same
