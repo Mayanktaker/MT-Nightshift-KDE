@@ -33,7 +33,7 @@ from PIL import Image
 HERE = Path(__file__).resolve().parent
 DEFAULT_SVG = HERE.parent.parent / "themes" / "aurorae" / "MTNightshift" / "decoration.svg"
 PROBE_CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "mt-nightshift-probe"
-RADIUS = 21                      # design constant; asserted against the slice size
+RADIUS = 21                      # replaced in main() from the slice geometry
 HEADER_FILL = np.array([0x15, 0x18, 0x1C])
 INACTIVE_FILL = np.array([0x10, 0x12, 0x16])
 SIDES = ("topleft", "top", "topright", "left", "center", "right", "bottomleft", "bottom", "bottomright")
@@ -121,8 +121,10 @@ def compose(text, probe, prefix, work, size, layout) -> np.ndarray:
 def corner_samples(alpha, ring: int, mirror: bool) -> list[float]:
     """Alpha along the 45° diagonal just outside the corner arc, nearest first."""
     values = []
-    for step in (1.0, 2.0, 3.0, 5.0, 7.0):
-        offset = int(round((RADIUS + step) / np.sqrt(2.0)))
+    # Sample radii clearly outside the silhouette (R + 2 .. R + 8) so the probe
+    # reads the shadow ring, never the window edge or the frame line itself.
+    for radius in (RADIUS + 2, RADIUS + 3, RADIUS + 4, RADIUS + 6, RADIUS + 8):
+        offset = int(round(radius / np.sqrt(2.0)))
         row = ring + RADIUS - offset
         column = (alpha.shape[1] - 1 - ring - RADIUS + offset) if mirror else (ring + RADIUS - offset)
         values.append(float(alpha[row, column]))
@@ -156,6 +158,35 @@ def audit(frame, label, fill, ring, peak) -> None:
     check(abs(max(right) - max(left)) <= 0.06,
           "top-right corner matches top-left (%.3f vs %.3f)" % (max(right), max(left)))
 
+    # The frame line must run *all the way* round each corner. Three of the four
+    # arcs were once drawn as lunes (inner arc off-centre), so the border tapered
+    # to 0.4px at the 45-degree point and read as a missing border on a light
+    # wallpaper; a 1px annulus also loses ~half its coverage there, which is why
+    # the arcs are drawn heavier than the straight edges.
+    print("%s: corner border" % label)
+    line = frame[ring, ring + frame.shape[1] // 2, :3]
+    fill = frame[ring + 2, ring + frame.shape[1] // 2, :3]
+    span = max(1.0, float(np.linalg.norm(line - fill)))
+    for name, (cx, cy, sx, sy) in {
+        "top-left": (ring + RADIUS, ring + RADIUS, -1, -1),
+        "top-right": (frame.shape[1] - 1 - ring - RADIUS, ring + RADIUS, 1, -1),
+        "bottom-left": (ring + RADIUS, frame.shape[0] - 1 - ring - RADIUS, -1, 1),
+        "bottom-right": (frame.shape[1] - 1 - ring - RADIUS, frame.shape[0] - 1 - ring - RADIUS, 1, 1),
+    }.items():
+        samples = []
+        for degrees in np.linspace(0, 90, 31):
+            angle = np.radians(degrees)
+            best = 0.0
+            for radius in np.arange(RADIUS - 2.4, RADIUS + 0.2, 0.15):
+                x = int(round(cx + sx * radius * np.cos(angle)))
+                y = int(round(cy + sy * radius * np.sin(angle)))
+                if 0 <= y < frame.shape[0] and 0 <= x < frame.shape[1]:
+                    best = max(best, float(np.linalg.norm(frame[y, x, :3] - fill)) / span)
+            samples.append(best)
+        values = np.array(samples)
+        check(values.mean() >= 0.75, "%s arc border is continuous (mean %.2f)" % (name, values.mean()))
+        check(values.min() >= 0.45, "%s arc border has no gap (min %.2f)" % (name, values.min()))
+
     print("%s: surfaces" % label)
     header = frame[ring + 12, ring + 20, :3]
     check(np.abs(header - fill).max() <= 1, "header fill is %s (got %s)" % (fill, header.round().astype(int)))
@@ -175,6 +206,11 @@ def main() -> int:
     peak = peak_alpha(text)
 
     print("checking %s  (frame %dx%d, peak %.3f)" % (svg_path, width, height, peak))
+    global RADIUS
+    # The corner radius is the arc radius in the corner fill path; the ring is the
+    # slice width minus it. Both follow the artwork instead of being duplicated.
+    arc = re.search(r'id="decoration-topleft".*?<path d="[^"]*A ([\d.]+),', text, re.S)
+    RADIUS = int(round(float(arc.group(1))))
     ring = layout["topleft"][2] - RADIUS
     check(ring > 0, "top-left slice is wider than the %dpx corner (shadow ring %dpx)" % (RADIUS, ring))
     check(layout["left"][2] == ring + RADIUS, "left slice width matches ring + corner")

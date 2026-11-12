@@ -40,6 +40,11 @@
 - [x] Build the qsvg probe through CMake (`tools/decoration-probe/CMakeLists.txt`) into `~/.cache/mt-nightshift-probe` with a `g++` fallback, so the pre-commit hook rebuilds incrementally instead of recompiling into a throwaway directory: first run 3.0s, subsequent runs 0.7s.
 - [x] Commit the decoration pass and tooling separately from the pre-existing Application Style work, which stays staged-free for its author.
 
+- [x] Fix the corner border, which thinned out on three of the four corners: their frame-line annulus used an inner arc offset from the corner centre instead of concentric with the silhouette arc, so the band became a lune reaching 0.4px at the 45° point (measured coverage 0.35 mean, 0.00 at the diagonal, against 0.85 on the correct top-left corner). All four arcs are concentric now and drawn 1.5px thick, with the stroke stopped 6° short of the tangents so its cap cannot paint into the shadow ring; live coverage is 0.84–0.88 mean on every corner.
+- [x] Teach `check-decoration.py` to measure that border: it samples each corner arc against the crisp straight-edge line and fails below 0.75 mean or 0.45 minimum. Verified it rejects the old artwork (min 0.00 on three corners) and passes the fix.
+- [x] Add `--padding/--visible/--peak/--arc` overrides to `build-decoration.py` plus a root `Makefile` (`make check`, `make decoration`, `make apply`, `make clean`), so the deferred 24px-ring flip and any weight trial are one command and still verified (`--padding 24 --visible 24` passes the checks offline).
+- [x] Encode the apply sequence once: `make apply` runs the checks, installs both packages, selects the Look-and-Feel, re-asserts `[KDE] frameContrast=0.14` (Plasma resets it) and reconfigures KWin.
+
 
 ## Chosen direction
 

@@ -18,6 +18,7 @@ pre-commit hook can catch an out-of-band edit.
 
 from __future__ import annotations
 
+import math
 import sys
 from pathlib import Path
 
@@ -34,7 +35,14 @@ PARAMS = {
     # padding: a shorter falloff leaves dead ring, and shrinking the padding is
     # what needs a compositor restart. Tune the weight with "peak" instead.
     "visible": 32,
-    "radius": 21,          # window corner arc, independent of the padding
+    # Window corner arc. The client is inset "border" px on each side, so its
+    # square corner sits (radius - border) * sqrt2 from the arc centre. That
+    # distance must stay INSIDE the arc, or the client paints over the corner
+    # band and the frame line disappears at the bottom corners — Aurorae does
+    # not clip the client to the rounded shape, it only clips it to the window
+    # silhouette. Guarded below.
+    "radius": 15,
+    "border": 6,           # must equal BorderLeft/Right/Bottom in MTNightshiftrc
     "header": 39,          # title bar height at 1x
     "centre": 64,          # FrameSvg centre slice
     # Cast-shadow alpha at the contour, and the shape of the falloff as
@@ -58,6 +66,12 @@ PARAMS = {
     # line. 0.20 puts the frame at #3F4246 against the client's #33363A.
     "frame_contrast": 0.14,
     "frame_line_contrast": 0.20,
+    # Thickness of the 1px frame line were it rasterised crisply on the corner
+    # arcs. A 1px annulus spreads over two pixels at ~50% coverage where the
+    # curve runs at 45 degrees, so the corners read as a broken border against
+    # the crisp straight edges. The arcs are drawn 0.5px heavier to compensate;
+    # the straight edges stay exactly 1px.
+    "frame_line_arc": 2.0,
 }
 
 P = PARAMS["padding"]
@@ -70,6 +84,21 @@ H_FRAME = (P + H) + C + (P + R)
 if PARAMS["visible"] > P:
     raise SystemExit("visible falloff (%d) cannot exceed the padding ring (%d)"
                      % (PARAMS["visible"], P))
+
+# The corner band only shows if the client's square corner stays inside the arc.
+# Its distance along the diagonal is (R - border) * sqrt2; the band's inner edge is
+# R - frame_line_arc. Requiring the corner to fall inside that keeps 1px of clear air.
+client_corner = (R - PARAMS["border"]) * math.sqrt(2.0)
+band_inner = R - PARAMS["frame_line_arc"]
+slack = band_inner - client_corner
+if slack < 0.2:
+    limit = int((PARAMS["border"] * math.sqrt(2.0) - PARAMS["frame_line_arc"] - 0.2)
+                / (math.sqrt(2.0) - 1.0))
+    raise SystemExit(
+        "radius %d is too large for border %d: the client's square corner reaches r=%.1f "
+        "and the frame-line band starts at r=%.1f (slack %.2f), so the client covers the "
+        "corner border. Keep radius <= %d." % (R, PARAMS["border"], client_corner,
+                                               band_inner, slack, limit))
 
 
 def blend(base: str, over: str, amount: float) -> str:
@@ -155,16 +184,17 @@ SHAPES = {
     "topright": (
         f"M 0,{P} L 0,{P + H} L {R},{P + H} L {R},{P + R} A {R},{R} 0 0 0 0,{P} Z",
         f"M 0,{P} A {R},{R} 0 0 1 {R},{P + R} L {R},{P + H} L {R - 1},{P + H} "
-        f"L {R - 1},{P + R} A {R - 1},{R - 1} 0 0 0 1,{P} L 0,{P} Z",
+        f"L {R - 1},{P + R} A {R - 1},{R - 1} 0 0 0 0,{P + 1} L 0,{P} Z",
     ),
     "bottomleft": (
         f"M {P},0 L {P + R},0 L {P + R},{R} A {R},{R} 0 0 1 {P},0 Z",
-        f"M {P},0 A {R},{R} 0 0 0 {P + R},{R} L {P + R - 1},{R} "
+        f"M {P},0 A {R},{R} 0 0 0 {P + R},{R} L {P + R},{R - 1} "
         f"A {R - 1},{R - 1} 0 0 1 {P + 1},0 L {P},0 Z",
     ),
     "bottomright": (
         f"M 0,0 L {R},0 A {R},{R} 0 0 1 0,{R} L 0,0 Z",
-        f"M {R},0 A {R},{R} 0 0 1 0,{R} L 1,{R} A {R - 1},{R - 1} 0 0 0 {R - 1},0 L {R},0 Z",
+        f"M {R},0 A {R},{R} 0 0 1 0,{R} L 0,{R - 1} "
+        f"A {R - 1},{R - 1} 0 0 0 {R - 1},0 L {R},0 Z",
     ),
 }
 
@@ -210,12 +240,45 @@ def shadow_rects(name: str) -> list[str]:
     return []
 
 
+def arc_stroke(name: str) -> str:
+    """Extra arc thickness for a corner: a stroke fully inside the silhouette.
+
+    The 1px band already hugs the contour but antialiasing spreads it to ~50%
+    coverage where the curve runs at 45 degrees, so the corner reads as a broken
+    border. This adds the missing half-pixel. The sweep stops 6 degrees short of
+    each tangent so the stroke's butt cap cannot poke into the shadow ring, where
+    an opaque pixel would read as a double-shadow artefact.
+    """
+    extra = PARAMS["frame_line_arc"] - 1.0
+    if extra <= 0:
+        return ""
+    r = R - extra / 2.0
+    # centre, start angle, end angle, sweep flag (degrees, y down)
+    arcs = {
+        "topleft": ((P + R, P + R), 186, 264, 1),
+        "topright": ((0, P + R), 276, 354, 1),
+        "bottomleft": ((P + R, 0), 174, 96, 0),
+        "bottomright": ((0, 0), 6, 84, 1),
+    }
+    if name not in arcs:
+        return ""
+    (cx, cy), a0, a1, sweep = arcs[name]
+    x0 = cx + r * math.cos(math.radians(a0))
+    y0 = cy + r * math.sin(math.radians(a0))
+    x1 = cx + r * math.cos(math.radians(a1))
+    y1 = cy + r * math.sin(math.radians(a1))
+    return (f'    <path d="M {x0:.2f},{y0:.2f} A {r:.2f},{r:.2f} 0 0 {sweep} {x1:.2f},{y1:.2f}" '
+            f'fill="none" stroke="{PARAMS["frame"]}" stroke-width="{extra:.2f}"/>')
+
+
 def surface(name: str, fill: str) -> list[str]:
     """Window fill and 1px frame line of one slice."""
     width, height = LAYOUT[name][2], LAYOUT[name][3]
     if name in SHAPES:
         body, line = SHAPES[name]
-        return [f'    <path d="{body}" fill="{fill}"/>', f'    <path d="{line}" fill="{PARAMS["frame"]}"/>']
+        rows = [f'    <path d="{body}" fill="{fill}"/>', f'    <path d="{line}" fill="{PARAMS["frame"]}"/>']
+        extra = arc_stroke(name)
+        return rows + ([extra] if extra else [])
     if name == "top":
         return [f'    <rect x="0" y="{P}" width="{width}" height="{H}" fill="{fill}"/>',
                 f'    <rect x="0" y="{P}" width="{width}" height="1" fill="{PARAMS["frame"]}"/>']
@@ -333,8 +396,28 @@ def build() -> str:
 
 
 def main() -> int:
-    """Write the SVG, or compare it with the file on disk."""
-    args = [a for a in sys.argv[1:] if a != "--check"]
+    """Write the SVG, or compare it with the file on disk.
+
+    Geometry and weight can be overridden for a one-off trial without editing
+    PARAMS, e.g. `--padding 24 --visible 24` or `--peak 0.22`. Nothing is written
+    unless the result is what you asked for, so a trial goes to a scratch path.
+    """
+    argv = sys.argv[1:]
+    overrides = {"--padding": "padding", "--visible": "visible", "--peak": "peak",
+                 "--arc": "frame_line_arc"}
+    rest = []
+    index = 0
+    while index < len(argv):
+        token = argv[index]
+        if token in overrides:
+            key = overrides[token]
+            value = argv[index + 1]
+            PARAMS[key] = float(value) if key in ("peak", "frame_line_arc") else int(value)
+            index += 2
+            continue
+        rest.append(token)
+        index += 1
+    args = [a for a in rest if a != "--check"]
     target = Path(args[0]) if args else DEFAULT_OUT
     document = build()
     if "--check" in sys.argv:
