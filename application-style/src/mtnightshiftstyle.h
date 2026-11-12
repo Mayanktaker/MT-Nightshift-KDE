@@ -23,6 +23,8 @@ public:
     MTNightshiftStyle();
 
     // Draws the borderless input fields, Sculpted indicators and Dolphin's edge, delegating the rest.
+    void polish(QWidget *widget) override;
+
     void drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter,
                        const QWidget *widget = nullptr) const override;
 

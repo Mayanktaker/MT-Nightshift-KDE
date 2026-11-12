@@ -170,6 +170,19 @@ bool isDolphinShellWindow(const QWidget *widget)
     return false;
 }
 
+// True when any ancestor is a KUrlNavigator: the breadcrumb and the editable path
+// are one control in two states, so the child edit needs the same field surface.
+bool isInsideUrlNavigator(const QWidget *widget)
+{
+    for (const QWidget *parent = widget ? widget->parentWidget() : nullptr; parent;
+         parent = parent->parentWidget()) {
+        if (isUrlNavigator(parent)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // WCAG 2.1 relative luminance of an opaque colour.
 qreal relativeLuminance(const QColor &color)
 {
@@ -275,6 +288,23 @@ void paintMark(QPainter *painter, const QRectF &rect, const QColor &color, bool 
 
 // Builds the style on the installed Breeze style, or the native style when absent.
 MTNightshiftStyle::MTNightshiftStyle() : QProxyStyle(QStyleFactory::create(QStringLiteral("Breeze"))) {}
+
+// Attempts to let the editable path field show the navigator's rounded surface. Qt
+// never asks the style for a frameless edit's panel: it fills the widget background
+// with Base itself, which squares off the corners the navigator painted behind it.
+// The widget attribute is the only lever a style has. NOT yet confirmed against a
+// real KUrlNavigator — the offscreen harness cannot reproduce KIO's widget, so check
+// the edit state live (click the path bar) before trusting it.
+void MTNightshiftStyle::polish(QWidget *widget)
+{
+    if (auto *edit = qobject_cast<QLineEdit *>(widget)) {
+        if (!edit->hasFrame() && isInsideUrlNavigator(edit)) {
+            edit->setAttribute(Qt::WA_TranslucentBackground, true);
+            edit->setAutoFillBackground(false);
+        }
+    }
+    QProxyStyle::polish(widget);
+}
 
 // Draws our own line edit and check indicators, delegating all other primitives.
 void MTNightshiftStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter,
@@ -414,11 +444,13 @@ bool MTNightshiftStyle::paintLineEdit(const QStyleOption *option, QPainter *pain
     if (!panel || !painter) {
         return false;
     }
-    // Frameless fields stay exactly as Breeze draws them. The option's line width
-    // cannot tell them apart, because Breeze reports a zero PM_DefaultFrameWidth
-    // for framed edits too, so the widget's own frame flag is the reliable test.
+    // Frameless fields stay exactly as Breeze draws them — except the editable path
+    // inside a URL navigator, which KIO creates frameless. It replaces the rounded
+    // breadcrumb field when clicked, so falling back to Breeze there showed a
+    // different, much tighter radius in edit mode.
     const auto *edit = qobject_cast<const QLineEdit *>(widget);
-    if (edit && !edit->hasFrame()) {
+    const bool navigatorField = isInsideUrlNavigator(widget);
+    if (edit && !edit->hasFrame() && !navigatorField) {
         return false;
     }
     // Editable combos and spin boxes own a child edit that Breeze already frames.
@@ -432,11 +464,12 @@ bool MTNightshiftStyle::paintLineEdit(const QStyleOption *option, QPainter *pain
         && panel->state.testFlag(State_Enabled);
     const QRectF rect = QRectF(panel->rect);
     const qreal radius = qMin(kControlRadius, qMin(rect.width(), rect.height()) / 2.0);
-    // The field reads as a tone step, not a frame: the palette's own Base colour,
-    // so a widget that tints its option palette (KUrlNavigator swaps Base for
-    // AlternateBase) cannot make the unframed field disappear into its toolbar.
-    const QColor fill = widget ? widget->palette().color(group, QPalette::Base)
-                               : palette.color(group, QPalette::Base);
+    // The field reads as a tone step, not a frame: the theme's Base colour. KIO tints
+    // a navigator's own Base to the toolbar shade, so both states of the path bar take
+    // the input tone from the application palette and match each other.
+    const QColor fill = (navigatorField || !widget) && qApp
+        ? qApp->palette().color(group, QPalette::Base)
+        : widget->palette().color(group, QPalette::Base);
     if (focused) {
         const QColor ring = readableAccent(palette.color(group, QPalette::Highlight), fill, kFocusContrast);
         paintSurface(painter, rect, radius, kFocusOutlineWidth, fill, ring);
