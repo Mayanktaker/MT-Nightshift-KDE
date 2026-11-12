@@ -14,7 +14,7 @@ LF_DIR := $(HOME)/.local/share/plasma/look-and-feel
 LOOKANDFEEL := com.mayanktaker.mt-nightshift.desktop
 PROBE_CACHE := $(or $(XDG_CACHE_HOME),$(HOME)/.cache)/mt-nightshift-probe
 
-.PHONY: all decoration check check-dpr2 style apply style-install clean
+.PHONY: all decoration check check-dpr2 style style-preview apply style-install clean
 
 all: check
 
@@ -45,6 +45,15 @@ style:
 	cmake -S application-style -B build/style -DCMAKE_BUILD_TYPE=Release
 	cmake --build build/style -j4
 	@echo "built build/style/mtnightshiftstyle.so"
+
+# Run any app against the freshly built plugin without touching /usr: Qt reads
+# plugins from QT_PLUGIN_PATH, and this lays out the <root>/styles/<name>.so tree it
+# expects. Usage: make style-preview APP=dolphin
+style-preview: style
+	@mkdir -p build/style-preview/styles
+	@ln -sfn "$(CURDIR)/build/style/mtnightshiftstyle.so" build/style-preview/styles/mtnightshiftstyle.so
+	QT_PLUGIN_PATH="$(CURDIR)/build/style-preview" QT_STYLE_OVERRIDE=MTNightshift $(or $(APP),dolphin) &
+	@echo "launched $(or $(APP),dolphin) with the freshly built plugin"
 
 # Requires sudo: installs the plugin where QStyleFactory finds it and the display
 # name where KStyle reads it. Relaunch apps afterwards; the running ones keep the
