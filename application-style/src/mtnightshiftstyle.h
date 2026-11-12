@@ -42,6 +42,9 @@ private:
     bool paintPushButton(const QStyleOption *option, QPainter *painter, const QWidget *widget) const;
     // Paints a borderless rounded text field; returns false when Breeze should handle it.
     bool paintLineEdit(const QStyleOption *option, QPainter *painter, const QWidget *widget) const;
+    // Paints a KIO URL path bar as a borderless rounded field; false for anything else.
+    bool paintUrlNavigatorField(const QStyleOption *option, QPainter *painter,
+                                const QWidget *widget) const;
     // Paints a borderless rounded non-editable combo box; false for editable combos.
     bool paintComboBox(const QStyleOptionComboBox *option, QPainter *painter,
                        const QWidget *widget) const;

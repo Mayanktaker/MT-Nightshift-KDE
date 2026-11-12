@@ -26,7 +26,7 @@ The upstream Breeze Dark metadata identifies the KDE Visual Design Group and lab
 - `themes/aurorae/MTNightshift/` — user-local Aurorae window decoration with 21px window corners. The Global Theme manifest references this separate package; it does not contain it.
 - `application-style/` — C++ Qt Widgets style plugin (`MTNightshift`) that keeps Breeze behavior while drawing Sculpted controls with approximately 15px corner radii.
 
-The Application Style also removes the Dolphin Places sidebar divider and gives framed path/search inputs borderless, rounded fills with a focus-only ring. A subtle horizontal toolbar hairline remains; removing it would require replacing a larger Breeze window-background paint pass.
+The Application Style also removes the Dolphin Places sidebar divider and gives framed path/search inputs borderless, rounded fills with a focus-only ring. Dolphin's path bar needed its own rule because KIO's `KUrlNavigator` paints through `PE_FrameLineEdit` rather than a line-edit panel; the style matches that public class name so other KIO navigators get the same field without affecting ordinary frames. A subtle horizontal toolbar hairline remains; removing it would require replacing a larger Breeze window-background paint pass.
 
 The Qt style is installed at `/usr/lib64/qt6/plugins/styles/mtnightshiftstyle.so` with its KStyle metadata at `/usr/share/kstyle/themes/mtnightshift.themerc`, and is selected as the active Qt Widgets style. The Global Theme also selects `MTNightshift`. Qt Quick/Kirigami apps and Plasma controls use separate style systems.
 

@@ -51,15 +51,38 @@ constexpr QLatin1StringView kDolphinApplicationName = QLatin1StringView("dolphin
 // Public class name of the Places sidebar view (KIO::KFilePlacesView), matched
 // from the QObject meta-object so no KIO or Dolphin headers are linked here.
 constexpr QLatin1StringView kPlacesViewClassName = QLatin1StringView("KFilePlacesView");
+// Public class name of KIO's URL path bar (KIO::KUrlNavigator). Dolphin's own
+// path bar is a subclass of it, so one name covers both.
+constexpr QLatin1StringView kUrlNavigatorClassName = QLatin1StringView("KUrlNavigator");
 
-// Compares one meta-object class name with the public Places view class name,
-// ignoring any namespace prefix.
-bool isPlacesViewClassName(const char *className)
+// Compares one meta-object class name with an expected class name, ignoring any
+// namespace prefix.
+bool matchesClassName(const char *className, QLatin1StringView expected)
 {
     const QLatin1StringView name(className);
     const qsizetype separator = name.lastIndexOf(QLatin1StringView("::"));
     const QLatin1StringView shortName = separator < 0 ? name : name.mid(separator + 2);
-    return shortName.compare(kPlacesViewClassName) == 0;
+    return shortName.compare(expected) == 0;
+}
+
+// Compares one meta-object class name with the public Places view class name.
+bool isPlacesViewClassName(const char *className)
+{
+    return matchesClassName(className, kPlacesViewClassName);
+}
+
+// True when the widget is a KIO URL path bar, including Dolphin's own subclass.
+bool isUrlNavigator(const QWidget *widget)
+{
+    if (!widget) {
+        return false;
+    }
+    for (const QMetaObject *meta = widget->metaObject(); meta; meta = meta->superClass()) {
+        if (matchesClassName(meta->className(), kUrlNavigatorClassName)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // Finds the scroll area that owns a scroll bar; Qt nests scroll bars in an
@@ -259,6 +282,12 @@ void MTNightshiftStyle::drawPrimitive(PrimitiveElement element, const QStyleOpti
             return;
         }
         break;
+    case PE_FrameLineEdit:
+        // KIO's URL navigator paints its path bar through this frame primitive.
+        if (paintUrlNavigatorField(option, painter, widget)) {
+            return;
+        }
+        break;
     case PE_IndicatorCheckBox:
         paintIndicator(option, painter, false);
         return;
@@ -390,6 +419,33 @@ bool MTNightshiftStyle::paintLineEdit(const QStyleOption *option, QPainter *pain
     // AlternateBase) cannot make the unframed field disappear into its toolbar.
     const QColor fill = widget ? widget->palette().color(group, QPalette::Base)
                                : palette.color(group, QPalette::Base);
+    if (focused) {
+        const QColor ring = readableAccent(palette.color(group, QPalette::Highlight), fill, kFocusContrast);
+        paintSurface(painter, rect, radius, kFocusOutlineWidth, fill, ring);
+    } else {
+        fillSurface(painter, rect, radius, fill);
+    }
+    return true;
+}
+
+// Paints a KIO URL navigator's path bar as a borderless Sculpted field. The
+// navigator draws itself through PE_FrameLineEdit, not PE_PanelLineEdit, which is
+// why a plain line-edit rule never reached it.
+bool MTNightshiftStyle::paintUrlNavigatorField(const QStyleOption *option, QPainter *painter,
+                                               const QWidget *widget) const
+{
+    if (!option || !painter || !isUrlNavigator(widget)) {
+        return false;
+    }
+    const QPalette &palette = option->palette;
+    const QPalette::ColorGroup group = colorGroup(option);
+    const bool focused = option->state.testFlag(State_HasFocus)
+        && option->state.testFlag(State_Enabled);
+    const QRectF rect = QRectF(option->rect);
+    const qreal radius = qMin(kControlRadius, qMin(rect.width(), rect.height()) / 2.0);
+    // Same input surface as every other field: the widget's own Base tone, not the
+    // AlternateBase tint the navigator puts in its frame option.
+    const QColor fill = widget->palette().color(group, QPalette::Base);
     if (focused) {
         const QColor ring = readableAccent(palette.color(group, QPalette::Highlight), fill, kFocusContrast);
         paintSurface(painter, rect, radius, kFocusOutlineWidth, fill, ring);
