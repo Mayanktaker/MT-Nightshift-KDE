@@ -14,6 +14,7 @@ class QPainter;
 class QStyleOption;
 class QStyleOptionComboBox;
 class QStyleOptionComplex;
+class QStyleOptionSpinBox;
 
 // Sculpted Qt Widgets style layered over Breeze; only rounded control surfaces are redrawn.
 class MTNightshiftStyle : public QProxyStyle
@@ -22,16 +23,13 @@ public:
     // Uses the installed Breeze style as the base, falling back to the native style.
     MTNightshiftStyle();
 
-    // Draws the borderless input fields, Sculpted indicators and Dolphin's edge, delegating the rest.
-    void polish(QWidget *widget) override;
-
     void drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter,
                        const QWidget *widget = nullptr) const override;
 
     // Draws rounded push buttons, delegating labels, icons and focus handling.
     void drawControl(ControlElement element, const QStyleOption *option, QPainter *painter,
                      const QWidget *widget = nullptr) const override;
-    // Draws rounded combo boxes; editable combos stay on Breeze.
+    // Draws rounded combo boxes and spin boxes, owning the whole field family.
     void drawComplexControl(ComplexControl control, const QStyleOptionComplex *option,
                             QPainter *painter, const QWidget *widget = nullptr) const override;
 
@@ -47,9 +45,12 @@ private:
     // Paints a KIO URL path bar as a borderless rounded field; false for anything else.
     bool paintUrlNavigatorField(const QStyleOption *option, QPainter *painter,
                                 const QWidget *widget) const;
-    // Paints a borderless rounded non-editable combo box; false for editable combos.
+    // Paints a borderless rounded combo box in both states; false when options are missing.
     bool paintComboBox(const QStyleOptionComboBox *option, QPainter *painter,
                        const QWidget *widget) const;
+    // Paints a borderless rounded spin box and its arrows; false when options are missing.
+    bool paintSpinBox(const QStyleOptionSpinBox *option, QPainter *painter,
+                      const QWidget *widget) const;
     // Paints a check box or radio indicator in the Sculpted shape.
     void paintIndicator(const QStyleOption *option, QPainter *painter, bool radio) const;
 };

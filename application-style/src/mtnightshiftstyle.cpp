@@ -25,6 +25,7 @@
 #include <QStyleOptionButton>
 #include <QStyleOptionComboBox>
 #include <QStyleOptionFrame>
+#include <QStyleOptionSpinBox>
 
 #include <cmath>
 
@@ -259,6 +260,72 @@ void fillSurface(QPainter *painter, const QRectF &rect, qreal radius, const QCol
     painter->restore();
 }
 
+// True when a combo box or spin box reads as focused: either the container holds
+// focus, or the widget in its focus chain does — editable containers put focus
+// on their embedded editor, so the option state alone would miss it.
+bool fieldContainerFocused(const QStyleOption *option, const QWidget *widget)
+{
+    if (option && option->state.testFlag(QStyle::State_HasFocus)) {
+        return true;
+    }
+    if (!widget || !option || !option->state.testFlag(QStyle::State_Enabled)) {
+        return false;
+    }
+    const QWidget *focused = widget->focusWidget();
+    // focusWidget can be stale after focus moved out of the subtree, so the real
+    // keyboard focus must be confirmed before the editor counts.
+    return focused && focused != widget && focused->hasFocus()
+        && qobject_cast<const QLineEdit *>(focused);
+}
+
+// Fills one field surface under the shared rule: borderless tone-step fill at
+// rest, readable accent ring only while focused.
+void paintFieldSurface(QPainter *painter, const QRectF &rect, const QColor &fill, bool focused,
+                       const QPalette &palette, QPalette::ColorGroup group)
+{
+    const qreal radius = qMin(kControlRadius, qMin(rect.width(), rect.height()) / 2.0);
+    if (focused) {
+        const QColor ring = readableAccent(palette.color(group, QPalette::Highlight), fill, kFocusContrast);
+        paintSurface(painter, rect, radius, kFocusOutlineWidth, fill, ring);
+    } else {
+        fillSurface(painter, rect, radius, fill);
+    }
+}
+
+// Draws a chevron arrow centred in the given rect, pointing up or down; used for
+// spin buttons so a hit step limit can mute its glyph, which the base style's
+// generic arrow primitives cannot express.
+void paintChevron(QPainter *painter, const QRectF &rect, const QColor &color, bool up)
+{
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, true);
+    const QPointF centre = rect.center();
+    const qreal reach = qMin(rect.width(), rect.height()) * 0.26;
+    const qreal apex = up ? -reach * 0.7 : reach * 0.7;
+    painter->setPen(QPen(color, qMax(1.5, rect.height() / 7.0), Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    QPainterPath chevron;
+    chevron.moveTo(centre.x() - reach, centre.y() - apex);
+    chevron.lineTo(centre.x(), centre.y() + apex);
+    chevron.lineTo(centre.x() + reach, centre.y() - apex);
+    painter->drawPath(chevron);
+    painter->restore();
+}
+
+// Draws a plus or minus centred in the given rect, the plus/minus spin symbol.
+void paintPlusGlyph(QPainter *painter, const QRectF &rect, const QColor &color, bool plus)
+{
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, true);
+    const QPointF centre = rect.center();
+    const qreal reach = qMin(rect.width(), rect.height()) * 0.28;
+    painter->setPen(QPen(color, qMax<qreal>(1.5, rect.height() / 7.0), Qt::SolidLine, Qt::RoundCap));
+    painter->drawLine(centre + QPointF(-reach, 0), centre + QPointF(reach, 0));
+    if (plus) {
+        painter->drawLine(centre + QPointF(0, -reach), centre + QPointF(0, reach));
+    }
+    painter->restore();
+}
+
 // Draws the check, dash or dot mark inside an indicator rect.
 void paintMark(QPainter *painter, const QRectF &rect, const QColor &color, bool radio, bool partial)
 {
@@ -289,23 +356,6 @@ void paintMark(QPainter *painter, const QRectF &rect, const QColor &color, bool 
 // Builds the style on the installed Breeze style, or the native style when absent.
 MTNightshiftStyle::MTNightshiftStyle() : QProxyStyle(QStyleFactory::create(QStringLiteral("Breeze"))) {}
 
-// Attempts to let the editable path field show the navigator's rounded surface. Qt
-// never asks the style for a frameless edit's panel: it fills the widget background
-// with Base itself, which squares off the corners the navigator painted behind it.
-// The widget attribute is the only lever a style has. NOT yet confirmed against a
-// real KUrlNavigator — the offscreen harness cannot reproduce KIO's widget, so check
-// the edit state live (click the path bar) before trusting it.
-void MTNightshiftStyle::polish(QWidget *widget)
-{
-    if (auto *edit = qobject_cast<QLineEdit *>(widget)) {
-        if (!edit->hasFrame() && isInsideUrlNavigator(edit)) {
-            edit->setAttribute(Qt::WA_TranslucentBackground, true);
-            edit->setAutoFillBackground(false);
-        }
-    }
-    QProxyStyle::polish(widget);
-}
-
 // Draws our own line edit and check indicators, delegating all other primitives.
 void MTNightshiftStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter,
                                       const QWidget *widget) const
@@ -319,6 +369,12 @@ void MTNightshiftStyle::drawPrimitive(PrimitiveElement element, const QStyleOpti
     case PE_FrameLineEdit:
         // KIO's URL navigator paints its path bar through this frame primitive.
         if (paintUrlNavigatorField(option, painter, widget)) {
+            return;
+        }
+        // Qt itself never asks a QLineEdit for this frame, but app-initiated
+        // draws that pass a QLineEdit widget must not stamp Breeze's tight
+        // radius over the pill PE_PanelLineEdit painted.
+        if (widget && qobject_cast<const QLineEdit *>(widget)) {
             return;
         }
         break;
@@ -365,13 +421,19 @@ void MTNightshiftStyle::drawControl(ControlElement element, const QStyleOption *
     QProxyStyle::drawControl(element, option, painter, widget);
 }
 
-// Draws our own non-editable combo boxes, delegating every other complex control.
+// Draws our own combo boxes and spin boxes, delegating every other complex control.
 void MTNightshiftStyle::drawComplexControl(ComplexControl control, const QStyleOptionComplex *option,
                                            QPainter *painter, const QWidget *widget) const
 {
     if (control == CC_ComboBox) {
         const auto *combo = qstyleoption_cast<const QStyleOptionComboBox *>(option);
         if (combo && paintComboBox(combo, painter, widget)) {
+            return;
+        }
+    }
+    if (control == CC_SpinBox) {
+        const auto *spin = qstyleoption_cast<const QStyleOptionSpinBox *>(option);
+        if (spin && paintSpinBox(spin, painter, widget)) {
             return;
         }
     }
@@ -444,38 +506,32 @@ bool MTNightshiftStyle::paintLineEdit(const QStyleOption *option, QPainter *pain
     if (!panel || !painter) {
         return false;
     }
-    // Frameless fields stay exactly as Breeze draws them — except the editable path
-    // inside a URL navigator, which KIO creates frameless. It replaces the rounded
-    // breadcrumb field when clicked, so falling back to Breeze there showed a
-    // different, much tighter radius in edit mode.
+    // Frameless fields stay exactly as Breeze draws them — except the path edit
+    // inside a URL navigator, which replaces the rounded breadcrumb field when
+    // clicked and must keep the same pill in both states.
     const auto *edit = qobject_cast<const QLineEdit *>(widget);
     const bool navigatorField = isInsideUrlNavigator(widget);
     if (edit && !edit->hasFrame() && !navigatorField) {
         return false;
     }
-    // Editable combos and spin boxes own a child edit that Breeze already frames.
-    if (widget && (qobject_cast<QComboBox *>(widget->parentWidget())
-                   || qobject_cast<QAbstractSpinBox *>(widget->parentWidget()))) {
-        return false;
+    // Editors inside combos and spin boxes sit on the container's own rounded
+    // surface: paint nothing, or a square panel would cover the pill's corners.
+    if (edit && widget && (qobject_cast<const QComboBox *>(widget->parentWidget())
+                           || qobject_cast<const QAbstractSpinBox *>(widget->parentWidget()))) {
+        return true;
     }
     const QPalette &palette = panel->palette;
     const QPalette::ColorGroup group = colorGroup(panel);
     const bool focused = panel->state.testFlag(State_HasFocus)
         && panel->state.testFlag(State_Enabled);
     const QRectF rect = QRectF(panel->rect);
-    const qreal radius = qMin(kControlRadius, qMin(rect.width(), rect.height()) / 2.0);
     // The field reads as a tone step, not a frame: the theme's Base colour. KIO tints
     // a navigator's own Base to the toolbar shade, so both states of the path bar take
     // the input tone from the application palette and match each other.
     const QColor fill = (navigatorField || !widget) && qApp
         ? qApp->palette().color(group, QPalette::Base)
         : widget->palette().color(group, QPalette::Base);
-    if (focused) {
-        const QColor ring = readableAccent(palette.color(group, QPalette::Highlight), fill, kFocusContrast);
-        paintSurface(painter, rect, radius, kFocusOutlineWidth, fill, ring);
-    } else {
-        fillSurface(painter, rect, radius, fill);
-    }
+    paintFieldSurface(painter, rect, fill, focused, palette, group);
     return true;
 }
 
@@ -509,32 +565,73 @@ bool MTNightshiftStyle::paintUrlNavigatorField(const QStyleOption *option, QPain
     return true;
 }
 
-// Paints the combo frame and delegates the arrow and the label to Breeze.
+// Paints a combo box — editable or not — as a borderless Sculpted field and
+// delegates the arrow and the label to Breeze.
 bool MTNightshiftStyle::paintComboBox(const QStyleOptionComboBox *option, QPainter *painter,
                                       const QWidget *widget) const
 {
-    // Editable combos keep Breeze's field and arrow arrangement.
-    if (!option || !painter || option->editable) {
+    if (!option || !painter) {
         return false;
     }
     const QPalette &palette = option->palette;
     const QPalette::ColorGroup group = colorGroup(option);
-    const bool enabled = option->state.testFlag(State_Enabled);
-    const bool focused = option->state.testFlag(State_HasFocus) && enabled;
+    const bool focused = option->state.testFlag(State_Enabled)
+        && fieldContainerFocused(option, widget);
     const QRectF rect = QRectF(option->rect);
-    const qreal radius = qMin(kControlRadius, qMin(rect.width(), rect.height()) / 2.0);
-    const QColor fill = palette.color(group, QPalette::Button);
-    // Same rule as text fields: filled and rounded, with the outline reserved for focus.
-    if (focused) {
-        const QColor ring = readableAccent(palette.color(group, QPalette::Highlight), fill, kFocusContrast);
-        paintSurface(painter, rect, radius, kFocusOutlineWidth, fill, ring);
-    } else {
-        fillSurface(painter, rect, radius, fill);
-    }
+    // Combos that take typed text use the input tone (Base); menu-style combos
+    // keep the button tone, which keeps the file dialog's two rows distinct.
+    const QColor fill = option->editable ? palette.color(group, QPalette::Base)
+                                         : palette.color(group, QPalette::Button);
+    paintFieldSurface(painter, rect, fill, focused, palette, group);
     QStyleOption arrowOption(*option);
     arrowOption.rect = subControlRect(CC_ComboBox, option, SC_ComboBoxArrow, widget);
     baseStyle()->drawPrimitive(PE_IndicatorArrowDown, &arrowOption, painter, widget);
     baseStyle()->drawControl(CE_ComboBoxLabel, option, painter, widget);
+    return true;
+}
+
+// Paints a spin box as a borderless Sculpted field with the button pair its
+// symbol mode and step limits call for.
+bool MTNightshiftStyle::paintSpinBox(const QStyleOptionSpinBox *option, QPainter *painter,
+                                     const QWidget *widget) const
+{
+    if (!option || !painter) {
+        return false;
+    }
+    const QPalette &palette = option->palette;
+    const QPalette::ColorGroup group = colorGroup(option);
+    const bool focused = option->state.testFlag(State_Enabled)
+        && fieldContainerFocused(option, widget);
+    const QRectF rect = QRectF(option->rect);
+    // A spin box edits typed text, so it takes the input tone like line edits;
+    // a frameless editor delegate opts out, mirroring the line edit rule.
+    const QColor fill = palette.color(group, QPalette::Base);
+    if (option->frame) {
+        paintFieldSurface(painter, rect, fill, focused, palette, group);
+    }
+    if (option->buttonSymbols == QAbstractSpinBox::NoButtons) {
+        return true;
+    }
+    // Each button takes its own colour: a hit step limit mutes only its glyph.
+    const QColor glyphColor = palette.color(group, QPalette::WindowText);
+    const QColor mutedColor = palette.color(QPalette::Disabled, QPalette::WindowText);
+    const auto buttonRect = [&](QStyle::SubControl sub) {
+        return subControlRect(CC_SpinBox, option, sub, widget);
+    };
+    const auto buttonColor = [&](QStyle::SubControl sub) {
+        const bool enabled = sub == SC_SpinBoxUp
+            ? bool(option->stepEnabled & QAbstractSpinBox::StepUpEnabled)
+            : bool(option->stepEnabled & QAbstractSpinBox::StepDownEnabled);
+        return enabled ? glyphColor : mutedColor;
+    };
+    if (option->buttonSymbols == QAbstractSpinBox::PlusMinus) {
+        // Qt ships no plus/minus primitive, so the glyphs are drawn by hand.
+        paintPlusGlyph(painter, buttonRect(SC_SpinBoxUp), buttonColor(SC_SpinBoxUp), true);
+        paintPlusGlyph(painter, buttonRect(SC_SpinBoxDown), buttonColor(SC_SpinBoxDown), false);
+        return true;
+    }
+    paintChevron(painter, buttonRect(SC_SpinBoxUp), buttonColor(SC_SpinBoxUp), true);
+    paintChevron(painter, buttonRect(SC_SpinBoxDown), buttonColor(SC_SpinBoxDown), false);
     return true;
 }
 
