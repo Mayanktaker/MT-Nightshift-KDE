@@ -63,9 +63,10 @@ PARAMS = {
     # Theme). The window's own outer line gets a stronger mix, because Breeze
     # derives its client hairline from the brighter Header background: at equal
     # contrast the client seam wins, and the outer edge should be the dominant
-    # line. 0.20 puts the frame at #3F4246 against the client's #33363A.
+    # line. 0.06 keeps the outer edge a whisper above the client seam instead of
+    # a visible border, per the 2026-11 polish pass.
     "frame_contrast": 0.14,
-    "frame_line_contrast": 0.20,
+    "frame_line_contrast": 0.06,
     # Thickness of the 1px frame line were it rasterised crisply on the corner
     # arcs. A 1px annulus spreads over two pixels at ~50% coverage where the
     # curve runs at 45 degrees, so the corners read as a broken border against

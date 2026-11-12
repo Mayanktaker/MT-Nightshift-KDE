@@ -68,7 +68,7 @@ apply: check
 	install -m 644 themes/aurorae/MTNightshift/* $(AURORAE_DIR)/
 	kpackagetool6 --type Plasma/LookAndFeel -u themes/mt-nightshift-global
 	plasma-apply-lookandfeel -a $(LOOKANDFEEL)
-	kwriteconfig6 --file kdeglobals --group KDE --key frameContrast 0.14
+	kwriteconfig6 --file kdeglobals --group KDE --key frameContrast 0.05
 	gdbus call --session --dest org.kde.KWin --object-path /KWin --method org.kde.KWin.reconfigure
 	@echo "applied; restart the session to pick up any Padding* change"
 

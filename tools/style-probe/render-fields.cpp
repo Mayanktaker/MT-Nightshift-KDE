@@ -322,5 +322,47 @@ int main(int argc, char **argv)
         app.style()->drawPrimitive(QStyle::PE_Frame, &option, p, &statusCard);
     });
 
+    // Capacity meters and progress bars take the CE_ProgressBar path (KCapacityBar
+    // falls back to it under styles without KDE custom elements): 30% meter with
+    // and without inline text.
+    const auto meterRender = [&](int progress, bool textVisible, const QString &name) {
+        saveRendered(QSize(160, 12), name, outdir, name, [&](QPainter *p) {
+            QStyleOptionProgressBar option;
+            option.initFrom(&statusCard);
+            option.rect = QRect(0, 0, 160, 12);
+            option.minimum = 0;
+            option.maximum = 100;
+            option.progress = progress;
+            option.text = textVisible ? QStringLiteral("%1%").arg(progress) : QString();
+            option.textVisible = textVisible;
+            option.state |= QStyle::State_Enabled | QStyle::State_Horizontal;
+            app.style()->drawControl(QStyle::CE_ProgressBar, &option, p, &statusCard);
+        });
+    };
+    meterRender(30, false, QStringLiteral("capacity-meter"));
+    meterRender(55, true, QStringLiteral("progress-text"));
+
+    // Simulate KDE's custom-element protocol exactly as KCapacityBar runs it:
+    // the widget temporarily carries the element name in its objectName.
+    statusCard.setObjectName(QStringLiteral("CE_CapacityBar"));
+    const int classInfoIndex = statusCard.style()->metaObject()->indexOfClassInfo("X-KDE-CustomElements");
+    const int customId = statusCard.style()->styleHint(static_cast<QStyle::StyleHint>(0xff000001),
+                                                      nullptr, &statusCard);
+    std::fprintf(stderr, "protocol: classInfo=%d customId=%d\n", classInfoIndex, customId);
+    if (customId) {
+        saveRendered(QSize(160, 12), QStringLiteral("capacity-meter-custom"), outdir,
+                     QStringLiteral("capacity-meter-custom"), [&](QPainter *p) {
+            QStyleOptionProgressBar option;
+            option.initFrom(&statusCard);
+            option.rect = QRect(0, 0, 160, 12);
+            option.minimum = 0;
+            option.maximum = 100;
+            option.progress = 30;
+            option.state |= QStyle::State_Enabled | QStyle::State_Horizontal;
+            app.style()->drawControl(static_cast<QStyle::ControlElement>(customId), &option, p, &statusCard);
+        });
+    }
+    statusCard.setObjectName(QString());
+
     return 0;
 }

@@ -14,11 +14,20 @@ class QPainter;
 class QStyleOption;
 class QStyleOptionComboBox;
 class QStyleOptionComplex;
+class QStyleOptionProgressBar;
 class QStyleOptionSpinBox;
+class QStyleHintReturn;
 
 // Sculpted Qt Widgets style layered over Breeze; only rounded control surfaces are redrawn.
 class MTNightshiftStyle : public QProxyStyle
 {
+    Q_OBJECT
+
+    // Opts the proxy into KDE's custom-element protocol so widgets like
+    // KCapacityBar ask this style for their element ids (Breeze answers through
+    // the delegation) instead of falling back to generic Qt primitives.
+    Q_CLASSINFO("X-KDE-CustomElements", "true")
+
 public:
     // Uses the installed Breeze style as the base, falling back to the native style.
     MTNightshiftStyle();
@@ -51,6 +60,19 @@ private:
     // Paints a borderless rounded spin box and its arrows; false when options are missing.
     bool paintSpinBox(const QStyleOptionSpinBox *option, QPainter *painter,
                       const QWidget *widget) const;
+    // Paints a determinate progress meter as a rounded pill; false for busy or vertical bars.
+    bool paintProgressBar(const QStyleOptionProgressBar *option, QPainter *painter,
+                          const QWidget *widget) const;
+
+protected:
+    // Records the element id Breeze assigns to CE_CapacityBar so the meter can
+    // be taken over in drawControl.
+    int styleHint(StyleHint hint, const QStyleOption *option, const QWidget *widget,
+                  QStyleHintReturn *hintReturn) const override;
     // Paints a check box or radio indicator in the Sculpted shape.
     void paintIndicator(const QStyleOption *option, QPainter *painter, bool radio) const;
+
+    // Element id Breeze handed out for CE_CapacityBar, captured in styleHint;
+    // mutable because the protocol queries through a const style.
+    mutable int m_capacityBarElement = 0;
 };

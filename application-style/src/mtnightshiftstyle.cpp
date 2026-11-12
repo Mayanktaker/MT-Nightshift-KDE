@@ -15,6 +15,7 @@
 #include <QDialog>
 #include <QDockWidget>
 #include <QLatin1StringView>
+#include <QMetaObject>
 #include <QLineEdit>
 #include <QMainWindow>
 #include <QMetaObject>
@@ -451,12 +452,77 @@ void MTNightshiftStyle::drawPrimitive(PrimitiveElement element, const QStyleOpti
     QProxyStyle::drawPrimitive(element, option, painter, widget);
 }
 
+// Paints a determinate progress meter as a rounded pill; false for busy or
+// vertical bars, whose animation and layout stay with Breeze.
+bool MTNightshiftStyle::paintProgressBar(const QStyleOptionProgressBar *option, QPainter *painter,
+                                         const QWidget *widget) const
+{
+    if (!option || !painter || option->maximum == 0
+        || !option->state.testFlag(QStyle::State_Horizontal)) {
+        return false;
+    }
+    const QPalette &palette = option->palette;
+    const QPalette::ColorGroup group = colorGroup(option);
+    const QRectF rect = QRectF(option->rect);
+    const qreal radius = qMin(kControlRadius, rect.height() / 2.0);
+    // The groove is one tone step below the surroundings — Base against Window —
+    // so a capacity meter reads as a soft inset instead of a black slab.
+    const QColor groove = blend(palette.color(group, QPalette::Window),
+                                palette.color(group, QPalette::Base), 0.5);
+    fillSurface(painter, rect, radius, groove);
+    const qreal span = option->maximum - option->minimum;
+    const qreal done = qBound<qreal>((option->progress - option->minimum) / span, 0.0, 1.0);
+    if (done > 0.0) {
+        const QRectF fillRect = rect.adjusted(0, 0, -rect.width() * (1.0 - done), 0);
+        fillSurface(painter, fillRect, qMin(radius, fillRect.width() / 2.0),
+                    palette.color(group, QPalette::Highlight));
+    }
+    if (option->textVisible && !option->text.isEmpty()) {
+        painter->save();
+        painter->setPen(palette.color(group, QPalette::Text));
+        painter->drawText(rect, Qt::AlignCenter, option->text);
+        painter->restore();
+    }
+    return true;
+}
+
+// KDE's custom-element protocol: the widget temporarily carries the element name
+// in its objectName and queries 0xff000001; remember the id Breeze assigns to
+// CE_CapacityBar so its draws can be taken over in drawControl.
+int MTNightshiftStyle::styleHint(StyleHint hint, const QStyleOption *option,
+                                 const QWidget *widget, QStyleHintReturn *hintReturn) const
+{
+    constexpr StyleHint kKdeCustomStyleElement = static_cast<StyleHint>(0xff000001);
+    constexpr int kOwnCapacityBarElement = static_cast<int>(QStyle::CE_CustomBase) + 1;
+    if (hint == kKdeCustomStyleElement && widget
+        && widget->objectName() == QLatin1StringView("CE_CapacityBar")) {
+        // Neither Qt nor Breeze supports CE_CapacityBar here — Breeze leaves the
+        // query unanswered, so KCapacityBar falls back to its near-black
+        // QPainter shape. Hand out our own element id and paint the pill.
+        m_capacityBarElement = kOwnCapacityBarElement;
+        return kOwnCapacityBarElement;
+    }
+    return QProxyStyle::styleHint(hint, option, widget, hintReturn);
+}
+
 // Draws our own push buttons, delegating every other control element.
 void MTNightshiftStyle::drawControl(ControlElement element, const QStyleOption *option, QPainter *painter,
                                     const QWidget *widget) const
 {
     if (element == CE_PushButton && paintPushButton(option, painter, widget)) {
         return;
+    }
+    // KDE capacity meters (Dolphin's free-space meter and KCapacityBar users)
+    // fall back to this primitive through our proxy, where Breeze's groove
+    // reads as a black slab.
+    // KDE capacity meters (Dolphin's free-space meter and other KCapacityBar
+    // users) arrive under Breeze's custom element id; the generic progress bars
+    // arrive as CE_ProgressBar. Both render as the same Sculpted pill.
+    if (element == m_capacityBarElement || element == CE_ProgressBar) {
+        const auto *bar = qstyleoption_cast<const QStyleOptionProgressBar *>(option);
+        if (bar && paintProgressBar(bar, painter, widget)) {
+            return;
+        }
     }
     QProxyStyle::drawControl(element, option, painter, widget);
 }
