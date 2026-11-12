@@ -50,6 +50,10 @@
 - [x] Tried reclaiming the 8px of unused ring on the running session (`Padding*` = 24 with matching artwork, then `plasma-apply-lookandfeel`): KWin keeps the padding it started with, so the capture still showed a 32px ring. Decision: keep `padding: 32` deployed rather than ship a state the compositor half-applies; the flip stays one command after a session restart.
 - [x] CI: `.github/workflows/checks.yml` runs `make check` and `make check-dpr2` on push, so the checks no longer depend on a local hook being installed.
 
+- [x] Path bar: the URL navigator field had no contrast because KIO tints its own `Base` to the toolbar tone, so the rounded fill was invisible and the corners looked broken. The style now takes the input tone from the application palette; measured on a live window launched with the user-local plugin: field 652x32 at rows 46-77, both ends tapering symmetrically over 15px — a proper rounded field.
+- [x] App tooltips: `PE_PanelTipLabel` is now painted by the style (6px radius, `ToolTipBase` fill, 1px frame) instead of Breeze's square-cornered default, which is what `9 folders` was showing — an app tooltip over the view, not a status widget. Verified by an offscreen render of the primitive.
+- [ ] Reinstall the Qt style plugin system-wide (`make style-install`, needs sudo): Qt has no user-local style path here, so until then only apps launched with `QT_PLUGIN_PATH=~/.local/lib64/qt6/plugins` use the fixes.
+
 
 ## Chosen direction
 

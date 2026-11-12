@@ -8,6 +8,7 @@
 #include "mtnightshiftstyle.h"
 
 #include <QAbstractScrollArea>
+#include <QApplication>
 #include <QAbstractSpinBox>
 #include <QComboBox>
 #include <QCoreApplication>
@@ -31,6 +32,9 @@ namespace
 {
 // Sculpted control radius in logical pixels, clamped per control.
 constexpr qreal kControlRadius = 15.0;
+// Tooltips follow the Plasma tooltip radius from design.md section 6, not the
+// control radius, so app tooltips match the shell's tooltips.
+constexpr qreal kTipRadius = 6.0;
 // WCAG non-text contrast for state outlines; focus must read brighter than hover.
 constexpr qreal kOutlineContrast = 3.0;
 constexpr qreal kFocusContrast = 5.0;
@@ -294,6 +298,20 @@ void MTNightshiftStyle::drawPrimitive(PrimitiveElement element, const QStyleOpti
     case PE_IndicatorRadioButton:
         paintIndicator(option, painter, true);
         return;
+    case PE_PanelTipLabel:
+        // Breeze's default app tooltip is a square-cornered frame; that surfaced as a
+        // stray bordered box over the view. Give it the theme's tooltip surface instead.
+        if (option && painter) {
+            const QPalette &tipPalette = option->palette;
+            const QPalette::ColorGroup tipGroup = colorGroup(option);
+            const QRectF tipRect = QRectF(option->rect).adjusted(0.5, 0.5, -0.5, -0.5);
+            const QColor tipFill = tipPalette.color(tipGroup, QPalette::ToolTipBase);
+            const QColor tipLine = blend(tipFill, tipPalette.color(tipGroup, QPalette::ToolTipText),
+                                         kFrameContrast);
+            paintSurface(painter, tipRect, kTipRadius, kOutlineWidth, tipFill, tipLine);
+            return;
+        }
+        break;
     case PE_IndicatorDockWidgetResizeHandle:
         // Dolphin's Places sidebar edge: keep the grab strip, drop the printed line.
         if (option && painter && isDolphinShellWindow(widget)) {
@@ -443,9 +461,12 @@ bool MTNightshiftStyle::paintUrlNavigatorField(const QStyleOption *option, QPain
         && option->state.testFlag(State_Enabled);
     const QRectF rect = QRectF(option->rect);
     const qreal radius = qMin(kControlRadius, qMin(rect.width(), rect.height()) / 2.0);
-    // Same input surface as every other field: the widget's own Base tone, not the
-    // AlternateBase tint the navigator puts in its frame option.
-    const QColor fill = widget->palette().color(group, QPalette::Base);
+    // The theme's input tone, taken from the application palette. KIO tints the
+    // navigator's own Base to the toolbar shade, which left the field with no
+    // contrast at all: the rounded fill was invisible and only the corner
+    // antialiasing showed, so the path bar read as "no proper roundness".
+    const QColor fill = qApp ? qApp->palette().color(group, QPalette::Base)
+                             : palette.color(group, QPalette::Base);
     if (focused) {
         const QColor ring = readableAccent(palette.color(group, QPalette::Highlight), fill, kFocusContrast);
         paintSurface(painter, rect, radius, kFocusOutlineWidth, fill, ring);
