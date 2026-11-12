@@ -45,6 +45,11 @@
 - [x] Add `--padding/--visible/--peak/--arc` overrides to `build-decoration.py` plus a root `Makefile` (`make check`, `make decoration`, `make apply`, `make clean`), so the deferred 24px-ring flip and any weight trial are one command and still verified (`--padding 24 --visible 24` passes the checks offline).
 - [x] Encode the apply sequence once: `make apply` runs the checks, installs both packages, selects the Look-and-Feel, re-asserts `[KDE] frameContrast=0.14` (Plasma resets it) and reconfigures KWin.
 
+- [x] Corner-language decision: keep **15px corners at the default 6px border**. Restoring 21px needs `BorderSize=VeryLarge` (border 8), a session-wide setting that thickens every frame, so the theme stays self-contained at 15px — the roundest radius that still leaves the corner border clear of the client. The generator enforces the pairing.
+- [x] HiDPI decision: the 2px corner arc stays for this 1x session; 1px is the correct value at 2x. Measured by rendering at `--scale 2`: a 1px arc reaches 0.94 minimum corner coverage there against 0.36 at 1x, so the extra pixel is purely 1x antialiasing compensation. `make check-dpr2` guards that configuration.
+- [x] Tried reclaiming the 8px of unused ring on the running session (`Padding*` = 24 with matching artwork, then `plasma-apply-lookandfeel`): KWin keeps the padding it started with, so the capture still showed a 32px ring. Decision: keep `padding: 32` deployed rather than ship a state the compositor half-applies; the flip stays one command after a session restart.
+- [x] CI: `.github/workflows/checks.yml` runs `make check` and `make check-dpr2` on push, so the checks no longer depend on a local hook being installed.
+
 
 ## Chosen direction
 

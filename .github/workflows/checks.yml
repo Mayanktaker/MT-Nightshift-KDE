@@ -1,0 +1,35 @@
+# © Mayanktaker Computers & Web Development | https://mayanktaker.com
+# SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development
+# SPDX-License-Identifier: LGPL-2.0-or-later
+#
+# Runs the same checks the pre-commit hook runs, so the artwork cannot regress on a
+# clone where the hook was never installed. check-dpr2 additionally renders at 2x.
+name: theme checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Qt6 (qsvg), libxml2 and Python deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            qt6-base-dev libgl1-mesa-dev libxml2-utils cmake pkg-config
+          pip install --disable-pip-version-check numpy pillow
+
+      - name: Check the artwork at 1x
+        run: make check
+
+      - name: Check the artwork at 2x
+        run: make check-dpr2

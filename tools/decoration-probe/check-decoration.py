@@ -92,10 +92,10 @@ def build_probe() -> Path:
     return binary
 
 
-def compose(text, probe, prefix, work, size, layout) -> np.ndarray:
+def compose(text, probe, prefix, work, size, layout, scale=1) -> np.ndarray:
     """Render every slice of one state and stitch it into the frame."""
     defs = re.search(r"  <defs>.*?  </defs>\n", text, re.S).group(0)
-    frame = np.zeros((size[1], size[0], 4), dtype=np.float64)
+    frame = np.zeros((size[1] * scale, size[0] * scale, 4), dtype=np.float64)
     for name, (ox, oy, w, h) in layout.items():
         block = re.search(r'^  <g id="%s%s".*?^  </g>\n' % (re.escape(prefix), name), text, re.S | re.M)
         if block is None:
@@ -105,16 +105,17 @@ def compose(text, probe, prefix, work, size, layout) -> np.ndarray:
         source, target = work / "slice.svg", work / "slice.png"
         source.write_text(
             '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d">%s<g>%s</g></svg>'
-            % (w, h, w, h, defs, body)
+            % (w * scale, h * scale, w, h, defs, body)
         )
         subprocess.run([str(probe), str(source), str(target)], check=True,
                        env={"QT_QPA_PLATFORM": "offscreen", "PATH": "/usr/bin:/bin", "HOME": str(Path.home())})
         tile = np.asarray(Image.open(target).convert("RGBA")).astype(np.float64)
-        dst = frame[oy:oy + h, ox:ox + w]
+        dst = frame[oy * scale:oy * scale + h * scale, ox * scale:ox * scale + w * scale]
         sa, da = tile[..., 3:4] / 255.0, dst[..., 3:4] / 255.0
         oa = sa + da * (1 - sa)
         rgb = (tile[..., :3] * sa + dst[..., :3] * da * (1 - sa)) / np.where(oa == 0, 1, oa)
-        frame[oy:oy + h, ox:ox + w] = np.concatenate([rgb, oa * 255.0], axis=2)
+        frame[oy * scale:oy * scale + h * scale, ox * scale:ox * scale + w * scale] = \
+            np.concatenate([rgb, oa * 255.0], axis=2)
     return frame
 
 
@@ -131,7 +132,7 @@ def corner_samples(alpha, ring: int, mirror: bool) -> list[float]:
     return values
 
 
-def audit(frame, label, fill, ring, peak) -> None:
+def audit(frame, label, fill, ring, peak, scale) -> None:
     """Assert shadow, corner and surface invariants for one re-stitched frame."""
     alpha = frame[..., 3] / 255.0
     mid = frame.shape[0] // 2
@@ -188,32 +189,43 @@ def audit(frame, label, fill, ring, peak) -> None:
         check(values.min() >= 0.45, "%s arc border has no gap (min %.2f)" % (name, values.min()))
 
     print("%s: surfaces" % label)
-    header = frame[ring + 12, ring + 20, :3]
+    header = frame[ring + 12 * scale, ring + 20 * scale, :3]
     check(np.abs(header - fill).max() <= 1, "header fill is %s (got %s)" % (fill, header.round().astype(int)))
-    divider = frame[ring + 38, ring + 20, :3]
+    divider = frame[ring + 38 * scale, ring + 20 * scale, :3]
     check(np.abs(divider - fill).max() <= 1, "no title divider row at the header boundary")
-    border = frame[mid, ring + 2, :3]
+    border = frame[mid, ring + 2 * scale, :3]
     check(border.max() >= 0, "side frame is painted")
 
 
 def main() -> int:
-    """Render both states and run the audit."""
-    svg_path = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_SVG
+    """Render both states and run the audit, at 1x or at a device scale."""
+    argv = sys.argv[1:]
+    scale = 1
+    if "--scale" in argv:
+        index = argv.index("--scale")
+        scale = int(argv[index + 1])
+        del argv[index:index + 2]
+    svg_path = Path(argv[0]) if argv else DEFAULT_SVG
     if not svg_path.exists():
         raise SystemExit("decoration not found: %s" % svg_path)
     text = svg_path.read_text()
     width, height, layout = geometry(text)
     peak = peak_alpha(text)
 
-    print("checking %s  (frame %dx%d, peak %.3f)" % (svg_path, width, height, peak))
     global RADIUS
     # The corner radius is the arc radius in the corner fill path; the ring is the
-    # slice width minus it. Both follow the artwork instead of being duplicated.
+    # slice width minus it. Both follow the artwork instead of being duplicated,
+    # then convert to device pixels so the measurements hold at any scale.
     arc = re.search(r'id="decoration-topleft".*?<path d="[^"]*A ([\d.]+),', text, re.S)
-    RADIUS = int(round(float(arc.group(1))))
-    ring = layout["topleft"][2] - RADIUS
-    check(ring > 0, "top-left slice is wider than the %dpx corner (shadow ring %dpx)" % (RADIUS, ring))
-    check(layout["left"][2] == ring + RADIUS, "left slice width matches ring + corner")
+    radius_units = int(round(float(arc.group(1))))
+    ring_units = layout["topleft"][2] - radius_units
+    RADIUS = radius_units * scale
+    ring = ring_units * scale
+
+    print("checking %s  (frame %dx%d at %dx, peak %.3f)" % (svg_path, width, height, scale, peak))
+    check(ring_units > 0, "top-left slice is wider than the %dpx corner (shadow ring %dpx)"
+          % (radius_units, ring_units))
+    check(layout["left"][2] == ring_units + radius_units, "left slice width matches ring + corner")
     check("cut-" not in text, "no corner cutout masks (they erase the corner shadow)")
     check('fill="#0A0B0D"' not in text, "no #0A0B0D title divider (the client paints its own hairline)")
 
@@ -221,8 +233,10 @@ def main() -> int:
         work = Path(tmp)
         probe = build_probe()
         size = (width, height)
-        audit(compose(text, probe, "decoration-", work, size, layout), "active", HEADER_FILL, ring, peak)
-        audit(compose(text, probe, "decoration-inactive-", work, size, layout), "inactive", INACTIVE_FILL, ring, peak)
+        audit(compose(text, probe, "decoration-", work, size, layout, scale),
+              "active", HEADER_FILL, ring, peak, scale)
+        audit(compose(text, probe, "decoration-inactive-", work, size, layout, scale),
+              "inactive", INACTIVE_FILL, ring, peak, scale)
 
     print()
     if failures:

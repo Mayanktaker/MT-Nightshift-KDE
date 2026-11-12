@@ -14,7 +14,7 @@ LF_DIR := $(HOME)/.local/share/plasma/look-and-feel
 LOOKANDFEEL := com.mayanktaker.mt-nightshift.desktop
 PROBE_CACHE := $(or $(XDG_CACHE_HOME),$(HOME)/.cache)/mt-nightshift-probe
 
-.PHONY: all decoration check apply clean
+.PHONY: all decoration check check-dpr2 apply clean
 
 all: check
 
@@ -29,6 +29,15 @@ check:
 	./tools/decoration-probe/check-decoration.py
 	@for f in themes/aurorae/MTNightshift/*.svg; do xmllint --noout "$$f" || exit 1; done
 	@echo "all theme checks passed"
+
+# The corner border is drawn `frame_line_arc` px thick because a 1px annulus only
+# reaches ~half coverage per pixel at 45 degrees on a 1x display. At 2x the same
+# line covers nearly every device pixel, so 1px is correct there — this target
+# proves the artwork still holds on HiDPI with the 1px arc it should use.
+check-dpr2:
+	@mkdir -p build
+	python3 tools/decoration-probe/build-decoration.py --arc 1.0 build/decoration-dpr2.svg
+	./tools/decoration-probe/check-decoration.py --scale 2 build/decoration-dpr2.svg
 
 # Install into user-local KDE paths and select the theme in the running session.
 apply: check
