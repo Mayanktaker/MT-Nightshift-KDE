@@ -18,6 +18,9 @@
 #include <QHash>
 #include <QImage>
 #include <QPainter>
+#include <QPainterPath>
+
+#include "status-card-widget.h"
 #include <QLineEdit>
 #include <QPalette>
 #include <QPluginLoader>
@@ -296,6 +299,28 @@ int main(int argc, char **argv)
     };
     spinRender(QAbstractSpinBox::StepUpEnabled | QAbstractSpinBox::StepDownEnabled, QStringLiteral("spinbox-steps-both"));
     spinRender(QAbstractSpinBox::StepUpEnabled, QStringLiteral("spinbox-steps-uponly"));
+
+    // Dolphin's compact status card: rounded fill drawn by Dolphin, then the
+    // frame primitive — which our style must answer with a matching hairline.
+    DolphinStatusBar statusCard;
+    statusCard.resize(120, 28);
+    saveRendered(statusCard.size(), QStringLiteral("status-card"), outdir,
+                 QStringLiteral("status-card"), [&](QPainter *p) {
+        // Reproduce Dolphin's clip: left and bottom border cut off.
+        QPainterPath clip;
+        clip.addRect(4, 0, 116, 24);
+        p->setClipPath(clip);
+        QStyleOption option;
+        option.initFrom(&statusCard);
+        // Dolphin expands the rect left and down only; the right edge stays put,
+        // which is where the rounding and its hairline remain visible.
+        option.rect = QRect(-4, 0, 124, 32);
+        option.state |= QStyle::State_Enabled | QStyle::State_Sunken;
+        p->setPen(Qt::NoPen);
+        p->setBrush(statusCard.palette().color(QPalette::Window));
+        p->drawRoundedRect(option.rect, 5, 5);
+        app.style()->drawPrimitive(QStyle::PE_Frame, &option, p, &statusCard);
+    });
 
     return 0;
 }

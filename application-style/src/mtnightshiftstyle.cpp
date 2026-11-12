@@ -43,13 +43,18 @@ constexpr qreal kFocusContrast = 5.0;
 constexpr qreal kDisabledMute = 0.65;
 // Frame-line strength: design.md section 6/8 frameContrast token.
 constexpr qreal kFrameContrast = 0.2;
-// State outline thickness in logical pixels; keyboard focus doubles it.
+// State outline thickness in logical pixels; the focus ring stays 1px and reads
+// crisp, with its visibility carried by the contrast token instead of weight.
 constexpr qreal kOutlineWidth = 1.0;
-constexpr qreal kFocusOutlineWidth = 2.0;
+constexpr qreal kFocusOutlineWidth = 1.0;
 // Scroll bar gutter in logical pixels. Breeze spends 21px on a gutter its 8px
 // handle never fills, so a 12px gutter keeps the same handle, hover states and
 // drag length while reading considerably slimmer.
 constexpr int kSlimScrollBarExtent = 12;
+// Corner radius Dolphin hardcodes for its compact status card
+// ("drawRoundedRect(opt.rect, 5, 5)" in DolphinStatusBar::paintEvent); the card
+// frame must follow it or the border squares off the rounded fill.
+constexpr qreal kStatusCardRadius = 5.0;
 // Application name Dolphin reports for its own windows; the zero scroll bar
 // extent is scoped to this name so no other application loses a scroll bar.
 constexpr QLatin1StringView kDolphinApplicationName = QLatin1StringView("dolphin");
@@ -59,6 +64,9 @@ constexpr QLatin1StringView kPlacesViewClassName = QLatin1StringView("KFilePlace
 // Public class name of KIO's URL path bar (KIO::KUrlNavigator). Dolphin's own
 // path bar is a subclass of it, so one name covers both.
 constexpr QLatin1StringView kUrlNavigatorClassName = QLatin1StringView("KUrlNavigator");
+// Public class name of Dolphin's status bar, which paints its compact card
+// through PE_Frame; matched from the meta-object like the other KDE classes.
+constexpr QLatin1StringView kStatusCardClassName = QLatin1StringView("DolphinStatusBar");
 
 // Compares one meta-object class name with an expected class name, ignoring any
 // namespace prefix.
@@ -88,6 +96,13 @@ bool isUrlNavigator(const QWidget *widget)
         }
     }
     return false;
+}
+
+// True when the widget is Dolphin's own status bar, whose compact card asks the
+// style for a square frame over its rounded fill.
+bool isStatusCard(const QWidget *widget)
+{
+    return widget && matchesClassName(widget->metaObject()->className(), kStatusCardClassName);
 }
 
 // Finds the scroll area that owns a scroll bar; Qt nests scroll bars in an
@@ -292,6 +307,22 @@ void paintFieldSurface(QPainter *painter, const QRectF &rect, const QColor &fill
     }
 }
 
+// Draws the compact status card's border as a hairline that follows its own
+// rounding; Dolphin's clip path keeps the left and bottom border off exactly as
+// it clips the card fill, so the border can never square the corners off again.
+void paintStatusCardFrame(const QStyleOption *option, QPainter *painter)
+{
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, true);
+    const QColor fill = option->palette.color(QPalette::Window);
+    const QColor line = blend(fill, option->palette.color(QPalette::WindowText), kFrameContrast);
+    painter->setPen(QPen(line, kOutlineWidth));
+    painter->setBrush(Qt::NoBrush);
+    painter->drawRoundedRect(QRectF(option->rect).adjusted(0.5, 0.5, -0.5, -0.5), kStatusCardRadius,
+                             kStatusCardRadius);
+    painter->restore();
+}
+
 // Draws a chevron arrow centred in the given rect, pointing up or down; used for
 // spin buttons so a hit step limit can mute its glyph, which the base style's
 // generic arrow primitives cannot express.
@@ -375,6 +406,15 @@ void MTNightshiftStyle::drawPrimitive(PrimitiveElement element, const QStyleOpti
         // draws that pass a QLineEdit widget must not stamp Breeze's tight
         // radius over the pill PE_PanelLineEdit painted.
         if (widget && qobject_cast<const QLineEdit *>(widget)) {
+            return;
+        }
+        break;
+    case PE_Frame:
+        // Dolphin's compact status card draws its own rounded Window-tone fill
+        // and asks the style only for a square frame; answer with a hairline
+        // that follows the card's rounding instead of squaring it off.
+        if (option && painter && isStatusCard(widget)) {
+            paintStatusCardFrame(option, painter);
             return;
         }
         break;
