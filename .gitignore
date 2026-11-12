@@ -17,3 +17,7 @@ deleted_files_folders/
 # Ignore editor backup files.
 *~
 *.swp
+
+# Ignore Python bytecode from the decoration tooling.
+__pycache__/
+*.pyc

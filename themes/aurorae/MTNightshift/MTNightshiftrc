@@ -8,6 +8,8 @@
 # Tiny -> 4px, Large -> 6px, VeryLarge -> 8px, Huge -> 12px, VeryHuge -> 23px,
 # Oversized -> 36px. The 21px radius therefore resolves fully at Normal and
 # above; the 32px shadow carries the corner at Tiny/NoSides.
+# Padding* must equal "padding" in tools/decoration-probe/build-decoration.py,
+# which generates decoration.svg at these slice sizes.
 
 [General]
 ActiveTextColor=232,235,240

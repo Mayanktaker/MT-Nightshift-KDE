@@ -5,6 +5,14 @@
 
 [kdeglobals][KDE]
 widgetStyle=MTNightshift
+# Seam contrast. KDE derives ColorScheme-Frame as blend(background, text, this),
+# so 0.14 keeps interior seams (Breeze's client header hairline #33363A, Plasma
+# panel and dialog edges #2E3035) below the window's own frame line instead of
+# the stock 0.20, which made the client hairline the brightest line on screen.
+# The decoration's frame line deliberately does not follow this key: it mixes at
+# 0.20 from the Header group to #3F4246 so the outer edge stays dominant
+# (design.md §8, §12.2).
+frameContrast=0.14
 
 [kdeglobals][General]
 ColorScheme=MT-Nightshift

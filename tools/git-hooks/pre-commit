@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# © Mayanktaker Computers & Web Development | https://mayanktaker.com
+# SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development
+# SPDX-License-Identifier: LGPL-2.0-or-later
+#
+# Pre-commit gate for the Aurorae decoration. Installed with:
+#   git config core.hooksPath tools/git-hooks
+#
+# Only runs when decoration artwork or its tooling is staged, so ordinary commits
+# stay instant. Two checks: the SVG still matches its generator parameters, and
+# the raster invariants hold (ramped edges, shadow in the corner cutouts, no
+# double-composited ring, no divider row).
+set -euo pipefail
+
+root="$(git rev-parse --show-toplevel)"
+cd "$root"
+
+staged=$(git diff --cached --name-only --diff-filter=ACM -- \
+    'themes/aurorae/**' 'tools/decoration-probe/**' || true)
+if [ -z "$staged" ]; then
+    exit 0
+fi
+
+echo "pre-commit: decoration artwork changed, running checks"
+
+if ! python3 tools/decoration-probe/build-decoration.py --check; then
+    echo "  decoration.svg is out of date with build-decoration.py; regenerate it" >&2
+    exit 1
+fi
+
+if ! ./tools/decoration-probe/check-decoration.py; then
+    echo "  decoration checks failed; fix the artwork before committing" >&2
+    exit 1
+fi
+
+echo "pre-commit: decoration checks passed"
