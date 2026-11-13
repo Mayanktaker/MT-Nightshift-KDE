@@ -22,6 +22,7 @@
 
 #include "status-card-widget.h"
 #include <QLineEdit>
+#include <QMenu>
 #include <QListView>
 #include <QStringListModel>
 #include <QPalette>
@@ -371,6 +372,15 @@ int main(int argc, char **argv)
     pillRender(QStyle::State_MouseOver, QStringLiteral("item-hover"));
     pillRender(QStyle::State_Selected | QStyle::State_Active, QStringLiteral("item-selected"));
     pillRender(QStyle::State_Selected, QStringLiteral("item-selected-inactive"));
+
+    // Context menu: does the frame language reach QMenu corners?
+    QMenu menu;
+    menu.addAction(QStringLiteral("Open"));
+    menu.addAction(QStringLiteral("Save"));
+    menu.addSeparator();
+    menu.addAction(QStringLiteral("Quit"));
+    menu.resize(menu.sizeHint());
+    menu.grab().save(QStringLiteral("%1/menu.png").arg(outdir));
 
     // Disabled field family: the Login Screen settings page greys out whole
     // groups of combos and edits, so their surface must stay legible.
