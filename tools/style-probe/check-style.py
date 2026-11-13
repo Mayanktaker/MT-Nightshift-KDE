@@ -154,22 +154,23 @@ def main() -> int:
                         str(svg_src), str(rounded), "14"], check=True)
         raster = Path("/tmp") / "panel-rounded-check.png"
         proc = subprocess.run([str(svg2png_bin), str(rounded), str(raster)], capture_output=True)
-        # TEMPORARY bisect: find which piece SIGABRTs the old qsvg on CI.
-        import re as _re
-        svg_text = rounded.read_text()
-        variants = {
-            "no-corner-groups": _re.subn(r'<g\n     id="(?:topleft|topright|bottomleft|bottomright)"[^>]*>.*?</g>\n', "", svg_text, flags=_re.S),
-            "no-outline-paths": _re.subn(r'    <path d="M [^"]*" style="fill:none;stroke:currentColor[^/]*/>\n', "", svg_text),
-            "no-face-paths": _re.subn(r'    <path d="M [^"]*" style="fill:currentColor" class="ColorScheme-Background" id="face-[^/]*/>\n', "", svg_text),
-            "no-hints": _re.subn(r'  <rect\n     id="hint-[^"]*"\n(?:.*?\n)*?  </rect>\n', "", svg_text, flags=0),
-        }
-        for vname, (count, vsvg) in variants.items():
-            vpath = Path("/tmp") / f"panel-{vname}.svg"
-            vpath.write_text(vsvg)
-            vp = subprocess.run([str(svg2png_bin), str(vpath), str(vpath) + ".png"], capture_output=True)
-            print(f"  bisect {vname}: rc={vp.returncode} ({vp.stderr.decode()[:80]})")
-        check("panel corner radius", proc.returncode == 0,
-              f"svg2png rc={proc.returncode} err={proc.stderr.decode()[:120]}")
+        panel_ok = proc.returncode == 0
+        recession = -1
+        if panel_ok:
+            panel = np.array(Image.open(raster).convert("RGBA")).astype(int)
+            # panel face tone = sample the centre band; arc recession measured on
+            # the top-left corner only (x < 22, y 10..26) so the top-right face
+            # does not pollute the row-min scan.
+            tone = panel[30, 20][:3]
+            face = (np.abs(panel[:, :, :3] - tone).sum(axis=2) < 30) & (panel[:, :, 3] > 200)
+            rows = []
+            for y in range(10, 26):
+                cols = np.where(face[y, 0:22])[0]
+                if len(cols):
+                    rows.append(int(cols.min()))
+            recession = max(rows) if rows else 0
+            panel_ok = 12 <= recession <= 16
+        check("panel corner radius", panel_ok, f"recession={recession}px")
     else:
         print("  panel corner radius                SKIP (svg2png probe not built yet)")
 

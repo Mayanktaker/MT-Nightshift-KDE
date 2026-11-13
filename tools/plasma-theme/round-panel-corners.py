@@ -7,28 +7,28 @@
 The stock Breeze panel-background (and our derived copy) draws its frame with
 6px corner arcs inside 6px borders — fine for edge-to-edge panels, too tight
 for floating ones. This script regenerates the frame section (the 44px-wide
-panel face at the left of the file) with a larger corner radius: borders grow
-to R, the four corner pieces become R quarter-rounds with a 1px
-ColorScheme-Frame outline arc inset inside, and the centre band shrinks
-accordingly. The shadow band (x > 47) and all shadow slices are copied through
-untouched.
+panel face at the left of the file) with a larger corner radius: the border
+slices grow to R (KSvg derives border sizes from the slice elements' sizes),
+the four corner pieces become R quarter-rounds with a 1px ColorScheme-Frame
+band inside the contour, and the centre shrinks accordingly. The shadow band
+(x > 47) and all shadow slices are copied through untouched, as are the margin
+hints (their 4px size is the content margin; their positions stay inside the
+wider bands).
 
-Usage: round-panel-corners.py <in.svg> <out.svg> [radius]
+Usage: round-panel-corners.py <in.svg|in.svgz> <out.svg|out.svgz> [radius]
 """
 
 from __future__ import annotations
 
 import gzip
 import math
-import re
 import sys
 from pathlib import Path
 
-K = 0.5523  # bezier circle approximation for quarter arcs
-
-FRAME_W = 44.0   # frame region width in the source file (x 0..44)
-FRAME_H = 44.0   # frame region height in the source file (y 10..54)
-SRC_BORDER = 10  # source top/bottom border (the 6px arcs sit inside it)
+K = 0.5523        # bezier circle approximation for quarter arcs
+FRAME_W = 44.0    # frame region width in the source file (x 0..44)
+FRAME_TOP = 10.0  # frame region top in the source file (y 10..54)
+N_SAMPLE = 12     # sampled points per quarter arc
 
 
 def fmt(v: float) -> str:
@@ -36,48 +36,52 @@ def fmt(v: float) -> str:
     return str(int(v)) if v == int(v) else f"{v:.7g}"
 
 
-def face_path(x: float, y: float, r: float, corner: str) -> str:
-    """Filled quarter-round face piece for one corner of the frame region."""
-    if corner == "tl":
-        return (f"M {fmt(x)},{fmt(y + r)} H {fmt(x + r)} V {fmt(y)} "
-                f"C {fmt(x + r - r * K)},{fmt(y)} {fmt(x)},{fmt(y + r - r * K)} "
-                f"{fmt(x)},{fmt(y + r)} Z")
-    if corner == "tr":
-        return (f"M {fmt(x)},{fmt(y)} V {fmt(y + r)} H {fmt(x + r)} "
-                f"C {fmt(x + r)},{fmt(y + r - r * K)} "
-                f"{fmt(x + r - r * K)},{fmt(y)} {fmt(x)},{fmt(y)} Z")
-    if corner == "bl":
-        return (f"M {fmt(x)},{fmt(y)} H {fmt(x + r)} V {fmt(y + r)} "
-                f"C {fmt(x + r)},{fmt(y + r * K)} "
-                f"{fmt(x + r - r * K)},{fmt(y + r)} {fmt(x)},{fmt(y + r)} Z")
-    return (f"M {fmt(x + r)},{fmt(y)} H {fmt(x)} V {fmt(y + r)} "
-            f"C {fmt(x)},{fmt(y + r - r * K)} "
-            f"{fmt(x + r - r * K)},{fmt(y + r)} {fmt(x + r)},{fmt(y)} Z")
+def arc_pts(cx: float, cy: float, rad: float, a0: float, a1: float) -> list:
+    """Sampled points along a circle; angles in degrees, y-down SVG coords."""
+    return [(cx + rad * math.cos(math.radians(a)), cy + rad * math.sin(math.radians(a)))
+            for a in [a0 + (a1 - a0) * i / N_SAMPLE for i in range(N_SAMPLE + 1)]]
 
 
-def outline_path(x: float, y: float, r: float, corner: str) -> str:
-    """1px-inside outline band for one corner, as a sampled-point polygon.
+def poly_d(pts: list) -> str:
+    return "M " + " L ".join(f"{fmt(px)},{fmt(py)}" for px, py in pts) + " Z"
 
-    Line segments only: arc commands crash the older qsvg parser CI uses, and
-    the sampled form is exactly how the stock Breeze outlines are built."""
-    n = 12
-    # band centre circle: inset 1px from the face contour
-    rr = r - 1.0
-    centres = {"tl": (x + r, y + r), "tr": (x + r, y + r),
-               "bl": (x + r, y + r), "br": (x + r, y + r)}
-    cx, cy = centres[corner]
-    spans = {"tl": (180, 270), "tr": (270, 360), "bl": (90, 180), "br": (0, 90)}
-    a0, a1 = spans[corner]
 
-    def arc_pts(rad: float, start: float, end: float) -> list:
-        return [(cx + rad * math.cos(math.radians(a)),
-                 cy + rad * math.sin(math.radians(a)))
-                for a in [start + (end - start) * i / n for i in range(n + 1)]]
+def face_corner(corner: str, r: float) -> str:
+    """Filled face piece (local 0..r square, outer corner cut by the arc).
 
-    outer = arc_pts(rr, a0, a1)
-    inner = arc_pts(rr - 1.0, a0, a1)
-    pts = outer + list(reversed(inner))
-    d = "M " + " L ".join(f"{fmt(px)},{fmt(py)}" for px, py in pts) + " Z"
+    The face = square minus the quarter-disc centred at the piece's INNER
+    corner; the transparent sliver sits at the OUTER corner and creates the
+    rounded silhouette through the frame mask.
+    """
+    # inner corner = disc centre; outer arc from a0 to a1 (degrees, y-down)
+    spec = {"tl": ((r, r), 180, 270), "tr": ((0, r), 270, 360),
+            "bl": ((r, 0), 90, 180), "br": ((0, 0), 0, 90)}
+    (cx, cy), a0, a1 = spec[corner]
+    pts = arc_pts(cx, cy, r, a0, a1)
+    # the two square edges beyond the arc endpoints, closing the polygon
+    edges = {"tl": [(r, r)], "tr": [(r, 0)], "bl": [(0, r)], "br": [(0, 0)]}
+    d = poly_d(pts + edges[corner])
+    return (f'    <path d="{d}" style="fill:currentColor" '
+            f'class="ColorScheme-Background" id="face-{corner}" />\n')
+
+
+def outline_corner(corner: str, r: float) -> str:
+    """1px-inside outline band for one corner, as a sampled filled polygon.
+
+    The band follows the face contour arc (radius r) between the two strip
+    line junctions, inset 1px along the straight edges, and returns along an
+    arc of radius r-1. Line segments only: arc commands crash the older qsvg
+    parser CI uses, and the sampled form matches the stock Breeze outlines.
+    """
+    spec = {"tl": ((r, r), 180, 270), "tr": ((0, r), 270, 360),
+            "bl": ((r, 0), 90, 180), "br": ((0, 0), 0, 90)}
+    (cx, cy), a0, a1 = spec[corner]
+    # junctions: where the strip 1px lines meet the contour
+    junction = {"tl": (r, 0), "tr": (0, 0), "bl": (0, 0), "br": (r, 0)}
+    inset = {"tl": (1, r), "tr": (r - 1, r), "bl": (1, r - 1), "br": (r - 1, r - 1)}
+    outer = arc_pts(cx, cy, r, a0, a1)
+    inner = arc_pts(cx, cy, r - 1, a0, a1)
+    d = poly_d([junction[corner]] + outer + [inset[corner]] + list(reversed(inner)))
     return (f'    <path d="{d}" style="fill:currentColor" '
             f'class="ColorScheme-Frame" id="outline-{corner}" />\n')
 
@@ -93,84 +97,76 @@ def main() -> int:
     svg = (gzip.decompress(raw) if raw[:2] == b"\x1f\x8b" else raw).decode()
     out_gzip = dst.suffix == ".svgz"
 
-    frame_top = radius            # frame region moves down as borders grow
-    frame_h = FRAME_H             # total frame height stays 44
-    inner_w = FRAME_W - 2 * radius
-    inner_h = frame_h - 2 * radius
-    inner_y = frame_top + radius
-
-    # 1. hints: Plasma reads these as the frame borders
-    svg = re.sub(r'(<rect[^>]*id="hint-top-margin"[^>]*y=")\d+(?=")',
-                 rf'\g<1>{frame_top}', svg)
-    svg = re.sub(r'(<rect[^>]*id="hint-bottom-margin"[^>]*y=")\d+(?=")',
-                 rf'\g<1>{64 - radius - 4}', svg)
-    svg = re.sub(r'(<rect[^>]*id="hint-left-margin"[^>]*x=")\d+(?=")',
-                 rf'\g<1>{radius}', svg)
-    svg = re.sub(r'(<rect[^>]*id="hint-right-margin"[^>]*x=")\d+(?=")',
-                 rf'\g<1>{44 - radius}', svg)
-    svg = re.sub(r'(<rect[^>]*id="hint-top-inset"[^>]*y=")\d+(?=")',
-                 rf'\g<1>{frame_top}', svg)
-    svg = re.sub(r'(<rect[^>]*id="hint-bottom-inset"[^>]*y=")\d+(?=")',
-                 rf'\g<1>{64 - radius - 4}', svg)
-    svg = re.sub(r'(<rect[^>]*id="hint-left-inset"[^>]*x=")\d+(?=")',
-                 rf'\g<1>{radius}', svg)
-    svg = re.sub(r'(<rect[^>]*id="hint-right-inset"[^>]*x=")\d+(?=")',
-                 rf'\g<1>{44 - radius}', svg)
-
-    # 2. regenerate the nine-slice groups (frame region x 0..44, y frame_top..
-    #    frame_top + frame_h; borders = radius)
-    def group(ident: str, tx: float, ty: float, content: str) -> str:
-        return (f'  <g\n     id="{ident}"\n     transform="translate({fmt(tx)},{fmt(ty)})">\n'
-                f'{content}  </g>\n')
+    r = radius
+    bw = fmt(r)             # border width (all four sides)
+    mid_ty = fmt(FRAME_TOP + r)         # centre/left/right band y
+    strip_w = fmt(44 - 2 * r)           # top/bottom strip width
+    side_h = fmt(44 - 2 * r)            # left/right strip height
+    bottom_line_y = fmt(r - 1)          # 1px line inside the bottom strip
+    right_line_x = fmt(r - 1)           # 1px line inside the right strip
 
     bg = 'style="fill:currentColor" class="ColorScheme-Background"'
     fr = 'class="ColorScheme-Frame" style="fill:currentColor"'
 
-    strip_w = fmt(inner_w)
-    center_h = fmt(inner_h)
-    side_h = fmt(frame_h - 2 * radius)
+    def group(ident: str, tx: float, ty: float, content: str) -> str:
+        return (f'  <g\n     id="{ident}"\n     transform="translate({fmt(tx)},{fmt(ty)})">\n'
+                f'{content}  </g>\n')
 
     new_groups = ""
-    # top edge strip + its 1px inner line
-    new_groups += group("top", radius, frame_top,
-                         f'    <rect id="rect4152" height="6" {bg} width="{strip_w}" x="0" y="0" />\n'
-                         f'    <rect {fr} x="0" y="0" width="{strip_w}" height="1" />\n')
-    # bottom edge strip + its 1px inner line
-    new_groups += group("bottom", radius, 64 - radius - 6,
-                        f'    <rect id="rect4148" height="6" {bg} width="{strip_w}" x="0" y="0" />\n'
-                        f'    <rect {fr} x="0" y="5" width="{strip_w}" height="1" />\n')
-    # left edge strip + its 1px inner line
-    new_groups += group("left", 0, frame_top + radius,
-                        f'    <rect id="rect4144" height="{side_h}" {bg} width="{fmt(radius)}" x="0" y="0" />\n'
+    # top edge strip + its 1px line at the outer edge
+    new_groups += group("top", r, FRAME_TOP,
+                        f'    <rect id="rect4152" height="{bw}" {bg} width="{strip_w}" x="0" y="0" />\n'
+                        f'    <rect {fr} x="0" y="0" width="{strip_w}" height="1" />\n')
+    # bottom edge strip + its 1px line at the outer edge
+    new_groups += group("bottom", r, 64 - r,
+                        f'    <rect id="rect4148" height="{bw}" {bg} width="{strip_w}" x="0" y="0" />\n'
+                        f'    <rect {fr} x="0" y="{bottom_line_y}" width="{strip_w}" height="1" />\n')
+    # left edge strip + its 1px line at the outer edge
+    new_groups += group("left", 0, FRAME_TOP + r,
+                        f'    <rect id="rect4144" height="{side_h}" {bg} width="{bw}" x="0" y="0" />\n'
                         f'    <rect {fr} x="0" y="0" width="1" height="{side_h}" />\n')
-    # right edge strip + its 1px inner line
-    new_groups += group("right", 44 - radius, frame_top + radius,
-                        f'    <rect id="rect4140" height="{side_h}" {bg} width="{fmt(radius)}" x="0" y="0" />\n'
-                        f'    <rect {fr} x="0" y="0" width="1" height="{side_h}" />\n')
+    # right edge strip + its 1px line at the outer edge
+    new_groups += group("right", 44 - r, FRAME_TOP + r,
+                        f'    <rect id="rect4140" height="{side_h}" {bg} width="{bw}" x="0" y="0" />\n'
+                        f'    <rect {fr} x="{right_line_x}" y="0" width="1" height="{side_h}" />\n')
     # centre
-    new_groups += group("center", radius, frame_top + radius,
-                        f'    <rect id="rect4138" height="{center_h}" {bg} width="{strip_w}" x="0" y="0" />\n')
-    # four corners: face quarter-round + 1px inner outline arc
-    corners = [("topleft", 0, frame_top, "tl"),
-               ("topright", 44 - radius, frame_top, "tr"),
-               ("bottomleft", 0, 64 - frame_top - radius, "bl"),
-               ("bottomright", 44 - radius, 64 - frame_top - radius, "br")]
+    new_groups += group("center", r, FRAME_TOP + r,
+                        f'    <rect id="rect4138" height="{side_h}" {bg} width="{strip_w}" x="0" y="0" />\n')
+    # four corners: face quarter-round + 1px outline band
+    corners = [("topleft", 0, FRAME_TOP, "tl"),
+               ("topright", 44 - r, FRAME_TOP, "tr"),
+               ("bottomleft", 0, 64 - r, "bl"),
+               ("bottomright", 44 - r, 64 - r, "br")]
     for ident, cx, cy, p in corners:
-        # paths are built in the group's LOCAL space (origin 0,0); the group
-        # translate positions the piece.
-        content = face_path(0, 0, radius, p) + outline_path(0, 0, radius, p)
+        # paths are built in the group's LOCAL space; translate positions it
+        content = face_corner(p, r) + outline_corner(p, r)
         new_groups += group(ident, cx, cy, content)
 
-    # 3. replace the frame section in the file: from the top group through the
-    #    hint insets, keeping masks and shadow slices byte-identical.
+    # margin hint rects: sizes are the content margins (4px), positions inside
+    # the new, wider bands; KSvg reads only their sizes.
+    def hint(ident: str, x: float, y: float, w: float, h: float) -> str:
+        return (f'  <rect\n     id="{ident}"\n     y="{fmt(y)}"\n     x="{fmt(x)}"\n'
+                f'     height="{fmt(h)}"\n     width="{fmt(w)}"\n'
+                f'     style="fill:#ff6600" />\n')
+
+    hints = (hint("hint-top-margin", 20, FRAME_TOP, 4, 4)
+             + hint("hint-bottom-margin", 20, 64 - r - 4, 4, 4)
+             + hint("hint-right-margin", 44 - r - 4, 30, 4, 4)
+             + hint("hint-left-margin", r, 30, 4, 4)
+             + hint("hint-top-inset", 20, FRAME_TOP, 4, 1e-9)
+             + hint("hint-bottom-inset", 20, 64 - r - 4, 4, 1e-9)
+             + hint("hint-right-inset", 44 - r - 4, 30, 1e-9, 4)
+             + hint("hint-left-inset", r, 30, 1e-9, 4))
+
+    # splice: replace everything from the top group to the mask rects; masks
+    # and shadow slices are preserved byte-identical.
     start = svg.index('<g\n     id="top"')
     mask_top = svg.index('<rect\n     id="mask-top"', start)
-    svg = svg[:start] + new_groups + svg[mask_top:]
+    svg = svg[:start] + new_groups + hints + svg[mask_top:]
 
     payload = svg.encode()
     if out_gzip:
-        import gzip as _gzip
-        payload = _gzip.compress(payload, mtime=0)
+        payload = gzip.compress(payload, mtime=0)
     dst.write_bytes(payload)
     print(f"wrote {dst} with corner radius {radius}")
     return 0
