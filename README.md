@@ -2,6 +2,8 @@
 
 # MT Dark KDE
 
+[![theme checks](https://github.com/Mayanktaker/MT-Nightshift-KDE/actions/workflows/checks.yml/badge.svg)](https://github.com/Mayanktaker/MT-Nightshift-KDE/actions/workflows/checks.yml)
+
 A personal, darker and more solid evolution of KDE Breeze Dark. The selected direction is **Nightshift OLED**: near-black carbon surfaces, restrained Breeze-blue highlights, and clear, solid layers rather than blur or glass effects.
 
 ## Upstream baseline
