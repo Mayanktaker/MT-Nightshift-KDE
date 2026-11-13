@@ -37,6 +37,10 @@ check: check-style
 # Render the field family under the built style offscreen and assert the pill
 # language, the 1px ring, the free-space meter and the 12px scroll-bar gutter.
 # --ci (set by CI) skips the two Breeze-dependent assertions.
+# The active scheme file is not refreshed by plasma-apply-lookandfeel once it
+# exists, so apply reinstalls it explicitly before selecting the theme.
+SCHEME_DIR := $(HOME)/.local/share/color-schemes
+
 check-style: style
 	@mkdir -p build/style-probe
 	$(MOC) tools/style-probe/status-card-widget.h -o build/style-probe/moc-status-card.cpp
@@ -83,6 +87,7 @@ style-install: style
 # Install into user-local KDE paths and select the theme in the running session.
 apply: check
 	install -m 644 themes/aurorae/MTNightshift/* $(AURORAE_DIR)/
+	install -m 644 color-schemes/MT-Nightshift.colors $(SCHEME_DIR)/
 	kpackagetool6 --type Plasma/LookAndFeel -u themes/mt-nightshift-global
 	plasma-apply-lookandfeel -a $(LOOKANDFEEL)
 	kwriteconfig6 --file kdeglobals --group KDE --key frameContrast 0.05
