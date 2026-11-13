@@ -345,6 +345,29 @@ int main(int argc, char **argv)
     meterRender(30, false, QStringLiteral("capacity-meter"));
     meterRender(55, true, QStringLiteral("progress-text"));
 
+    // Disabled field family: the Login Screen settings page greys out whole
+    // groups of combos and edits, so their surface must stay legible.
+    QComboBox disabledCombo;
+    disabledCombo.setEnabled(false);
+    disabledCombo.addItems({QStringLiteral("as user:")});
+    grab(disabledCombo, QStringLiteral("disabled-combo"), outdir);
+
+    QComboBox disabledEditable;
+    disabledEditable.setEditable(true);
+    disabledEditable.setEnabled(false);
+    disabledEditable.addItems({QStringLiteral("with session:")});
+    grab(disabledEditable, QStringLiteral("disabled-editable-combo"), outdir);
+    if (auto *child = disabledEditable.findChild<QLineEdit *>()) {
+        std::fprintf(stderr, "disabled editable child: autofill=%d Base=%s\n",
+                     int(child->autoFillBackground()),
+                     qPrintable(child->palette().color(QPalette::Disabled, QPalette::Base).name()));
+    }
+
+    QLineEdit disabledEdit;
+    disabledEdit.setEnabled(false);
+    disabledEdit.setText(QStringLiteral("disabled edit"));
+    grab(disabledEdit, QStringLiteral("disabled-lineedit"), outdir);
+
     // Scroll bar gutter: the 12px clamp is asserted against Breeze's 21px base.
     {
         QScrollBar scrollbar(Qt::Vertical);

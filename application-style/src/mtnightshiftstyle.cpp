@@ -44,6 +44,9 @@ constexpr qreal kFocusContrast = 5.0;
 constexpr qreal kDisabledMute = 0.65;
 // Frame-line strength: design.md section 6/8 frameContrast token.
 constexpr qreal kFrameContrast = 0.2;
+// Hairline contrast for disabled fields: dimmer than the resting outline so a
+// greyed-out group stays quiet, but present enough to keep the shapes legible.
+constexpr qreal kDisabledOutlineContrast = 0.10;
 // State outline thickness in logical pixels; the focus ring stays 1px and reads
 // crisp, with its visibility carried by the contrast token instead of weight.
 constexpr qreal kOutlineWidth = 1.0;
@@ -303,9 +306,22 @@ void paintFieldSurface(QPainter *painter, const QRectF &rect, const QColor &fill
     if (focused) {
         const QColor ring = readableAccent(palette.color(group, QPalette::Highlight), fill, kFocusContrast);
         paintSurface(painter, rect, radius, kFocusOutlineWidth, fill, ring);
-    } else {
-        fillSurface(painter, rect, radius, fill);
+        return;
     }
+    if (group == QPalette::Disabled) {
+        // A disabled field keeps its shape: one lifted tone for the whole family
+        // (Base-tone and Button-tone disabled fields otherwise vanish or go
+        // near-black on settings pages) plus a dimmed hairline.
+        QColor lifted = blend(palette.color(QPalette::Disabled, QPalette::Window),
+                              palette.color(QPalette::Disabled, QPalette::Button), 0.55);
+        lifted = blend(lifted, palette.color(QPalette::Disabled, QPalette::WindowText),
+                       kDisabledOutlineContrast * 0.5);
+        const QColor outline = blend(lifted, palette.color(QPalette::Disabled, QPalette::WindowText),
+                                     kDisabledOutlineContrast);
+        paintSurface(painter, rect, radius, kOutlineWidth, lifted, outline);
+        return;
+    }
+    fillSurface(painter, rect, radius, fill);
 }
 
 // Draws the compact status card's border as a hairline that follows its own
@@ -612,19 +628,21 @@ bool MTNightshiftStyle::paintLineEdit(const QStyleOption *option, QPainter *pain
     if (!panel || !painter) {
         return false;
     }
-    // Frameless fields stay exactly as Breeze draws them — except the path edit
-    // inside a URL navigator, which replaces the rounded breadcrumb field when
-    // clicked and must keep the same pill in both states.
     const auto *edit = qobject_cast<const QLineEdit *>(widget);
-    const bool navigatorField = isInsideUrlNavigator(widget);
-    if (edit && !edit->hasFrame() && !navigatorField) {
-        return false;
-    }
     // Editors inside combos and spin boxes sit on the container's own rounded
-    // surface: paint nothing, or a square panel would cover the pill's corners.
+    // surface: paint nothing, or their square panel — Breeze fills frameless
+    // editors with Base even when the container is disabled — would cover the
+    // pill's corners and flatten the lifted disabled tone.
     if (edit && widget && (qobject_cast<const QComboBox *>(widget->parentWidget())
                            || qobject_cast<const QAbstractSpinBox *>(widget->parentWidget()))) {
         return true;
+    }
+    // Frameless fields stay exactly as Breeze draws them — except the path edit
+    // inside a URL navigator, which replaces the rounded breadcrumb field when
+    // clicked and must keep the same pill in both states.
+    const bool navigatorField = isInsideUrlNavigator(widget);
+    if (edit && !edit->hasFrame() && !navigatorField) {
+        return false;
     }
     const QPalette &palette = panel->palette;
     const QPalette::ColorGroup group = colorGroup(panel);

@@ -82,6 +82,18 @@ def main() -> int:
     longest = max(runs) if runs else 0
     check("focus ring 1px", bool(runs) and longest <= 2, f"run={longest}px")
 
+    # Disabled fields: lifted tone plus a dimmed hairline (settings pages grey
+    # out whole groups — the shapes must stay legible without the focus ring).
+    for name in ["disabled-combo", "disabled-editable-combo", "disabled-lineedit"]:
+        disabled = np.array(Image.open(outdir / f"{name}.png").convert("RGB")).astype(int)
+        dh, dw = disabled.shape[:2]
+        fill = disabled[dh // 2, dw // 3]
+        check(f"{name} lifted fill", int(fill.sum()) > 75 and abs(int(fill.sum()) - 34) > 12,
+              f"rgb={tuple(fill)}")
+        outline = disabled[dh // 2, 0]
+        check(f"{name} dimmed outline", int(outline.sum()) > int(fill.sum()) + 8,
+              f"outline={tuple(outline)}")
+
     # 12px scroll-bar gutter (needs Breeze's 21px to clamp down from).
     if not ci:
         scrollbar = np.array(Image.open(outdir / "scrollbar.png").convert("RGBA"))
