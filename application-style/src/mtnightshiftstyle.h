@@ -15,6 +15,7 @@ class QStyleOption;
 class QStyleOptionComboBox;
 class QStyleOptionComplex;
 class QStyleOptionProgressBar;
+class QStyleOptionViewItem;
 class QStyleOptionSpinBox;
 class QStyleHintReturn;
 
@@ -63,6 +64,9 @@ private:
     // Paints a determinate progress meter as a rounded pill; false for busy or vertical bars.
     bool paintProgressBar(const QStyleOptionProgressBar *option, QPainter *painter,
                           const QWidget *widget) const;
+    // Paints item-view selection and hover as inset rounded pills; true when the
+    // primitive must not fall through to Breeze's square highlight.
+    bool paintItemPill(const QStyleOption *option, QPainter *painter) const;
 
 protected:
     // Records the element id Breeze assigns to CE_CapacityBar so the meter can

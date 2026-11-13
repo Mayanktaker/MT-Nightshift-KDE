@@ -51,6 +51,12 @@ constexpr qreal kDisabledOutlineContrast = 0.10;
 // crisp, with its visibility carried by the contrast token instead of weight.
 constexpr qreal kOutlineWidth = 1.0;
 constexpr qreal kFocusOutlineWidth = 1.0;
+// Item-view pills are inset from the row edges so selections read as cards
+// rather than full-width bands, and hover stays fainter than selection.
+constexpr qreal kItemInsetX = 4.0;
+constexpr qreal kItemInsetY = 1.0;
+constexpr qreal kItemHoverContrast = 0.07;
+constexpr qreal kItemInactiveContrast = 0.12;
 // Scroll bar gutter in logical pixels. Breeze spends 21px on a gutter its 8px
 // handle never fills, so a 12px gutter keeps the same handle, hover states and
 // drag length while reading considerably slimmer.
@@ -435,6 +441,14 @@ void MTNightshiftStyle::drawPrimitive(PrimitiveElement element, const QStyleOpti
             return;
         }
         break;
+    case PE_PanelItemViewItem:
+    case PE_PanelItemViewRow:
+        // Selections and hovers in list, tree and icon views become inset
+        // rounded pills instead of Breeze's square bands.
+        if (paintItemPill(option, painter)) {
+            return;
+        }
+        break;
     case PE_IndicatorCheckBox:
         paintIndicator(option, painter, false);
         return;
@@ -576,6 +590,43 @@ int MTNightshiftStyle::pixelMetric(PixelMetric metric, const QStyleOption *optio
         return qMin(kSlimScrollBarExtent, QProxyStyle::pixelMetric(metric, option, widget));
     }
     return QProxyStyle::pixelMetric(metric, option, widget);
+}
+
+// Paints an item-view selection or hover highlight as an inset rounded pill:
+// Highlight while the window is active, muted grey when inactive, faint tone
+// on hover. Returns false for unselected idle items so views keep painting
+// their own backgrounds.
+bool MTNightshiftStyle::paintItemPill(const QStyleOption *option, QPainter *painter) const
+{
+    const auto *item = qstyleoption_cast<const QStyleOptionViewItem *>(option);
+    if (!item || !painter) {
+        return false;
+    }
+    const bool selected = option->state.testFlag(QStyle::State_Selected);
+    const bool hovered = option->state.testFlag(QStyle::State_MouseOver);
+    if (!selected && !hovered) {
+        return false;
+    }
+    const QPalette &palette = option->palette;
+    const QColor windowTone = palette.color(QPalette::Window);
+    QColor fill;
+    if (selected) {
+        fill = option->state.testFlag(QStyle::State_Active)
+            ? palette.color(QPalette::Active, QPalette::Highlight)
+            : blend(windowTone, palette.color(QPalette::WindowText), kItemInactiveContrast);
+    } else {
+        fill = blend(windowTone, palette.color(QPalette::WindowText), kItemHoverContrast);
+    }
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, true);
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(fill);
+    const QRectF pill = QRectF(option->rect).adjusted(kItemInsetX, kItemInsetY,
+                                                      -kItemInsetX, -kItemInsetY);
+    painter->drawRoundedRect(pill, qMin(kControlRadius, pill.height() / 2.0),
+                             qMin(kControlRadius, pill.height() / 2.0));
+    painter->restore();
+    return true;
 }
 
 // Paints a rounded push button and lets Breeze draw its label, icon and focus state.

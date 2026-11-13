@@ -94,6 +94,40 @@ def main() -> int:
         check(f"{name} dimmed outline", int(outline.sum()) > int(fill.sum()) + 8,
               f"outline={tuple(outline)}")
 
+    # Item-view pills: selections are inset Highlight pills, hovers are faint
+    # insets, inactive selections are muted grey.
+    def pill_shape(path, blue_required):
+        rgb = np.array(Image.open(path).convert("RGB")).astype(int)
+        alpha = np.array(Image.open(path).convert("RGBA").split()[3])
+        blue = (rgb[:, :, 2] > rgb[:, :, 0] + 60) & (alpha > 10)
+        ys, xs = np.where(blue) if blue_required else (None, None)
+        if blue_required:
+            if len(ys) == 0:
+                return False, "no accent fill"
+            left_inset = int(xs.min())
+            region = blue[:, max(0, left_inset):xs.max() + 1]
+            rec = []
+            for row in range(region.shape[0]):
+                cols = np.where(region[row])[0]
+                if len(cols):
+                    rec.append(int(cols.min()))
+            deepest = max(rec) if rec else 0
+            return deepest >= 5 and left_inset >= 3, f"inset={left_inset} taper={deepest}"
+        diff = np.abs(rgb - np.array([16, 18, 22])).sum(axis=2)
+        ink = (diff > 12) & (alpha > 10)
+        return bool(ink.any()), f"ink px {int(ink.sum())}"
+
+    for name, blue in [("item-selected", True), ("item-hover", False),
+                       ("item-selected-inactive", False)]:
+        ok, detail = pill_shape(outdir / f"{name}.png", blue)
+        check(f"{name} pill", ok, detail)
+
+    listview = np.array(Image.open(outdir / "itemview-selected.png").convert("RGB")).astype(int)
+    hi_blue = (listview[:, :, 2] > listview[:, :, 0] + 60)
+    cols = np.where(hi_blue.any(axis=0))[0]
+    check("list selection pill", len(cols) > 0 and int(cols.min()) >= 3,
+          f"fill cols {int(cols.min())}-{int(cols.max())}" if len(cols) else "none")
+
     # 12px scroll-bar gutter (needs Breeze's 21px to clamp down from).
     if not ci:
         scrollbar = np.array(Image.open(outdir / "scrollbar.png").convert("RGBA"))

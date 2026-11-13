@@ -22,6 +22,8 @@
 
 #include "status-card-widget.h"
 #include <QLineEdit>
+#include <QListView>
+#include <QStringListModel>
 #include <QPalette>
 #include <QPluginLoader>
 #include <QProxyStyle>
@@ -344,6 +346,31 @@ int main(int argc, char **argv)
     };
     meterRender(30, false, QStringLiteral("capacity-meter"));
     meterRender(55, true, QStringLiteral("progress-text"));
+
+    // Item-view pills: a real list with a selection, plus the primitive with
+    // forced hover and inactive-selection states.
+    QListView listView;
+    QStringListModel listModel(QStringList() << QStringLiteral("Mouse & Touchpad")
+                                             << QStringLiteral("Accessibility")
+                                             << QStringLiteral("Sound")
+                                             << QStringLiteral("Display & Monitor"));
+    listView.setModel(&listModel);
+    listView.setCurrentIndex(listModel.index(1, 0));
+    listView.resize(220, 130);
+    grab(listView, QStringLiteral("itemview-selected"), outdir);
+
+    const auto pillRender = [&](QStyle::State state, const QString &name) {
+        saveRendered(QSize(220, 30), name, outdir, name, [&](QPainter *p) {
+            QStyleOptionViewItem option;
+            option.initFrom(&listView);
+            option.rect = QRect(0, 0, 220, 30);
+            option.state |= QStyle::State_Enabled | state;
+            app.style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &option, p, &listView);
+        });
+    };
+    pillRender(QStyle::State_MouseOver, QStringLiteral("item-hover"));
+    pillRender(QStyle::State_Selected | QStyle::State_Active, QStringLiteral("item-selected"));
+    pillRender(QStyle::State_Selected, QStringLiteral("item-selected-inactive"));
 
     // Disabled field family: the Login Screen settings page greys out whole
     // groups of combos and edits, so their surface must stay legible.
