@@ -13,9 +13,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_AUTOMOC ON)
 
-find_package(ECM 6.0 REQUIRED NO_MODULE)
-set(CMAKE_MODULE_PATH "${ECM_MODULE_PATH}" ${CMAKE_MODULE_PATH})
-include(KDEInstallDirs)
+# No ECM dependency: deployment goes through the Makefile's explicit install
+# paths, so plain GNUInstallDirs covers the target rules.
+include(GNUInstallDirs)
 
 # 6.4 keeps CI (ubuntu-24.04) able to build the plugin; no newer API is used.
 find_package(Qt6 6.4 REQUIRED COMPONENTS Widgets)
@@ -34,10 +34,10 @@ target_link_libraries(mtnightshiftstyle PRIVATE Qt6::Widgets)
 set_target_properties(mtnightshiftstyle PROPERTIES PREFIX "")
 
 install(TARGETS mtnightshiftstyle
-    LIBRARY DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/styles
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/qt6/plugins/styles
 )
 
 # Widget style metadata read by KStyle to fill the application-style list.
 install(FILES kstyle/themes/mtnightshift.themerc
-    DESTINATION ${KDE_INSTALL_DATADIR}/kstyle/themes
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/kstyle/themes
 )
