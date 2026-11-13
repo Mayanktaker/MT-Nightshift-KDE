@@ -13,6 +13,7 @@ Qt's fallback and those two checks would fail for the wrong reason.
 
 from __future__ import annotations
 
+import subprocess
 import sys
 from pathlib import Path
 
@@ -20,6 +21,7 @@ import numpy as np
 from PIL import Image
 
 FAILURES: list[str] = []
+svg2png_bin = Path.home() / ".cache/mt-nightshift-probe/svg2png"
 
 
 def check(name: str, ok: bool, detail: str = "") -> None:
@@ -138,6 +140,32 @@ def main() -> int:
     border_ink = int((np.abs(border_row - np.array([16, 18, 22])).sum(axis=1) > 30).sum())
     check("item frame dimmed", border_ink > 0 and blue_border == 0,
           f"ink px={border_ink}, blue px={blue_border}")
+
+    # Panel background: floating-panel corner radius. The theme svgz is rounded
+    # by round-panel-corners.py, then rasterised through the qsvg probe.
+    import gzip
+    if svg2png_bin.exists():
+        svg_src = Path("themes/mt-nightshift/dialogs/background.svgz")
+        with gzip.open(svg_src, "rb") as fh:
+            raw_svg = fh.read()
+        rounded = Path("/tmp") / "panel-rounded-check.svg"
+        raster = Path("/tmp") / "panel-rounded-check.png"
+        subprocess.run([sys.executable,
+                        str(Path("tools/plasma-theme/round-panel-corners.py")),
+                        str(svg_src), str(rounded), "14"], check=True)
+        subprocess.run([str(svg2png_bin), str(rounded), str(raster)], check=True)
+        panel = np.array(Image.open(raster).convert("RGBA")).astype(int)
+        # panel face = x 0..44, y 14..50; top-left corner arc recession
+        face = (panel[:, :, 3] > 200) & (panel[:, :, :3].sum(axis=2) > 600)
+        rows = []
+        for y in range(14, 30):
+            cols = np.where(face[y, 0:44])[0]
+            if len(cols):
+                rows.append(int(cols.min()))
+        recession = max(rows) if rows else 0
+        check("panel corner radius", 12 <= recession <= 16, f"recession={recession}px")
+    else:
+        print("  panel corner radius                SKIP (svg2png probe not built yet)")
 
     # Keyboard-focus pill: accent ring, pill-rounded, inset; hidden when selected.
     ring = np.array(Image.open(outdir / "focus-pill.png").convert("RGB")).astype(int)

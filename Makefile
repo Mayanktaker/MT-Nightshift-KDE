@@ -28,10 +28,11 @@ decoration:
 
 # Fail if the committed SVG drifted from its generator, the raster invariants
 # broke, or the rendered field family regressed.
-check: check-style
+check:
 	python3 tools/decoration-probe/build-decoration.py --check
 	./tools/decoration-probe/check-decoration.py
 	@for f in themes/aurorae/MTNightshift/*.svg; do xmllint --noout "$$f" || exit 1; done
+	$(MAKE) check-style
 	@echo "all theme checks passed"
 
 # Render the field family under the built style offscreen and assert the pill
@@ -88,6 +89,12 @@ style-install: style
 apply: check
 	install -m 644 themes/aurorae/MTNightshift/* $(AURORAE_DIR)/
 	install -m 644 color-schemes/MT-Nightshift.colors $(SCHEME_DIR)/
+	install -m 644 themes/mt-nightshift/dialogs/background.svgz \
+		$(HOME)/.local/share/plasma/desktoptheme/mt-nightshift/dialogs/
+	install -m 644 themes/mt-nightshift/translucent/dialogs/background.svgz \
+		$(HOME)/.local/share/plasma/desktoptheme/mt-nightshift/translucent/dialogs/
+	install -m 644 themes/mt-nightshift/solid/dialogs/background.svgz \
+		$(HOME)/.local/share/plasma/desktoptheme/mt-nightshift/solid/dialogs/
 	kpackagetool6 --type Plasma/LookAndFeel -u themes/mt-nightshift-global
 	plasma-apply-lookandfeel -a $(LOOKANDFEEL)
 	kwriteconfig6 --file kdeglobals --group KDE --key frameContrast 0.05
