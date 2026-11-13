@@ -19,6 +19,7 @@ Usage: round-panel-corners.py <in.svg> <out.svg> [radius]
 from __future__ import annotations
 
 import gzip
+import math
 import re
 import sys
 from pathlib import Path
@@ -55,18 +56,29 @@ def face_path(x: float, y: float, r: float, corner: str) -> str:
 
 
 def outline_path(x: float, y: float, r: float, corner: str) -> str:
-    """1px-inside stroked arc outline for one corner of the frame region."""
-    i = 0.5
-    rr = r - i
-    if corner == "tl":
-        d = f"M {fmt(x + i)},{fmt(y + rr)} A {fmt(rr)},{fmt(rr)} 0 0 1 {fmt(x + rr)},{fmt(y + i)}"
-    elif corner == "tr":
-        d = f"M {fmt(x + r - i)},{fmt(y + i)} A {fmt(rr)},{fmt(rr)} 0 0 1 {fmt(x + r - i)},{fmt(y + rr)}"
-    elif corner == "bl":
-        d = f"M {fmt(x + i)},{fmt(y + r - i)} A {fmt(rr)},{fmt(rr)} 0 0 0 {fmt(x + rr)},{fmt(y + r - i)}"
-    else:
-        d = f"M {fmt(x + r - i)},{fmt(y + r - i)} A {fmt(rr)},{fmt(rr)} 0 0 0 {fmt(x + r - i)},{fmt(y + i)}"
-    return (f'    <path d="{d}" style="fill:none;stroke:currentColor;stroke-width:1" '
+    """1px-inside outline band for one corner, as a sampled-point polygon.
+
+    Line segments only: arc commands crash the older qsvg parser CI uses, and
+    the sampled form is exactly how the stock Breeze outlines are built."""
+    n = 12
+    # band centre circle: inset 1px from the face contour
+    rr = r - 1.0
+    centres = {"tl": (x + r, y + r), "tr": (x + r, y + r),
+               "bl": (x + r, y + r), "br": (x + r, y + r)}
+    cx, cy = centres[corner]
+    spans = {"tl": (180, 270), "tr": (270, 360), "bl": (90, 180), "br": (0, 90)}
+    a0, a1 = spans[corner]
+
+    def arc_pts(rad: float, start: float, end: float) -> list:
+        return [(cx + rad * math.cos(math.radians(a)),
+                 cy + rad * math.sin(math.radians(a)))
+                for a in [start + (end - start) * i / n for i in range(n + 1)]]
+
+    outer = arc_pts(rr, a0, a1)
+    inner = arc_pts(rr - 1.0, a0, a1)
+    pts = outer + list(reversed(inner))
+    d = "M " + " L ".join(f"{fmt(px)},{fmt(py)}" for px, py in pts) + " Z"
+    return (f'    <path d="{d}" style="fill:currentColor" '
             f'class="ColorScheme-Frame" id="outline-{corner}" />\n')
 
 
