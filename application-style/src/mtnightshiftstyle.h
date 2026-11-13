@@ -67,6 +67,10 @@ private:
     // Paints item-view selection and hover as inset rounded pills; true when the
     // primitive must not fall through to Breeze's square highlight.
     bool paintItemPill(const QStyleOption *option, QPainter *painter) const;
+    // Paints the item-view keyboard-focus indicator as a pill ring following the
+    // selection pill's geometry; true when the primitive must be suppressed
+    // (Breeze's squarish outline) or the selection already marks the item.
+    bool paintFocusPill(const QStyleOption *option, QPainter *painter) const;
 
 protected:
     // Records the element id Breeze assigns to CE_CapacityBar so the meter can

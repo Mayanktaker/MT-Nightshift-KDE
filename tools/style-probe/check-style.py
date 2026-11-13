@@ -122,6 +122,28 @@ def main() -> int:
         ok, detail = pill_shape(outdir / f"{name}.png", blue)
         check(f"{name} pill", ok, detail)
 
+    # Keyboard-focus pill: accent ring, pill-rounded, inset; hidden when selected.
+    ring = np.array(Image.open(outdir / "focus-pill.png").convert("RGB")).astype(int)
+    blue = (ring[:, :, 2] > ring[:, :, 0] + 60) & (ring.sum(axis=2) > 60)
+    ys, xs = np.where(blue)
+    ring_ok = len(ys) > 0
+    detail = "no ring"
+    if ring_ok:
+        left_inset = int(xs.min())
+        rec = []
+        for row in range(blue.shape[0]):
+            cols = np.where(blue[row])[0]
+            if len(cols):
+                rec.append(int(cols.min()) - left_inset)
+        deepest = max(rec) if rec else 0
+        ring_ok = left_inset >= 3 and deepest >= 5
+        detail = f"inset={left_inset} taper={deepest}"
+    check("focus pill ring", ring_ok, detail)
+
+    selected_focus = np.array(Image.open(outdir / "focus-pill-selected.png").convert("RGB")).astype(int)
+    suppressed = int(((selected_focus[:, :, 2] > selected_focus[:, :, 0] + 60)).sum()) == 0
+    check("focus ring hidden when selected", suppressed)
+
     listview = np.array(Image.open(outdir / "itemview-selected.png").convert("RGB")).astype(int)
     hi_blue = (listview[:, :, 2] > listview[:, :, 0] + 60)
     cols = np.where(hi_blue.any(axis=0))[0]

@@ -449,6 +449,13 @@ void MTNightshiftStyle::drawPrimitive(PrimitiveElement element, const QStyleOpti
             return;
         }
         break;
+    case PE_FrameFocusRect:
+        // Item-view keyboard focus becomes a pill ring that follows the
+        // selection pill's geometry; Breeze's squarish outline never draws.
+        if (paintFocusPill(option, painter)) {
+            return;
+        }
+        break;
     case PE_IndicatorCheckBox:
         paintIndicator(option, painter, false);
         return;
@@ -625,6 +632,32 @@ bool MTNightshiftStyle::paintItemPill(const QStyleOption *option, QPainter *pain
                                                       -kItemInsetX, -kItemInsetY);
     painter->drawRoundedRect(pill, qMin(kControlRadius, pill.height() / 2.0),
                              qMin(kControlRadius, pill.height() / 2.0));
+    painter->restore();
+    return true;
+}
+
+// Paints the item-view keyboard-focus indicator as a pill ring that follows the
+// selection pill's geometry; suppressed while the item is selected, which
+// already announces it. Returns true so Breeze's squarish outline never draws.
+bool MTNightshiftStyle::paintFocusPill(const QStyleOption *option, QPainter *painter) const
+{
+    const auto *focus = qstyleoption_cast<const QStyleOptionFocusRect *>(option);
+    if (!focus || !painter) {
+        return false;
+    }
+    if (option->state.testFlag(QStyle::State_Selected)) {
+        return true;
+    }
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, true);
+    const QColor accent = readableAccent(option->palette.color(QPalette::Active, QPalette::Highlight),
+                                         option->palette.color(QPalette::Window), kOutlineContrast);
+    painter->setPen(QPen(accent, kOutlineWidth));
+    painter->setBrush(Qt::NoBrush);
+    const QRectF ring = QRectF(option->rect).adjusted(kItemInsetX, kItemInsetY,
+                                                      -kItemInsetX, -kItemInsetY);
+    painter->drawRoundedRect(ring, qMin(kControlRadius, ring.height() / 2.0),
+                             qMin(kControlRadius, ring.height() / 2.0));
     painter->restore();
     return true;
 }

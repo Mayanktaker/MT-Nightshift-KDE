@@ -373,6 +373,23 @@ int main(int argc, char **argv)
     pillRender(QStyle::State_Selected | QStyle::State_Active, QStringLiteral("item-selected"));
     pillRender(QStyle::State_Selected, QStringLiteral("item-selected-inactive"));
 
+    // Keyboard-focus pill: replaces the squarish focus outline; suppressed
+    // while the item is selected.
+    const auto focusRender = [&](bool selected, const QString &name) {
+        saveRendered(QSize(220, 30), name, outdir, name, [&](QPainter *p) {
+            QStyleOptionFocusRect option;
+            option.initFrom(&listView);
+            option.rect = QRect(0, 0, 220, 30);
+            option.state |= QStyle::State_Enabled | QStyle::State_Active | QStyle::State_HasFocus;
+            if (selected) {
+                option.state |= QStyle::State_Selected;
+            }
+            app.style()->drawPrimitive(QStyle::PE_FrameFocusRect, &option, p, &listView);
+        });
+    };
+    focusRender(false, QStringLiteral("focus-pill"));
+    focusRender(true, QStringLiteral("focus-pill-selected"));
+
     // Context menu: does the frame language reach QMenu corners?
     QMenu menu;
     menu.addAction(QStringLiteral("Open"));
