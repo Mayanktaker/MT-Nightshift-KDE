@@ -17,6 +17,9 @@
 #include <QLatin1StringView>
 #include <QMetaObject>
 #include <QLineEdit>
+#include <QListView>
+#include <QTableView>
+#include <QTreeView>
 #include <QMainWindow>
 #include <QMetaObject>
 #include <QPainter>
@@ -29,6 +32,7 @@
 #include <QStyleOptionSpinBox>
 
 #include <cmath>
+#include <cstdio>
 
 namespace
 {
@@ -549,12 +553,26 @@ void MTNightshiftStyle::drawControl(ControlElement element, const QStyleOption *
     if (element == CE_PushButton && paintPushButton(option, painter, widget)) {
         return;
     }
-    // KDE capacity meters (Dolphin's free-space meter and KCapacityBar users)
-    // fall back to this primitive through our proxy, where Breeze's groove
-    // reads as a black slab.
     // KDE capacity meters (Dolphin's free-space meter and other KCapacityBar
     // users) arrive under Breeze's custom element id; the generic progress bars
     // arrive as CE_ProgressBar. Both render as the same Sculpted pill.
+    // Boxed item-view frames (Kate's sessions list and other item-view
+    // panels) become dimmed rounded hairlines; other frames keep Breeze.
+    if (element == CE_ShapedFrame && paintItemViewFrame(option, painter)) {
+        return;
+    }
+    // Standard-delegate item views (Kate's welcome lists and every
+    // QListView/QTreeWidget routed through CE_ItemViewItem) get the pill under
+    // Breeze's content rendering.
+    if (element == QStyle::CE_ItemViewItem) {
+        const auto *item = qstyleoption_cast<const QStyleOptionViewItem *>(option);
+        if (item && painter
+            && (item->state.testFlag(State_Selected) || item->state.testFlag(State_MouseOver))) {
+            paintItemPill(option, painter);
+            paintItemViewContent(item, painter, widget);
+            return;
+        }
+    }
     if (element == m_capacityBarElement || element == CE_ProgressBar) {
         const auto *bar = qstyleoption_cast<const QStyleOptionProgressBar *>(option);
         if (bar && paintProgressBar(bar, painter, widget)) {
@@ -587,6 +605,15 @@ void MTNightshiftStyle::drawComplexControl(ComplexControl control, const QStyleO
 int MTNightshiftStyle::pixelMetric(PixelMetric metric, const QStyleOption *option,
                                    const QWidget *widget) const
 {
+    if (metric == PM_DefaultFrameWidth && widget) {
+        // Boxed item views (session lists, recent-file lists): keep one pixel
+        // so the viewport does not swallow the rounded frame hairline.
+        const bool itemView = qobject_cast<const QListView *>(widget)
+            || qobject_cast<const QTreeView *>(widget) || qobject_cast<const QTableView *>(widget);
+        if (itemView) {
+            return qMax(1, QProxyStyle::pixelMetric(metric, option, widget));
+        }
+    }
     if (metric == PM_ScrollBarExtent) {
         // A zero extent alone removes the bar: Qt 6.11 sizes scroll bars from
         // QScrollBar::sizeHint(), and a 0-wide bar leaves the layout entirely.
@@ -658,6 +685,51 @@ bool MTNightshiftStyle::paintFocusPill(const QStyleOption *option, QPainter *pai
                                                       -kItemInsetX, -kItemInsetY);
     painter->drawRoundedRect(ring, qMin(kControlRadius, ring.height() / 2.0),
                              qMin(kControlRadius, ring.height() / 2.0));
+    painter->restore();
+    return true;
+}
+
+// Paints CE_ItemViewItem content on top of our selection pill: strips the
+// selected/hovered band from Breeze's rendering so only its icon and text
+// remain, with the text recoloured for contrast on the accent fill.
+void MTNightshiftStyle::paintItemViewContent(const QStyleOptionViewItem *option, QPainter *painter,
+                                             const QWidget *widget) const
+{
+    QStyleOptionViewItem stripped(*option);
+    stripped.state &= ~(QStyle::State_Selected | QStyle::State_MouseOver | QStyle::State_HasFocus);
+    if (option->state.testFlag(QStyle::State_Selected)) {
+        const auto group = colorGroup(option);
+        const QColor onPill = option->palette.color(group, QPalette::HighlightedText);
+        stripped.palette.setColor(QPalette::Active, QPalette::Text, onPill);
+        stripped.palette.setColor(QPalette::Inactive, QPalette::Text, onPill);
+    }
+    baseStyle()->drawControl(QStyle::CE_ItemViewItem, &stripped, painter, widget);
+}
+
+// Paints item-view panel frames (boxed lists like Kate's sessions view) as
+// dimmed rounded hairlines; Breeze frames them square and switches to a loud
+// Highlight outline when focused.
+bool MTNightshiftStyle::paintItemViewFrame(const QStyleOption *option, QPainter *painter) const
+{
+    const auto *frame = qstyleoption_cast<const QStyleOptionFrame *>(option);
+    if (!frame || !painter) {
+        return false;
+    }
+    if (qEnvironmentVariableIsSet("MTNS_DEBUG")) {
+        std::fprintf(stderr, "MTNS-DBG item frame: shape=%d lw=%d rect=%dx%d\n", int(frame->frameShape),
+                     frame->lineWidth, frame->rect.width(), frame->rect.height());
+        std::fflush(stderr);
+    }
+    if (frame->frameShape != QFrame::StyledPanel && frame->frameShape != QFrame::Panel) {
+        return false;
+    }
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, true);
+    const QColor windowTone = option->palette.color(QPalette::Window);
+    const QColor line = blend(windowTone, option->palette.color(QPalette::WindowText), kFrameContrast);
+    painter->setPen(QPen(line, kOutlineWidth));
+    painter->setBrush(Qt::NoBrush);
+    painter->drawRoundedRect(QRectF(option->rect).adjusted(0.5, 0.5, -0.5, -0.5), kTipRadius, kTipRadius);
     painter->restore();
     return true;
 }

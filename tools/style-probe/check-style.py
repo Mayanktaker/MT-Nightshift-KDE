@@ -125,6 +125,20 @@ def main() -> int:
         ok, detail = pill_shape(outdir / f"{name}.png", blue)
         check(f"{name} pill", ok, detail)
 
+    # Item-view content: readable text stays on the accent pill (CE path).
+    content = np.array(Image.open(outdir / "itemview-selected.png").convert("RGB")).astype(int)
+    text_px = int((np.abs(content - np.array([255, 255, 255])).sum(axis=2) < 180).sum())
+    check("item text on pill", text_px > 40, f"light px={text_px}")
+
+    # Boxed item-view frame: dimmed rounded hairline, not a blue square outline.
+    frame = np.array(Image.open(outdir / "itemview-frame.png").convert("RGB")).astype(int)
+    fh, fw = frame.shape[:2]
+    border_row = frame[fh // 2, 0:12]
+    blue_border = int((border_row[:, 2] > border_row[:, 0] + 40).sum())
+    border_ink = int((np.abs(border_row - np.array([16, 18, 22])).sum(axis=1) > 30).sum())
+    check("item frame dimmed", border_ink > 0 and blue_border == 0,
+          f"ink px={border_ink}, blue px={blue_border}")
+
     # Keyboard-focus pill: accent ring, pill-rounded, inset; hidden when selected.
     ring = np.array(Image.open(outdir / "focus-pill.png").convert("RGB")).astype(int)
     blue = (ring[:, :, 2] > ring[:, :, 0] + 60) & (ring.sum(axis=2) > 60)

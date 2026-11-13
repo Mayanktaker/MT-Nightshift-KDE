@@ -348,6 +348,26 @@ int main(int argc, char **argv)
     meterRender(30, false, QStringLiteral("capacity-meter"));
     meterRender(55, true, QStringLiteral("progress-text"));
 
+    // Boxed item-view frame (Kate's sessions list): must render as a dimmed
+    // rounded hairline, not Breeze's blue square outline.
+    QListView framedList;
+    framedList.setFrameShape(QFrame::StyledPanel);
+    framedList.resize(220, 200);
+    framedList.grab().save(QStringLiteral("%1/itemview-frame.png").arg(outdir));
+    std::fprintf(stderr, "framedList frameWidth=%d PM_DefaultFrameWidth=%d\n", framedList.frameWidth(),
+                 framedList.style()->pixelMetric(QStyle::PM_DefaultFrameWidth, nullptr, &framedList));
+    // Forced primitive: isolates our frame painting from viewport stacking.
+    saveRendered(framedList.size(), QStringLiteral("frame-primitive"), outdir,
+                 QStringLiteral("frame-primitive"), [&](QPainter *p) {
+        QStyleOptionFrame option;
+        option.initFrom(&framedList);
+        option.rect = framedList.rect();
+        option.frameShape = QFrame::StyledPanel;
+        option.lineWidth = 1;
+        option.state |= QStyle::State_Enabled;
+        app.style()->drawControl(QStyle::CE_ShapedFrame, &option, p, &framedList);
+    });
+
     // Item-view pills: a real list with a selection, plus the primitive with
     // forced hover and inactive-selection states.
     QListView listView;
