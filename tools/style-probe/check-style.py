@@ -49,12 +49,15 @@ def main() -> int:
     ci = "--ci" in sys.argv[2:]
 
     # Corner language: every field-family pill must show the deep corner taper.
+    # Threshold is proportional to height (taper/height ≈ 0.3 at pill radius),
+    # because font metrics on other platforms render shorter widgets.
     for name in ["framed-lineedit", "framed-lineedit-focused", "editable-combo",
                  "editable-combo-focused", "selector-combo", "selector-combo-focused",
                  "spinbox", "spinbox-focused"]:
         path = outdir / f"{name}.png"
         height, recession = taper(path)
-        check(f"{name} taper", recession >= 10, f"h={height} taper={recession}px")
+        check(f"{name} taper", height > 8 and recession >= height / 4,
+              f"h={height} taper={recession}px")
 
     # Breeze's tight frame must not be stamped over our pill (needs Breeze).
     if not ci:
