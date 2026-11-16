@@ -9,7 +9,7 @@ state live in `PLAN.md`.
 ## One entry point
 
 ```bash
-make check        # decoration drift + raster invariants, palette/metadata audit, style probe (dark and light)
+make check        # decoration drift + raster invariants, palette/metadata audit, style probe (four schemes)
 make check-dpr2   # the same artwork rendered at 2x, where the corner arc is 1px
 make verify-live  # the running session: config values, deployed copies, system plugin
 ```
@@ -70,6 +70,34 @@ canonical value missed: Night lifted negative, positive, active, link and
 visited; Day deepened negative, active, link and visited. Every other tone is
 the design's first pass verbatim.
 
+**Inactive-header derivation.** Breeze paints a selected/active row from the
+focus token at 80% over its background (§2 of `design.md`), so a scheme's focus
+tone must clear the floors *after compositing*, not just at rest. Nord's plain
+focus `#88C0D0` measured 4.64:1 on the dark `Window` — just under the 4.66
+floor — which is why Night's focus becomes `#84A5C6`. The inactive header is a
+separate palette group, not a dimmed copy of the active one: Night pairs
+`Header[Inactive]` `#2E3440` / alternate `#3B4252` against inactive text
+`#D8DEE9` (the active header is `#3B4252` / `#2E3440` with `#ECEFF4`), and Day
+pairs `#D8DEE9` / `#E5E9F0` against `#4C566A` (active `#E5E9F0` / `#D8DEE9`
+with `#2E3440`). The audit measures every `Foreground*` role against *both*
+backgrounds of its own group, so that inverted alternate and its dimmer title
+tone are audited independently; the 4.79 (Night) and 4.69 (Day) floors are the
+result, not an assumption.
+
+**Selection-pill derivation.** A selected row is an 80% focus fill over the row
+background, with text from the `Selection` group. Night's normal pill is
+`#84A5C6` with dark `#2E3440` ink; its alternate row uses
+`BackgroundAlternate`, which the canonical `#5E81AC` left at 3.10:1. Lifting
+the alternate to `#93B3D1` (147,179,209) makes it **lighter** than the normal
+`#84A5C6` (132,165,198) — a deliberate +15/+14/+11 channel step, so one dark
+ink set works on both row states. Day inverted the fix: white pill text on
+nord10 was 4.03:1, so its alternate was deepened to `#405A79`, which stays
+darker than the normal `#4C6B91` pill. The offscreen style probe renders a
+forced selected pill under each of the four schemes and asserts readable text
+inside the pill's own bounding box (115/210/180/210 text pixels for
+Nightshift/Dayshift/Nord Night/Nord Day), so the lighter Night alternate cannot
+regress to a sub-floor fill unnoticed.
+
 ## Decoration artwork — `tools/decoration-probe/`
 
 `build-decoration.py --check` regenerates every variant in memory and fails when
@@ -82,6 +110,21 @@ each corner (mean ≥ 0.75, min ≥ 0.45 coverage), expected fills, no title div
 row. `make check-dpr2` renders the `--arc 1.0` configuration that 2x displays
 want, so the 1x compensation is covered in both directions.
 
+The five button SVGs (`close`, `minimize`, `maximize`, `restore`, `menu`) are
+generated from the same per-variant palette as the decoration, so `frame_line`
+is an explicit token in each `VARIANTS` row rather than a value baked at
+import. `tools/decoration-probe/check-buttons.py` independently parses all 20
+button files, asserts each of their eight state groups paints exactly the
+variant's tones (and no stray colour), and measures real contrast: active and
+pressed text ≥ 4.5:1, inactive glyph and the hover-inactive ring ≥ 3:1 against
+the variant's own header. It also fingerprints every path, rect and stroke
+width against Nightshift to prove the four variants share one geometry. The
+hover-inactive ring is `ForegroundInactive`, not the whisper `frame_line`: the
+old ring measured 1.02–1.46:1 on the surfaces it sits on, while the shipped
+tone measures 6.33 (Nightshift), 4.99 (Dayshift), 9.25 (Nord Night) and 5.46
+(Nord Day). Both `check-buttons.py` and all four `check-decoration.py` runs are
+wired into `make check`.
+
 ## Application style — `tools/style-probe/`
 
 `render-fields.cpp` builds the shipped plugin and renders the whole field family,
@@ -91,11 +134,16 @@ Breeze's frame suppressed over the pill, 1px focus ring, disabled tone step plus
 dimmed hairline, inset pills with the accent fill, the pill ring, the free-space
 meter not a black slab, and a 12px scrollbar gutter.
 
-The family is rendered twice — once under each scheme — because the style is
-palette-driven. The light pass runs the palette-agnostic assertions only
-(`--light`): the item hover/inactive checks measure ink against the dark `Window`
-tone and would pass vacuously on a light render. CI passes `--ci`, which skips the
-two assertions that need Breeze installed (frame suppression, 12px clamp).
+The family is rendered once per scheme — all four, into
+`build/style-probe/out-<scheme>` — because the style is palette-driven.
+`check-style.py --scheme <name>` is required and selects that scheme's reference
+`window`, pill-text and accent tones; an unknown name exits 2 instead of
+silently grading a render with the wrong palette. The former `--light` pass,
+which skipped the item hover/inactive ink checks, is gone: those checks now run
+on every scheme and use a per-variant `window_rgb` (the *View Base* tone the
+grabbed list actually paints) so the light and Nord passes cannot pass
+vacuously. CI passes `--ci`, which skips the two assertions that need Breeze
+installed (frame suppression, 12px clamp).
 
 ## Plasma Style assets
 
@@ -125,23 +173,46 @@ a popup's corners look "nearly right but not quite".
 
 ## Live session — `make verify-live`
 
-The offline suite describes files; these values only exist in the running session:
+The offline suite describes files; these values only exist in the running session.
+`make verify-live` reads them through the same variant table as `make apply`, so
+one command covers every installed look:
 
 | Value | Expected |
 | --- | --- |
 | `[KDE] frameContrast` in `kdeglobals` | `0.05` — `plasma-apply-lookandfeel` resets it to the stock 0.2 on every run, which triples the strength of every derived seam |
-| `[General] ColorScheme` | `MT-Nightshift` |
-| `[Theme] name` in `plasmarc` | `mt-nightshift` |
-| `[org.kde.kdecoration2] theme` | `__aurorae__svg__MTNightshift` |
-| Installed scheme, Plasma Style, Aurorae files | byte-identical to the repo |
+| Installed scheme, Plasma Style, Aurorae files | byte-identical to the repo, for **all four** variants |
 | `/usr/lib64/qt6/plugins/styles/mtnightshiftstyle.so` | byte-identical to `build/style/mtnightshiftstyle.so` |
+
+The three selection values are per variant (the Look-and-Feel id is derived from
+the style id, `com.mayanktaker.<style>.desktop`):
+
+| `make verify-live` variant | `[General] ColorScheme` | `[Theme] name` | decoration |
+| --- | --- | --- | --- |
+| `nightshift` (default) | `MT-Nightshift` | `mt-nightshift` | `__aurorae__svg__MTNightshift` |
+| `dayshift` | `MT-Dayshift` | `mt-dayshift` | `__aurorae__svg__MTDayshift` |
+| `nord-night` | `MT-Nord-Night` | `mt-nord-night` | `__aurorae__svg__MTNordNight` |
+| `nord-day` | `MT-Nord-Day` | `mt-nord-day` | `__aurorae__svg__MTNordDay` |
 
 A session that fails one of these renders the previous build indefinitely — the
 failure mode that hid a stale 1.2.0 Plasma Style and an un-updated 1.3.0 plugin.
 
-`DAYSHIFT=1` checks the light selection instead (`make apply-dayshift` runs it
-that way). Running it against the other variant is the best self-test: it names
-every mismatch rather than reporting a bare failure.
+The old `DAYSHIFT=1` switch is inert: `make verify-live VARIANT=dayshift` checks
+the light selection, and `VARIANT=nord-night` / `VARIANT=nord-day` check the two
+Nord selections. `make apply VARIANT=<name>` installs and selects any of the four
+(`make apply-dayshift` and its Nord aliases are thin wrappers over the same
+variable). Running the check against a variant that is not active is the best
+self-test: it names every mismatch rather than reporting a bare failure. On
+2026-11-16 all four were applied and verified live in turn; the Nord captures
+are `/tmp/opencode/nord-night.png` and `/tmp/opencode/nord-day.png`, and the
+session was restored to the original `nightshift` variant afterwards.
+
+One session-level limit: Plasma's `[General] AccentColor` preference overrides
+the `Selection` palette group for Qt Widgets. In the captured session it is
+`33,98,138`, so a live selected pill renders as its 80% derivative `33,80,111`
+rather than the scheme's own `Selection.BackgroundNormal`; reapplying
+`plasma-apply-colorscheme` while the scheme is already active does not rewrite
+the group. The lighter Nord Night alternate therefore has to be checked from the
+palette and the offscreen probe, not from a live selection in that session.
 
 ## What this cannot see
 
