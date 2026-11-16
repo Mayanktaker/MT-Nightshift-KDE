@@ -42,16 +42,17 @@ check:
 	$(MAKE) check-style
 	@echo "all theme checks passed"
 
-# Render the field family under the built style offscreen and assert the pill
-# language, the 1px ring, the free-space meter and the 12px scroll-bar gutter.
-# `make check` runs the same render twice: the dark scheme in full and the light
-# scheme with the palette-agnostic assertions. GitHub Actions sets
-# GITHUB_ACTIONS=true, which passes --ci and skips the two Breeze-dependent
-# assertions; a local run keeps them, whatever CI the shell happens to export.
+# Render the field family under the built style offscreen once per scheme and
+# assert the pill language, the 1px ring, the free-space meter and the 12px
+# scroll-bar gutter against that scheme's reference tones (SCHEMES in
+# tools/style-probe/check-style.py). GitHub Actions sets GITHUB_ACTIONS=true,
+# which passes --ci and skips the two Breeze-dependent assertions; a local run
+# keeps them, whatever CI the shell happens to export.
 # The active scheme file is not refreshed by plasma-apply-lookandfeel once it
 # exists, so apply reinstalls it explicitly before selecting the theme.
 SCHEME_DIR := $(HOME)/.local/share/color-schemes
 STYLE_CHECK_ARGS := $(if $(GITHUB_ACTIONS),--ci,)
+STYLE_SCHEMES := MT-Nightshift MT-Dayshift MT-Nord-Night MT-Nord-Day
 # verify-live checks whichever variant is selected; DAYSHIFT=1 switches it.
 LIVE_STYLE := $(if $(DAYSHIFT),mt-dayshift,mt-nightshift)
 LIVE_SCHEME := $(if $(DAYSHIFT),MT-Dayshift,MT-Nightshift)
@@ -63,15 +64,14 @@ check-style: style
 	g++ -fPIC -std=c++17 -O2 $(QT_CFLAGS) -Itools/style-probe \
 		tools/style-probe/render-fields.cpp build/style-probe/moc-status-card.cpp \
 		-o build/style-probe/render-fields $(QT_LIBS)
-	QT_QPA_PLATFORM=offscreen ./build/style-probe/render-fields MTNightshift build/style-probe/out \
-		color-schemes/MT-Nightshift.colors $(CURDIR)/build/style/mtnightshiftstyle.so >/dev/null
-	python3 tools/style-probe/check-style.py build/style-probe/out $(STYLE_CHECK_ARGS)
-	# The same plugin under the light scheme: the pill language, ring width and
-	# disabled tone step must hold whichever palette is active.
-	@mkdir -p build/style-probe/out-dayshift
-	QT_QPA_PLATFORM=offscreen ./build/style-probe/render-fields MTNightshift build/style-probe/out-dayshift \
-		color-schemes/MT-Dayshift.colors $(CURDIR)/build/style/mtnightshiftstyle.so >/dev/null
-	python3 tools/style-probe/check-style.py build/style-probe/out-dayshift --light $(STYLE_CHECK_ARGS)
+	@set -e; for scheme in $(STYLE_SCHEMES); do \
+		mkdir -p build/style-probe/out-$$scheme; \
+		QT_QPA_PLATFORM=offscreen ./build/style-probe/render-fields MTNightshift \
+			build/style-probe/out-$$scheme color-schemes/$$scheme.colors \
+			$(CURDIR)/build/style/mtnightshiftstyle.so >/dev/null; \
+		python3 tools/style-probe/check-style.py build/style-probe/out-$$scheme \
+			$(STYLE_CHECK_ARGS) --scheme $$scheme; \
+	done
 
 # The corner border is drawn `frame_line_arc` px thick because a 1px annulus only
 # reaches ~half coverage per pixel at 45 degrees on a 1x display. At 2x the same

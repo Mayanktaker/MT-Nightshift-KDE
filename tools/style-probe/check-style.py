@@ -4,16 +4,15 @@
 # SPDX-License-Identifier: LGPL-2.0-or-later
 """Assert the rendered field family from render-fields output.
 
-Usage: check-style.py <render-dir> [--ci] [--light]
+Usage: check-style.py <render-dir> [--ci] --scheme <name>
+
+--scheme names the colour scheme the render was produced under and selects its
+reference tones from SCHEMES; it is required, because the item-view checks
+measure ink against the palette the probe actually painted.
 
 --ci skips Breeze-dependent assertions (the frame-suppression check and the
 12px scroll-bar extent) because CI has no Breeze style; the base style then is
 Qt's fallback and those two checks would fail for the wrong reason.
-
---light asserts only the invariants that hold for any palette (tapers, ring
-width, pill geometry, disabled tone step, meter not a black slab); the item
-hover/inactive checks measure ink against the dark Window tone, so they are
-skipped instead of silently passing on a light render.
 """
 
 from __future__ import annotations
@@ -24,6 +23,38 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
+
+# Per-scheme reference tones. `window_rgb` is the Base tone a grabbed list or
+# viewport paints, which is one step below Colors:Window; `pill_text_rgb` is the
+# tone CE_ItemViewItem draws the selected row's text in, so it flips polarity on
+# Nord Night; `accent_rgb` is the Selection background and `accent_blue` declares
+# its blue-dominance, the premise behind every blue-family assertion below.
+SCHEMES = {
+    "MT-Nightshift": {
+        "window_rgb": (10, 11, 13),
+        "pill_text_rgb": (255, 255, 255),
+        "accent_rgb": (31, 110, 156),
+        "accent_blue": True,
+    },
+    "MT-Dayshift": {
+        "window_rgb": (250, 251, 253),
+        "pill_text_rgb": (255, 255, 255),
+        "accent_rgb": (31, 110, 156),
+        "accent_blue": True,
+    },
+    "MT-Nord-Night": {
+        "window_rgb": (35, 41, 50),
+        "pill_text_rgb": (46, 52, 64),
+        "accent_rgb": (132, 165, 198),
+        "accent_blue": True,
+    },
+    "MT-Nord-Day": {
+        "window_rgb": (247, 249, 252),
+        "pill_text_rgb": (255, 255, 255),
+        "accent_rgb": (76, 107, 145),
+        "accent_blue": True,
+    },
+}
 
 FAILURES: list[str] = []
 svg2png_bin = Path.home() / ".cache/mt-nightshift-probe/svg2png"
@@ -52,9 +83,24 @@ def taper(path: Path) -> tuple[int, int]:
 
 
 def main() -> int:
+    if len(sys.argv) < 2:
+        print("usage: check-style.py <render-dir> [--ci] --scheme <name>", file=sys.stderr)
+        return 2
     outdir = Path(sys.argv[1])
-    ci = "--ci" in sys.argv[2:]
-    light = "--light" in sys.argv[2:]
+    rest = sys.argv[2:]
+    ci = "--ci" in rest
+    scheme_name = None
+    if "--scheme" in rest and rest.index("--scheme") + 1 < len(rest):
+        scheme_name = rest[rest.index("--scheme") + 1]
+    if scheme_name is None:
+        print(f"--scheme is required; one of: {', '.join(SCHEMES)}", file=sys.stderr)
+        return 2
+    if scheme_name not in SCHEMES:
+        print(f"unknown scheme {scheme_name!r}; one of: {', '.join(SCHEMES)}", file=sys.stderr)
+        return 2
+    scheme = SCHEMES[scheme_name]
+    window_rgb = np.array(scheme["window_rgb"])
+    pill_text_rgb = np.array(scheme["pill_text_rgb"])
 
     # Corner language: every field-family pill must show the deep corner taper.
     # Threshold is proportional to height (taper/height ≈ 0.3 at pill radius),
@@ -75,8 +121,12 @@ def main() -> int:
     # Free-space meter: accent fill and a groove that is not a black slab.
     meter = np.array(Image.open(outdir / "capacity-meter-custom.png").convert("RGB")).astype(int)
     mid = meter.shape[0] // 2
-    fill_blue = meter[mid, 4][2] > meter[mid, 4][0] + 60
-    check("meter accent fill", fill_blue, f"rgb={tuple(meter[mid, 4])}")
+    fill = meter[mid, 4]
+    accent = np.array(scheme["accent_rgb"])
+    accent_blue = fill[2] > fill[0] + 60
+    check("meter accent fill",
+          int(np.abs(fill - accent).sum()) < 30 and accent_blue == scheme["accent_blue"],
+          f"rgb={tuple(fill)} ref={tuple(accent)}")
     groove = meter[mid, 140]
     check("meter groove not black", int(groove.sum()) > 30, f"rgb={tuple(groove)}")
 
@@ -99,7 +149,8 @@ def main() -> int:
         disabled = np.array(Image.open(outdir / f"{name}.png").convert("RGB")).astype(int)
         dh, dw = disabled.shape[:2]
         fill = disabled[dh // 2, dw // 3]
-        check(f"{name} lifted fill", int(fill.sum()) > 75 and abs(int(fill.sum()) - 34) > 12,
+        check(f"{name} lifted fill",
+              int(fill.sum()) > 75 and abs(int(fill.sum()) - int(window_rgb.sum())) > 12,
               f"rgb={tuple(fill)}")
         outline = disabled[dh // 2, 0]
         check(f"{name} dimmed outline", abs(int(outline.sum()) - int(fill.sum())) >= 8,
@@ -124,28 +175,36 @@ def main() -> int:
                     rec.append(int(cols.min()))
             deepest = max(rec) if rec else 0
             return deepest >= 5 and left_inset >= 3, f"inset={left_inset} taper={deepest}"
-        diff = np.abs(rgb - np.array([16, 18, 22])).sum(axis=2)
+        diff = np.abs(rgb - window_rgb).sum(axis=2)
         ink = (diff > 12) & (alpha > 10)
         return bool(ink.any()), f"ink px {int(ink.sum())}"
 
     for name, blue in [("item-selected", True), ("item-hover", False),
                        ("item-selected-inactive", False)]:
-        if not blue and light:
-            continue  # ink is measured against the dark Window tone; see --light
         ok, detail = pill_shape(outdir / f"{name}.png", blue)
         check(f"{name} pill", ok, detail)
 
-    # Item-view content: readable text stays on the accent pill (CE path).
+    # Item-view content: readable text stays on the accent pill (CE path). The
+    # probe grabs the list over an opaque base, so the two most common exact
+    # tones are that background and the pill surface; the pill's bounding box
+    # isolates the selected row's text from every other row.
     content = np.array(Image.open(outdir / "itemview-selected.png").convert("RGB")).astype(int)
-    text_px = int((np.abs(content - np.array([255, 255, 255])).sum(axis=2) < 180).sum())
-    check("item text on pill", text_px > 40, f"light px={text_px}")
+    tones, tone_counts = np.unique(content.reshape(-1, 3), axis=0, return_counts=True)
+    base_tone, pill_tone = tones[np.argsort(-tone_counts)[0]], tones[np.argsort(-tone_counts)[1]]
+    ys, xs = np.where((content == pill_tone).all(axis=2))
+    row = content[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+    on_pill = (np.abs(row - pill_text_rgb).sum(axis=2) < 180) \
+        & (np.abs(row - pill_tone).sum(axis=2) > 40) \
+        & (np.abs(row - base_tone).sum(axis=2) > 12)
+    text_px = int(on_pill.sum())
+    check("item text on pill", text_px > 40, f"text px={text_px}")
 
     # Boxed item-view frame: dimmed rounded hairline, not a blue square outline.
     frame = np.array(Image.open(outdir / "itemview-frame.png").convert("RGB")).astype(int)
     fh, fw = frame.shape[:2]
     border_row = frame[fh // 2, 0:12]
     blue_border = int((border_row[:, 2] > border_row[:, 0] + 40).sum())
-    border_ink = int((np.abs(border_row - np.array([16, 18, 22])).sum(axis=1) > 30).sum())
+    border_ink = int((np.abs(border_row - window_rgb).sum(axis=1) > 30).sum())
     check("item frame dimmed", border_ink > 0 and blue_border == 0,
           f"ink px={border_ink}, blue px={blue_border}")
 
