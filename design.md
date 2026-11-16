@@ -244,7 +244,7 @@ The Qt Widgets Application Style is implemented separately in §13. It is a comp
 | Pressed fill / glyph | `#1F6E9C` (`Selection` background) / `#FFFFFF` (`Selection` text) |
 | Inactive button icon | `#8D97A4` (`ForegroundInactive`) |
 | Disabled button icon | `blend(header, ForegroundInactive, 0.65)` |
-| Hover outline, inactive window | `#222529` (the frame line) |
+| Hover outline, inactive window | `#8D97A4` (`ForegroundInactive`, 6.3:1 on the inactive header) |
 
 Every row above is baked per variant by `tools/decoration-probe/build-decoration.py` from the `VARIANTS` palette table; the four decorations and their five button sets share paths, rects and stroke widths and differ only in colour. Each palette carries `header_active`, `header_inactive`, `window`, `foreground`, `foreground_inactive`, `negative`, `selection`, `selection_text` and an explicit `frame_line`. Nord Day's frame line is `#D8DCE4`, one step above the 0.06 mix, because its header-to-foreground span is the narrowest of the four and the 0.06 value left the corner arcs at the light-surface coverage floor. Button tones follow the variant scheme rather than a baked set: Nord Night's selection pill is light `#84A5C6`, so its pressed glyph is dark `#2E3440` where the other three use `#FFFFFF`.
 
@@ -254,7 +254,7 @@ Every row above is baked per variant by `tools/decoration-probe/build-decoration
 - **Hover**: 1px outline with a 6px rounded-square radius, no fill; the outline and icon take the variant's `ForegroundNegative`.
 - **Pressed**: a filled 6px rounded-square disc in the variant's selection background, with the selection text tone as the glyph, and no outline.
 - **Disabled**: a dimmed glyph, no disc, stepped 65% from the header toward `ForegroundInactive`.
-- **Inactive window**: buttons drop to `ForegroundInactive`; hover-inactive keeps that glyph under a frame-line outline; pressed-inactive uses the selection fill with selection text.
+- **Inactive window**: buttons drop to `ForegroundInactive`; hover-inactive keeps that glyph under a `ForegroundInactive` ring, which clears the 3:1 non-text floor on the inactive header (Nightshift 6.3:1, Dayshift 5.0:1, Nord Night 9.3:1, Nord Day 5.5:1); pressed-inactive uses the selection fill with selection text.
 - State changes never move or resize a control. The negative tone is a transient hover cue only, never a resting colour.
 
 ### 12.4 HiDPI and Aurorae constraints

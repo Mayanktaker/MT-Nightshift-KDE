@@ -34,7 +34,7 @@
   </g>
   <g id="hover-inactive-center">
   <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>
-  <rect x="2.5" y="2.5" width="19" height="19" rx="6" fill="none" stroke="#D8DCE4" stroke-width="1"/>
+  <rect x="2.5" y="2.5" width="19" height="19" rx="6" fill="none" stroke="#4C566A" stroke-width="1"/>
   <path d="M 8,8 L 16,16 M 16,8 L 8,16" fill="none" stroke="#4C566A" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
   </g>
   <g id="pressed-inactive-center">

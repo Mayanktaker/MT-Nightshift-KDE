@@ -94,6 +94,16 @@ def tones(element) -> tuple[set[str], set[str]]:
     return strokes, fills
 
 
+def ring_stroke(element) -> str | None:
+    """The stroke of one state group's 19px, 1px-wide hover ring."""
+    for child in element.iter():
+        if (local(child.tag) == "rect" and child.get("fill") == "none"
+                and child.get("stroke-width") == "1"):
+            stroke = child.get("stroke")
+            return stroke.upper() if stroke else None
+    return None
+
+
 def geometry(root) -> list[tuple[str, tuple[str | None, ...]]]:
     """Every shape's geometry, with colour attributes deliberately excluded."""
     return [(local(element.tag), tuple(element.get(attribute) for attribute in GEOMETRY_ATTRS))
@@ -113,7 +123,7 @@ def expected_tones(palette: dict[str, str], blend,
         "pressed": ({palette["selection_text"]}, {palette["selection"]}),
         "deactivated": ({disabled_active}, set()),
         "inactive": ({palette["foreground_inactive"]}, set()),
-        "hover-inactive": ({palette["foreground_inactive"], palette["frame_line"]}, set()),
+        "hover-inactive": ({palette["foreground_inactive"]}, set()),
         "pressed-inactive": ({palette["selection_text"]}, {palette["selection"]}),
         "deactivated-inactive": ({disabled_inactive}, set()),
     }
@@ -171,16 +181,25 @@ def check_button(path: Path, label: str, palette: dict[str, str], title: str,
         (palette["foreground"], palette["header_active"], 4.5, "active glyph"),
         (palette["foreground_inactive"], palette["header_active"], 3.0, "inactive glyph"),
         (palette["negative"], palette["header_active"], 3.0, "hover glyph/outline"),
-        (palette["foreground_inactive"], palette["header_inactive"], 3.0, "hover-inactive glyph"),
+        (palette["foreground_inactive"], palette["header_inactive"], 3.0,
+         "hover-inactive ring and glyph"),
         (palette["selection_text"], palette["selection"], 4.5, "pressed glyph"),
     )
     for colour, surface, floor, role in floors:
         ratio = contrast(colour, surface)
         check(ratio >= floor, "%s %s on %s is %.2f:1 (floor %.1f:1)"
               % (path, role, surface, ratio, floor))
-    check(max(abs(int(palette["frame_line"][i:i + 2], 16) - int(palette["header_active"][i:i + 2], 16))
-              for i in (1, 3, 5)) >= 4,
-          "%s frame line is distinguishable from the header fill" % path)
+
+    # The hover-inactive ring is the only cue on an inactive window, so assert
+    # the element that actually paints it, against the surface it sits on.
+    hover_inactive = groups.get("hover-inactive-center")
+    if check(hover_inactive is not None, "%s has a hover-inactive state group" % path):
+        ring = ring_stroke(hover_inactive)
+        check(ring == palette["foreground_inactive"].upper(),
+              "%s hover-inactive ring is ForegroundInactive (got %s)" % (path, ring))
+        ratio = contrast(palette["foreground_inactive"], palette["header_inactive"])
+        check(ratio >= 3.0, "%s hover-inactive ring on %s is %.2f:1 (floor 3.0:1)"
+              % (path, palette["header_inactive"], ratio))
     return geometry(root)
 
 
@@ -212,6 +231,13 @@ def check_decoration(path: Path, palette: dict[str, str], title: str,
         _, fills = tones(element)
         check(expected.upper() in fills,
               "%s %s paints %s (got %s)" % (path, group_id, expected, sorted(fills)))
+
+    # The frame line is a deliberate whisper, so it only has to differ from the
+    # header fill; its 3:1 duty does not apply (it is not a state cue).
+    line, header = palette["frame_line"], palette["header_active"]
+    check(max(abs(int(line[i:i + 2], 16) - int(header[i:i + 2], 16))
+              for i in (1, 3, 5)) >= 4,
+          "%s frame line is distinguishable from the header fill" % path)
 
 
 def main() -> int:

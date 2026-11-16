@@ -543,15 +543,15 @@ def build_buttons(palette: dict[str, str], title: str) -> dict[str, str]:
     All five files carry the same eight state groups as the original artwork.
     Active and hover tones come from the variant's text and negative roles,
     pressed uses its selection pair (Nord Night's pill is light, so its glyph is
-    dark), the inactive ring is the variant's frame line, and disabled glyphs are
-    the inactive tone dimmed toward the header by PARAMS["deactivated_mix"].
+    dark), the hover-inactive ring is ForegroundInactive so that cue clears the
+    3:1 non-text floor against the inactive header, and disabled glyphs are the
+    inactive tone dimmed toward the header by PARAMS["deactivated_mix"].
     """
     foreground = palette["foreground"]
     inactive = palette["foreground_inactive"]
     negative = palette["negative"]
     selection = palette["selection"]
     selection_text = palette["selection_text"]
-    frame_line = palette["frame_line"]
     disabled_active = blend(palette["header_active"], inactive, PARAMS["deactivated_mix"])
     disabled_inactive = blend(palette["header_inactive"], inactive, PARAMS["deactivated_mix"])
 
@@ -563,7 +563,7 @@ def build_buttons(palette: dict[str, str], title: str) -> dict[str, str]:
             button_state("pressed-center", glyph.format(tone=selection_text), disc=selection),
             button_state("deactivated-center", glyph.format(tone=disabled_active)),
             button_state("inactive-center", glyph.format(tone=inactive)),
-            button_state("hover-inactive-center", glyph.format(tone=inactive), ring=frame_line),
+            button_state("hover-inactive-center", glyph.format(tone=inactive), ring=inactive),
             button_state("pressed-inactive-center", glyph.format(tone=selection_text), disc=selection),
             button_state("deactivated-inactive-center", glyph.format(tone=disabled_inactive)),
         ]
