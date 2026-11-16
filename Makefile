@@ -10,6 +10,9 @@
 SHELL := /bin/bash
 DECORATION := themes/aurorae/MTNightshift/decoration.svg
 AURORAE_DIR := $(HOME)/.local/share/aurorae/themes/MTNightshift
+DAYSHIFT_AURORAE_DIR := $(HOME)/.local/share/aurorae/themes/MTDayshift
+DAYSHIFT_LOOKANDFEEL := com.mayanktaker.mt-dayshift.desktop
+DESKTHEME_DIR := $(HOME)/.local/share/plasma/desktoptheme
 LF_DIR := $(HOME)/.local/share/plasma/look-and-feel
 LOOKANDFEEL := com.mayanktaker.mt-nightshift.desktop
 PROBE_CACHE := $(or $(XDG_CACHE_HOME),$(HOME)/.cache)/mt-nightshift-probe
@@ -17,7 +20,7 @@ MOC := $(shell pkg-config --variable=libexecdir Qt6Core)/moc
 QT_CFLAGS := $(shell pkg-config --cflags Qt6Widgets)
 QT_LIBS := $(shell pkg-config --libs Qt6Widgets)
 
-.PHONY: all decoration check check-style check-dpr2 style style-preview apply style-install clean
+.PHONY: all decoration check check-style check-dpr2 style style-preview apply apply-dayshift apply-install style-install verify-live clean
 
 all: check
 
@@ -31,16 +34,28 @@ decoration:
 check:
 	python3 tools/decoration-probe/build-decoration.py --check
 	./tools/decoration-probe/check-decoration.py
-	@for f in themes/aurorae/MTNightshift/*.svg; do xmllint --noout "$$f" || exit 1; done
+	./tools/decoration-probe/check-decoration.py themes/aurorae/MTDayshift/decoration.svg
+	@for f in themes/aurorae/MTNightshift/*.svg themes/aurorae/MTDayshift/*.svg; do xmllint --noout "$$f" || exit 1; done
+	./tools/theme-audit/check-theme.py
+	./tools/plasma-theme/dialog-frame.py --check
+	./tools/plasma-theme/applet-background.py --check
 	$(MAKE) check-style
 	@echo "all theme checks passed"
 
 # Render the field family under the built style offscreen and assert the pill
 # language, the 1px ring, the free-space meter and the 12px scroll-bar gutter.
-# --ci (set by CI) skips the two Breeze-dependent assertions.
+# `make check` runs the same render twice: the dark scheme in full and the light
+# scheme with the palette-agnostic assertions. GitHub Actions sets
+# GITHUB_ACTIONS=true, which passes --ci and skips the two Breeze-dependent
+# assertions; a local run keeps them, whatever CI the shell happens to export.
 # The active scheme file is not refreshed by plasma-apply-lookandfeel once it
 # exists, so apply reinstalls it explicitly before selecting the theme.
 SCHEME_DIR := $(HOME)/.local/share/color-schemes
+STYLE_CHECK_ARGS := $(if $(GITHUB_ACTIONS),--ci,)
+# verify-live checks whichever variant is selected; DAYSHIFT=1 switches it.
+LIVE_STYLE := $(if $(DAYSHIFT),mt-dayshift,mt-nightshift)
+LIVE_SCHEME := $(if $(DAYSHIFT),MT-Dayshift,MT-Nightshift)
+LIVE_DECORATION := $(if $(DAYSHIFT),__aurorae__svg__MTDayshift,__aurorae__svg__MTNightshift)
 
 check-style: style
 	@mkdir -p build/style-probe
@@ -50,7 +65,13 @@ check-style: style
 		-o build/style-probe/render-fields $(QT_LIBS)
 	QT_QPA_PLATFORM=offscreen ./build/style-probe/render-fields MTNightshift build/style-probe/out \
 		color-schemes/MT-Nightshift.colors $(CURDIR)/build/style/mtnightshiftstyle.so >/dev/null
-	python3 tools/style-probe/check-style.py build/style-probe/out
+	python3 tools/style-probe/check-style.py build/style-probe/out $(STYLE_CHECK_ARGS)
+	# The same plugin under the light scheme: the pill language, ring width and
+	# disabled tone step must hold whichever palette is active.
+	@mkdir -p build/style-probe/out-dayshift
+	QT_QPA_PLATFORM=offscreen ./build/style-probe/render-fields MTNightshift build/style-probe/out-dayshift \
+		color-schemes/MT-Dayshift.colors $(CURDIR)/build/style/mtnightshiftstyle.so >/dev/null
+	python3 tools/style-probe/check-style.py build/style-probe/out-dayshift --light $(STYLE_CHECK_ARGS)
 
 # The corner border is drawn `frame_line_arc` px thick because a 1px annulus only
 # reaches ~half coverage per pixel at 45 degrees on a 1x display. At 2x the same
@@ -86,20 +107,60 @@ style-install: style
 	@echo "installed; start a new app to see the change"
 
 # Install into user-local KDE paths and select the theme in the running session.
-apply: check
-	install -m 644 themes/aurorae/MTNightshift/* $(AURORAE_DIR)/
-	install -m 644 color-schemes/MT-Nightshift.colors $(SCHEME_DIR)/
-	install -m 644 themes/mt-nightshift/dialogs/background.svgz \
-		$(HOME)/.local/share/plasma/desktoptheme/mt-nightshift/dialogs/
-	install -m 644 themes/mt-nightshift/translucent/dialogs/background.svgz \
-		$(HOME)/.local/share/plasma/desktoptheme/mt-nightshift/translucent/dialogs/
-	install -m 644 themes/mt-nightshift/solid/dialogs/background.svgz \
-		$(HOME)/.local/share/plasma/desktoptheme/mt-nightshift/solid/dialogs/
-	kpackagetool6 --type Plasma/LookAndFeel -u themes/mt-nightshift-global
+# Install both variants user-locally; the dark one stays selected.
+apply: check apply-install
 	plasma-apply-lookandfeel -a $(LOOKANDFEEL)
 	kwriteconfig6 --file kdeglobals --group KDE --key frameContrast 0.05
 	gdbus call --session --dest org.kde.KWin --object-path /KWin --method org.kde.KWin.reconfigure
+	$(MAKE) verify-live
 	@echo "applied; restart the session to pick up any Padding* change"
+
+# Select the light variant in the running session (both stay installed).
+apply-dayshift: check apply-install
+	plasma-apply-lookandfeel -a $(DAYSHIFT_LOOKANDFEEL)
+	kwriteconfig6 --file kdeglobals --group KDE --key frameContrast 0.05
+	gdbus call --session --dest org.kde.KWin --object-path /KWin --method org.kde.KWin.reconfigure
+	$(MAKE) verify-live DAYSHIFT=1
+	@echo "dayshift applied; switch back with: make apply"
+
+# Values Plasma and KWin keep in user config rather than in the packages, plus the
+# deployed copies. `make check` cannot see any of this: plasma-apply-lookandfeel
+# resets [KDE] frameContrast on every run, and a stale system plugin or theme
+# directory keeps rendering the previous build. Run after apply/apply-install.
+verify-live:
+	@bad=0; \
+	seam=$$(kreadconfig6 --file kdeglobals --group KDE --key frameContrast --default none); \
+	[ "$$seam" = "0.05" ] || { echo "FAIL [KDE] frameContrast=$$seam, want 0.05 (make apply)"; bad=1; }; \
+	scheme=$$(kreadconfig6 --file kdeglobals --group General --key ColorScheme --default none); \
+	[ "$$scheme" = "$(LIVE_SCHEME)" ] || { echo "FAIL active scheme=$$scheme, want $(LIVE_SCHEME)"; bad=1; }; \
+	style=$$(kreadconfig6 --file plasmarc --group Theme --key name --default none); \
+	[ "$$style" = "$(LIVE_STYLE)" ] || { echo "FAIL Plasma Style=$$style, want $(LIVE_STYLE)"; bad=1; }; \
+	decoration=$$(kreadconfig6 --file kwinrc --group org.kde.kdecoration2 --key theme --default none); \
+	[ "$$decoration" = "$(LIVE_DECORATION)" ] || { echo "FAIL decoration=$$decoration, want $(LIVE_DECORATION)"; bad=1; }; \
+	cmp -s color-schemes/$(LIVE_SCHEME).colors $(SCHEME_DIR)/$(LIVE_SCHEME).colors || { echo "FAIL installed scheme differs from the repo (make apply-install)"; bad=1; }; \
+	diff -r themes/$(LIVE_STYLE) $(DESKTHEME_DIR)/$(LIVE_STYLE) >/dev/null || { echo "FAIL installed Plasma Style differs from the repo (make apply-install)"; bad=1; }; \
+	if [ -f build/style/mtnightshiftstyle.so ]; then \
+		cmp -s build/style/mtnightshiftstyle.so /usr/lib64/qt6/plugins/styles/mtnightshiftstyle.so || { echo "FAIL system plugin differs from build/style (make style-install)"; bad=1; }; \
+	fi; \
+	[ $$bad -eq 0 ] && echo "live session matches the theme"
+
+# Install every theme package user-locally without changing the selection.
+apply-install:
+	install -d $(AURORAE_DIR) $(DAYSHIFT_AURORAE_DIR)
+	install -m 644 themes/aurorae/MTNightshift/* $(AURORAE_DIR)/
+	install -m 644 themes/aurorae/MTDayshift/* $(DAYSHIFT_AURORAE_DIR)/
+	install -m 644 color-schemes/MT-Nightshift.colors color-schemes/MT-Dayshift.colors $(SCHEME_DIR)/
+	# Copied whole, like Dayshift: an explicit file list silently missed new slots
+	# twice (the palette, then widgets/background).
+	install -d $(DESKTHEME_DIR)/mt-nightshift
+	cp -r themes/mt-nightshift/. $(DESKTHEME_DIR)/mt-nightshift/
+	install -d $(DESKTHEME_DIR)/mt-dayshift/dialogs $(DESKTHEME_DIR)/mt-dayshift/solid/dialogs \
+		$(DESKTHEME_DIR)/mt-dayshift/translucent/dialogs $(DESKTHEME_DIR)/mt-dayshift/widgets
+	cp -r themes/mt-dayshift/. $(DESKTHEME_DIR)/mt-dayshift/
+	kpackagetool6 --type Plasma/LookAndFeel -i themes/mt-nightshift-global || \
+		kpackagetool6 --type Plasma/LookAndFeel -u themes/mt-nightshift-global
+	kpackagetool6 --type Plasma/LookAndFeel -i themes/mt-dayshift-global || \
+		kpackagetool6 --type Plasma/LookAndFeel -u themes/mt-dayshift-global
 
 # Drop the cached probe binary so the next check rebuilds from scratch.
 clean:

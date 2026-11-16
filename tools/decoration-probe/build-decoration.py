@@ -59,13 +59,12 @@ PARAMS = {
     "header_inactive": "#101216",
     "window": "#101216",
     "foreground": "#E8EBF0",
-    # Interior seams follow [KDE] frameContrast (0.14, shipped by the Global
-    # Theme). The window's own outer line gets a stronger mix, because Breeze
-    # derives its client hairline from the brighter Header background: at equal
-    # contrast the client seam wins, and the outer edge should be the dominant
-    # line. 0.06 keeps the outer edge a whisper above the client seam instead of
-    # a visible border, per the 2026-11 polish pass.
-    "frame_contrast": 0.14,
+    # The window's own outer line gets a stronger mix than the derived interior
+    # seams, because Breeze derives its client hairline from the brighter Header
+    # background: at equal contrast the client seam wins, and the outer edge
+    # should be the dominant line. 0.06 keeps the outer edge a whisper above the
+    # client seam (which follows [KDE] frameContrast=0.05, shipped by the Global
+    # Theme) instead of a visible border, per the 2026-11 polish pass.
     "frame_line_contrast": 0.06,
     # Thickness of the 1px frame line were it rasterised crisply on the corner
     # arcs. A 1px annulus spreads over two pixels at ~50% coverage where the
@@ -73,6 +72,30 @@ PARAMS = {
     # the crisp straight edges. The arcs are drawn 0.5px heavier to compensate;
     # the straight edges stay exactly 1px.
     "frame_line_arc": 2.0,
+}
+
+# Palette variants: geometry is shared, only the baked surface tones differ.
+# Dayshift is the light counterpart of Nightshift (color-schemes/MT-Dayshift.colors);
+# its frame line is derived at build time from the light header/foreground mix.
+VARIANTS = {
+    "nightshift": {
+        "out": HERE.parent.parent / "themes" / "aurorae" / "MTNightshift" / "decoration.svg",
+        "palette": {
+            "header_active": "#15181C",
+            "header_inactive": "#101216",
+            "window": "#101216",
+            "foreground": "#E8EBF0",
+        },
+    },
+    "dayshift": {
+        "out": HERE.parent.parent / "themes" / "aurorae" / "MTDayshift" / "decoration.svg",
+        "palette": {
+            "header_active": "#F3F5F8",
+            "header_inactive": "#EFF1F5",
+            "window": "#EFF1F5",
+            "foreground": "#1B1E22",
+        },
+    },
 }
 
 P = PARAMS["padding"]
@@ -406,6 +429,7 @@ def main() -> int:
     argv = sys.argv[1:]
     overrides = {"--padding": "padding", "--visible": "visible", "--peak": "peak",
                  "--arc": "frame_line_arc"}
+    variant = "nightshift"
     rest = []
     index = 0
     while index < len(argv):
@@ -416,10 +440,34 @@ def main() -> int:
             PARAMS[key] = float(value) if key in ("peak", "frame_line_arc") else int(value)
             index += 2
             continue
+        if token == "--variant":
+            variant = argv[index + 1]
+            if variant not in VARIANTS:
+                raise SystemExit("unknown variant %r (have: %s)" % (variant, ", ".join(VARIANTS)))
+            index += 2
+            continue
         rest.append(token)
         index += 1
+    PARAMS.update(VARIANTS[variant]["palette"])
     args = [a for a in rest if a != "--check"]
-    target = Path(args[0]) if args else DEFAULT_OUT
+    target = Path(args[0]) if args else VARIANTS[variant]["out"]
+    if "--check" in sys.argv and not args:
+        # Drift-check every variant's committed artwork, not just the default.
+        stale = []
+        for name, spec in VARIANTS.items():
+            backup = dict(PARAMS)
+            PARAMS.update(spec["palette"])
+            document = build()
+            PARAMS.clear()
+            PARAMS.update(backup)
+            current = spec["out"].read_text() if spec["out"].exists() else ""
+            if current != document:
+                stale.append(str(spec["out"]))
+        if stale:
+            print("stale decoration artwork: %s" % ", ".join(stale))
+            return 1
+        print("all %d decoration variants match the generator" % len(VARIANTS))
+        return 0
     document = build()
     if "--check" in sys.argv:
         current = target.read_text() if target.exists() else ""
