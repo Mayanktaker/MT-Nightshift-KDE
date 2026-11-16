@@ -23,16 +23,17 @@ The upstream Breeze Dark metadata identifies the KDE Visual Design Group and lab
 ## Theme files
 
 - `themes/mt-nightshift/` — installable Plasma Style (`mt-nightshift`). It overrides only the assets needed for the solid Nightshift surfaces; unmodified assets fall back to system Breeze `default/`.
-- `color-schemes/MT-Nightshift.colors` — global application color scheme. Its palette is mirrored in `themes/mt-nightshift/colors`; keep those files synchronized as described in `design.md`.
+- `color-schemes/MT-Nightshift.colors` — global application color scheme. Its palette is byte-identical in `themes/mt-nightshift/colors` and `themes/mt-nightshift-global/contents/colors`; `tools/theme-audit/check-theme.py` enforces that and re-measures the contrast floors for both variants on every `make check`.
 - `themes/mt-nightshift-global/` — Plasma 6 Global Theme (Look-and-Feel package). It selects the Plasma Style, color scheme, and Aurorae decoration without resetting the desktop layout, icons, cursor, wallpaper, or splash.
-- `themes/aurorae/MTNightshift/` — user-local Aurorae window decoration with 21px window corners. The Global Theme manifest references this separate package; it does not contain it.
+- `themes/aurorae/MTNightshift/` — user-local Aurorae window decoration with 15px window corners. The Global Theme manifest references this separate package; it does not contain it.
+- Light variant — the same geometry and shape language on cool carbon-whites: `color-schemes/MT-Dayshift.colors`, `themes/mt-dayshift/`, `themes/mt-dayshift-global/` and `themes/aurorae/MTDayshift/`. The Qt style plugin is palette-driven, so one `MTNightshift` style serves both; `make apply-dayshift` switches to it and `make apply` switches back.
 - `application-style/` — C++ Qt Widgets style plugin (`MTNightshift`) that keeps Breeze behavior while drawing Sculpted controls with approximately 15px corner radii.
 
 The Application Style also removes the Dolphin Places sidebar divider and gives framed path/search inputs borderless, rounded fills with a focus-only ring. Dolphin's path bar needed its own rule because KIO's `KUrlNavigator` paints through `PE_FrameLineEdit` rather than a line-edit panel; the style matches that public class name so other KIO navigators get the same field without affecting ordinary frames. A subtle horizontal toolbar hairline remains; removing it would require replacing a larger Breeze window-background paint pass.
 
 The Qt style is installed at `/usr/lib64/qt6/plugins/styles/mtnightshiftstyle.so` with its KStyle metadata at `/usr/share/kstyle/themes/mtnightshift.themerc`, and is selected as the active Qt Widgets style. The Global Theme also selects `MTNightshift`. Qt Quick/Kirigami apps and Plasma controls use separate style systems.
 
-The installed style narrows Qt Widgets scrollbar gutters to 12px and removes the gutter from Dolphin's Places sidebar only; other Dolphin scroll areas and file dialogs keep a slim scrollbar. A fresh Dolphin screenshot confirms the sidebar has no visible scrollbar. Offscreen tests confirm wheel scrolling still works with a long list and the dialog retains a 12px gutter; keyboard/touch interaction in a live Dolphin window remains to be checked.
+The installed style narrows Qt Widgets scrollbar gutters to 12px and removes the gutter from Dolphin's Places sidebar only; other Dolphin scroll areas and file dialogs keep a slim scrollbar. A fresh Dolphin screenshot confirms the sidebar has no visible scrollbar. Offscreen tests confirm wheel scrolling still works with a long list and the dialog retains a 12px gutter; keyboard and touch scrolling in a live Dolphin window were confirmed on 2026-11-14.
 
 ### Build the Qt style
 
@@ -67,4 +68,7 @@ To remove the local packages, restore your previous selections first. Then run `
 
 ## Current state
 
-The official baseline in `upstream/` is copied and has not been modified. The Global Theme, MT Nightshift color scheme, Aurorae decoration and Qt Application Style are active; the `QStyleFactory` smoke test reports `MTNightshift` and the active palette base is `#0A0B0D`. Aurorae's corner slices are fixed, but the running KWin process cached the missing menu path, so a full Plasma logout/login is still required to verify the menu glyph. See [`PLAN.md`](PLAN.md).
+The official baseline in `upstream/` is copied and has not been modified. The Global Theme, MT Nightshift color scheme, Aurorae decoration and Qt Application Style are active; the `QStyleFactory` smoke test reports `MTNightshift` and the active palette base is `#0A0B0D`. The style plugin 1.4.0 and the Plasma Style 1.4.0 are installed, and `make verify-live` confirms the session matches the repository. `make check` verifies the decoration artwork, the rendered field family under both schemes, the package metadata and both palettes (contrast floors and copy identity); `validation.md` records what each check measures and what it cannot see. The Aurorae menu glyph and the 15px window corners were confirmed live on 2026-11-15. Plasma popups — notification
+history, tray, Kickoff, widget explorer — now render from a generated `widgets/background` at the theme's 14px corner
+radius (Breeze's 4px asset read as square), and the dialog frame is generated from Breeze's solid slices with the
+tooltip's 6px corners. One live check remains: click Dolphin's path field to confirm the editable focus ring. See [`PLAN.md`](PLAN.md).
