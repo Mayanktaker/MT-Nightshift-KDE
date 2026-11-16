@@ -1,0 +1,165 @@
+# © Mayanktaker Computers & Web Development | https://mayanktaker.com
+# MT Dayshift global colour scheme — the light counterpart of MT Nightshift,
+# derived from Breeze (KDE Breeze, plasma-breeze-common 6.8.2).
+# Cool carbon-whites mirror the Nightshift OLED tones; the restrained Breeze-blue
+# accents are shared with the dark scheme. Semantic colours are the dark set
+# re-tuned darker for light surfaces: every Foreground* role clears 4.66:1 on
+# both backgrounds of its group (checked by tools/theme-audit/check-theme.py).
+# Values are documented in design.md; keep this file and themes/mt-dayshift/colors in sync.
+# SPDX-FileCopyrightText: Andrew Lake <jamboarder@gmail.com>
+# SPDX-FileCopyrightText: Marco Martin <notmart@gmail.com>
+# SPDX-FileCopyrightText: Nate Graham <nate@kde.org>
+# SPDX-FileCopyrightText: Noah Davis <noahadvs@gmail.com>
+# SPDX-FileCopyrightText: Neal Gompa <ngompa@kde.org>
+# SPDX-FileCopyrightText: David Redondo <kde@david-redondo.de>
+# SPDX-FileCopyrightText: Thomas Duckworth <tduck973564@gmail.com>
+# SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development <https://mayanktaker.com>
+# SPDX-License-Identifier: LGPL-2.0-or-later
+
+[ColorEffects:Disabled]
+Color=56,56,56
+ColorAmount=0
+ColorEffect=0
+ContrastAmount=0.65
+ContrastEffect=1
+IntensityAmount=0.1
+IntensityEffect=2
+
+[ColorEffects:Inactive]
+ChangeSelectionColor=true
+Color=112,111,110
+ColorAmount=0.025
+ColorEffect=2
+ContrastAmount=0.1
+ContrastEffect=2
+Enable=false
+IntensityAmount=0
+IntensityEffect=0
+
+[Colors:Button]
+BackgroundAlternate=236,238,242
+BackgroundNormal=244,246,249
+DecorationFocus=42,127,168
+DecorationHover=46,141,190
+ForegroundActive=37,109,159
+ForegroundInactive=96,104,115
+ForegroundLink=31,106,174
+ForegroundNegative=171,72,77
+ForegroundNeutral=142,93,16
+ForegroundNormal=27,30,34
+ForegroundPositive=27,119,64
+ForegroundVisited=115,88,173
+
+[Colors:Complementary]
+BackgroundAlternate=232,235,240
+BackgroundNormal=236,238,242
+DecorationFocus=42,127,168
+DecorationHover=46,141,190
+ForegroundActive=37,109,159
+ForegroundInactive=96,104,115
+ForegroundLink=31,106,174
+ForegroundNegative=171,72,77
+ForegroundNeutral=142,93,16
+ForegroundNormal=27,30,34
+ForegroundPositive=27,119,64
+ForegroundVisited=115,88,173
+
+[Colors:Header]
+BackgroundAlternate=232,235,240
+BackgroundNormal=243,245,248
+DecorationFocus=42,127,168
+DecorationHover=46,141,190
+ForegroundActive=37,109,159
+ForegroundInactive=96,104,115
+ForegroundLink=31,106,174
+ForegroundNegative=171,72,77
+ForegroundNeutral=142,93,16
+ForegroundNormal=27,30,34
+ForegroundPositive=27,119,64
+ForegroundVisited=115,88,173
+
+[Colors:Header][Inactive]
+BackgroundAlternate=236,238,242
+BackgroundNormal=239,241,245
+DecorationFocus=42,127,168
+DecorationHover=46,141,190
+ForegroundActive=31,94,137
+ForegroundInactive=97,104,115
+ForegroundLink=31,106,174
+ForegroundNegative=171,72,77
+ForegroundNeutral=142,93,16
+ForegroundNormal=92,99,108
+ForegroundPositive=27,119,64
+ForegroundVisited=115,88,173
+
+[Colors:Selection]
+BackgroundAlternate=23,78,112
+BackgroundNormal=31,110,156
+DecorationFocus=214,238,251
+DecorationHover=168,220,247
+ForegroundActive=255,255,255
+ForegroundInactive=230,237,242
+ForegroundLink=220,238,255
+ForegroundNegative=255,230,232
+ForegroundNeutral=255,233,197
+ForegroundNormal=255,255,255
+ForegroundPositive=201,245,218
+ForegroundVisited=242,233,250
+
+[Colors:Tooltip]
+BackgroundAlternate=240,242,245
+BackgroundNormal=247,248,250
+DecorationFocus=42,127,168
+DecorationHover=46,141,190
+ForegroundActive=37,109,159
+ForegroundInactive=96,104,115
+ForegroundLink=31,106,174
+ForegroundNegative=171,72,77
+ForegroundNeutral=142,93,16
+ForegroundNormal=27,30,34
+ForegroundPositive=27,119,64
+ForegroundVisited=115,88,173
+
+[Colors:View]
+BackgroundAlternate=250,251,253
+BackgroundNormal=250,251,253
+DecorationFocus=42,127,168
+DecorationHover=46,141,190
+ForegroundActive=37,109,159
+ForegroundInactive=96,104,115
+ForegroundLink=31,106,174
+ForegroundNegative=171,72,77
+ForegroundNeutral=142,93,16
+ForegroundNormal=27,30,34
+ForegroundPositive=27,119,64
+ForegroundVisited=115,88,173
+
+[Colors:Window]
+BackgroundAlternate=232,235,240
+BackgroundNormal=239,241,245
+DecorationFocus=42,127,168
+DecorationHover=46,141,190
+ForegroundActive=37,109,159
+ForegroundInactive=96,104,115
+ForegroundLink=31,106,174
+ForegroundNegative=171,72,77
+ForegroundNeutral=142,93,16
+ForegroundNormal=27,30,34
+ForegroundPositive=27,119,64
+ForegroundVisited=115,88,173
+
+[General]
+ColorScheme=MT-Dayshift
+Name=MT Dayshift
+shadeSortColumn=true
+
+[KDE]
+contrast=4
+
+[WM]
+activeBackground=243,245,248
+activeBlend=27,30,34
+activeForeground=27,30,34
+inactiveBackground=239,241,245
+inactiveBlend=96,104,115
+inactiveForeground=96,104,115
