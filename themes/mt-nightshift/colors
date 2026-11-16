@@ -1,6 +1,6 @@
 # © Mayanktaker Computers & Web Development | https://mayanktaker.com
-# Palette used by Plasma to tint this theme's SVG assets.
-# Mirrors ../../color-schemes/MT-Nightshift.colors (see design.md, section 8). Keep both in sync.
+# MT Nightshift global colour scheme — derived from Breeze Dark (KDE Breeze, plasma-breeze-common 6.8.2).
+# Values are documented in design.md; keep this file and themes/mt-nightshift/colors in sync.
 # SPDX-FileCopyrightText: Andrew Lake <jamboarder@gmail.com>
 # SPDX-FileCopyrightText: Marco Martin <notmart@gmail.com>
 # SPDX-FileCopyrightText: Nate Graham <nate@kde.org>
@@ -39,7 +39,7 @@ DecorationHover=42,127,168
 ForegroundActive=79,180,230
 ForegroundInactive=141,151,164
 ForegroundLink=74,165,234
-ForegroundNegative=234,113,124
+ForegroundNegative=208,128,132
 ForegroundNeutral=240,163,43
 ForegroundNormal=232,235,240
 ForegroundPositive=75,201,122
@@ -53,7 +53,7 @@ DecorationHover=42,127,168
 ForegroundActive=79,180,230
 ForegroundInactive=141,151,164
 ForegroundLink=74,165,234
-ForegroundNegative=234,113,124
+ForegroundNegative=208,128,132
 ForegroundNeutral=240,163,43
 ForegroundNormal=232,235,240
 ForegroundPositive=75,201,122
@@ -67,7 +67,7 @@ DecorationHover=42,127,168
 ForegroundActive=79,180,230
 ForegroundInactive=141,151,164
 ForegroundLink=74,165,234
-ForegroundNegative=234,113,124
+ForegroundNegative=208,128,132
 ForegroundNeutral=240,163,43
 ForegroundNormal=232,235,240
 ForegroundPositive=75,201,122
@@ -81,7 +81,7 @@ DecorationHover=42,127,168
 ForegroundActive=143,211,245
 ForegroundInactive=124,133,147
 ForegroundLink=74,165,234
-ForegroundNegative=234,113,124
+ForegroundNegative=208,128,132
 ForegroundNeutral=240,163,43
 ForegroundNormal=200,206,214
 ForegroundPositive=75,201,122
@@ -109,21 +109,21 @@ DecorationHover=42,127,168
 ForegroundActive=79,180,230
 ForegroundInactive=141,151,164
 ForegroundLink=74,165,234
-ForegroundNegative=234,113,124
+ForegroundNegative=208,128,132
 ForegroundNeutral=240,163,43
 ForegroundNormal=232,235,240
 ForegroundPositive=75,201,122
 ForegroundVisited=187,134,220
 
 [Colors:View]
-BackgroundAlternate=15,17,20
+BackgroundAlternate=10,11,13
 BackgroundNormal=10,11,13
 DecorationFocus=52,150,201
 DecorationHover=42,127,168
 ForegroundActive=79,180,230
 ForegroundInactive=141,151,164
 ForegroundLink=74,165,234
-ForegroundNegative=234,113,124
+ForegroundNegative=208,128,132
 ForegroundNeutral=240,163,43
 ForegroundNormal=232,235,240
 ForegroundPositive=75,201,122
@@ -137,7 +137,7 @@ DecorationHover=42,127,168
 ForegroundActive=79,180,230
 ForegroundInactive=141,151,164
 ForegroundLink=74,165,234
-ForegroundNegative=234,113,124
+ForegroundNegative=208,128,132
 ForegroundNeutral=240,163,43
 ForegroundNormal=232,235,240
 ForegroundPositive=75,201,122
@@ -146,6 +146,15 @@ ForegroundVisited=187,134,220
 [General]
 ColorScheme=MT-Nightshift
 Name=MT Nightshift
+shadeSortColumn=true
 
 [KDE]
 contrast=4
+
+[WM]
+activeBackground=23,26,31
+activeBlend=232,235,240
+activeForeground=232,235,240
+inactiveBackground=16,18,22
+inactiveBlend=141,151,164
+inactiveForeground=141,151,164

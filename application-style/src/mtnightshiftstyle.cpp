@@ -48,9 +48,15 @@ constexpr qreal kFocusContrast = 5.0;
 constexpr qreal kDisabledMute = 0.65;
 // Frame-line strength: design.md section 6/8 frameContrast token.
 constexpr qreal kFrameContrast = 0.2;
+// How far a disabled field steps off the page tone. Mixed from the *enabled*
+// Window/WindowText pair so the step points away from the surface on both
+// variants: a lift on Nightshift, a recess on Dayshift. Blending the two muted
+// disabled tones instead collapsed on light (Window and Button differ by only
+// 5/255 there), leaving the field indistinguishable from the page.
+constexpr qreal kDisabledLift = 0.075;
 // Hairline contrast for disabled fields: dimmer than the resting outline so a
 // greyed-out group stays quiet, but present enough to keep the shapes legible.
-constexpr qreal kDisabledOutlineContrast = 0.10;
+constexpr qreal kDisabledOutlineContrast = 0.25;
 // State outline thickness in logical pixels; the focus ring stays 1px and reads
 // crisp, with its visibility carried by the contrast token instead of weight.
 constexpr qreal kOutlineWidth = 1.0;
@@ -319,13 +325,13 @@ void paintFieldSurface(QPainter *painter, const QRectF &rect, const QColor &fill
         return;
     }
     if (group == QPalette::Disabled) {
-        // A disabled field keeps its shape: one lifted tone for the whole family
+        // A disabled field keeps its shape: one tone step for the whole family
         // (Base-tone and Button-tone disabled fields otherwise vanish or go
-        // near-black on settings pages) plus a dimmed hairline.
-        QColor lifted = blend(palette.color(QPalette::Disabled, QPalette::Window),
-                              palette.color(QPalette::Disabled, QPalette::Button), 0.55);
-        lifted = blend(lifted, palette.color(QPalette::Disabled, QPalette::WindowText),
-                       kDisabledOutlineContrast * 0.5);
+        // near-black on settings pages) plus a dimmed hairline. The step comes
+        // from the enabled tones so it keeps its direction on a light scheme.
+        const QColor lifted = blend(palette.color(QPalette::Active, QPalette::Window),
+                                    palette.color(QPalette::Active, QPalette::WindowText),
+                                    kDisabledLift);
         const QColor outline = blend(lifted, palette.color(QPalette::Disabled, QPalette::WindowText),
                                      kDisabledOutlineContrast);
         paintSurface(painter, rect, radius, kOutlineWidth, lifted, outline);
