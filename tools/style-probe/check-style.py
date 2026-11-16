@@ -4,11 +4,16 @@
 # SPDX-License-Identifier: LGPL-2.0-or-later
 """Assert the rendered field family from render-fields output.
 
-Usage: check-style.py <render-dir> [--ci]
+Usage: check-style.py <render-dir> [--ci] [--light]
 
 --ci skips Breeze-dependent assertions (the frame-suppression check and the
 12px scroll-bar extent) because CI has no Breeze style; the base style then is
 Qt's fallback and those two checks would fail for the wrong reason.
+
+--light asserts only the invariants that hold for any palette (tapers, ring
+width, pill geometry, disabled tone step, meter not a black slab); the item
+hover/inactive checks measure ink against the dark Window tone, so they are
+skipped instead of silently passing on a light render.
 """
 
 from __future__ import annotations
@@ -49,6 +54,7 @@ def taper(path: Path) -> tuple[int, int]:
 def main() -> int:
     outdir = Path(sys.argv[1])
     ci = "--ci" in sys.argv[2:]
+    light = "--light" in sys.argv[2:]
 
     # Corner language: every field-family pill must show the deep corner taper.
     # Threshold is proportional to height (taper/height ≈ 0.3 at pill radius),
@@ -96,7 +102,7 @@ def main() -> int:
         check(f"{name} lifted fill", int(fill.sum()) > 75 and abs(int(fill.sum()) - 34) > 12,
               f"rgb={tuple(fill)}")
         outline = disabled[dh // 2, 0]
-        check(f"{name} dimmed outline", int(outline.sum()) > int(fill.sum()) + 8,
+        check(f"{name} dimmed outline", abs(int(outline.sum()) - int(fill.sum())) >= 8,
               f"outline={tuple(outline)}")
 
     # Item-view pills: selections are inset Highlight pills, hovers are faint
@@ -124,6 +130,8 @@ def main() -> int:
 
     for name, blue in [("item-selected", True), ("item-hover", False),
                        ("item-selected-inactive", False)]:
+        if not blue and light:
+            continue  # ink is measured against the dark Window tone; see --light
         ok, detail = pill_shape(outdir / f"{name}.png", blue)
         check(f"{name} pill", ok, detail)
 

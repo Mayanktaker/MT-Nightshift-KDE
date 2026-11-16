@@ -3,17 +3,25 @@
 # SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development
 # SPDX-License-Identifier: LGPL-2.0-or-later
 #
-# Pre-commit gate for the Aurorae decoration. Installed with:
+# Pre-commit gate for the palette, the package metadata and the Aurorae
+# decoration. Installed with:
 #   git config core.hooksPath tools/git-hooks
 #
-# Only runs when decoration artwork or its tooling is staged, so ordinary commits
-# stay instant. Two checks: the SVG still matches its generator parameters, and
-# the raster invariants hold (ramped edges, shadow in the corner cutouts, no
-# double-composited ring, no divider row).
+# The palette/metadata audit runs on every commit: it is stdlib-only and takes
+# ~0.1s, and the drift it catches (a colours-only commit that updated the scheme
+# but not its two mirrors, a semantic colour dimmed below the floor) is invisible
+# in a review. The decoration raster checks only run when the artwork or its
+# tooling is staged, because they compile a probe.
 set -euo pipefail
 
 root="$(git rev-parse --show-toplevel)"
 cd "$root"
+
+if ! audit_output=$(./tools/theme-audit/check-theme.py 2>&1); then
+    printf '%s\n' "$audit_output"
+    echo "pre-commit: palette/metadata audit failed; see validation.md" >&2
+    exit 1
+fi
 
 staged=$(git diff --cached --name-only --diff-filter=ACM -- \
     'themes/aurorae/**' 'tools/decoration-probe/**' || true)

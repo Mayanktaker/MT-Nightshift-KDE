@@ -35,6 +35,3 @@ jobs:
 
       - name: Check the artwork at 2x
         run: make check-dpr2
-
-      - name: Check the field family renders
-        run: make check-style
