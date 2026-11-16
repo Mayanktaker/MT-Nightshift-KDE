@@ -8,19 +8,44 @@
 # borders KWin caches until it restarts).
 
 SHELL := /bin/bash
+
+# Named variants: one row per look. `make apply VARIANT=nord-day` selects it,
+# `make apply-dayshift` and friends are aliases over the same variable.
+VARIANT ?= nightshift
+VARIANTS := nightshift dayshift nord-night nord-day
+nightshift_STYLE := mt-nightshift
+nightshift_SCHEME := MT-Nightshift
+nightshift_DECORATION := __aurorae__svg__MTNightshift
+dayshift_STYLE := mt-dayshift
+dayshift_SCHEME := MT-Dayshift
+dayshift_DECORATION := __aurorae__svg__MTDayshift
+nord-night_STYLE := mt-nord-night
+nord-night_SCHEME := MT-Nord-Night
+nord-night_DECORATION := __aurorae__svg__MTNordNight
+nord-day_STYLE := mt-nord-day
+nord-day_SCHEME := MT-Nord-Day
+nord-day_DECORATION := __aurorae__svg__MTNordDay
+
+ifeq ($(filter $(VARIANT),$(VARIANTS)),)
+  $(error unknown VARIANT '$(VARIANT)'; use one of: $(VARIANTS))
+endif
+
+LIVE_STYLE := $($(VARIANT)_STYLE)
+LIVE_SCHEME := $($(VARIANT)_SCHEME)
+LIVE_DECORATION := $($(VARIANT)_DECORATION)
+# The LAF package id is derived, so a style rename cannot leave it behind.
+LIVE_LAF := com.mayanktaker.$(LIVE_STYLE).desktop
+
 DECORATION := themes/aurorae/MTNightshift/decoration.svg
-AURORAE_DIR := $(HOME)/.local/share/aurorae/themes/MTNightshift
-DAYSHIFT_AURORAE_DIR := $(HOME)/.local/share/aurorae/themes/MTDayshift
-DAYSHIFT_LOOKANDFEEL := com.mayanktaker.mt-dayshift.desktop
+AURORAE_DIR := $(HOME)/.local/share/aurorae/themes
 DESKTHEME_DIR := $(HOME)/.local/share/plasma/desktoptheme
 LF_DIR := $(HOME)/.local/share/plasma/look-and-feel
-LOOKANDFEEL := com.mayanktaker.mt-nightshift.desktop
 PROBE_CACHE := $(or $(XDG_CACHE_HOME),$(HOME)/.cache)/mt-nightshift-probe
 MOC := $(shell pkg-config --variable=libexecdir Qt6Core)/moc
 QT_CFLAGS := $(shell pkg-config --cflags Qt6Widgets)
 QT_LIBS := $(shell pkg-config --libs Qt6Widgets)
 
-.PHONY: all decoration check check-style check-dpr2 style style-preview apply apply-dayshift apply-install style-install verify-live clean
+.PHONY: all decoration check check-style check-dpr2 style style-preview apply apply-dayshift apply-nord-night apply-nord-day apply-install style-install verify-live clean
 
 all: check
 
@@ -33,9 +58,12 @@ decoration:
 # broke, or the rendered field family regressed.
 check:
 	python3 tools/decoration-probe/build-decoration.py --check
+	python3 tools/decoration-probe/check-buttons.py
 	./tools/decoration-probe/check-decoration.py
 	./tools/decoration-probe/check-decoration.py themes/aurorae/MTDayshift/decoration.svg
-	@for f in themes/aurorae/MTNightshift/*.svg themes/aurorae/MTDayshift/*.svg; do xmllint --noout "$$f" || exit 1; done
+	./tools/decoration-probe/check-decoration.py themes/aurorae/MTNordNight/decoration.svg
+	./tools/decoration-probe/check-decoration.py themes/aurorae/MTNordDay/decoration.svg
+	@for f in themes/aurorae/*/*.svg; do xmllint --noout "$$f" || exit 1; done
 	./tools/theme-audit/check-theme.py
 	./tools/plasma-theme/dialog-frame.py --check
 	./tools/plasma-theme/applet-background.py --check
@@ -53,10 +81,6 @@ check:
 SCHEME_DIR := $(HOME)/.local/share/color-schemes
 STYLE_CHECK_ARGS := $(if $(GITHUB_ACTIONS),--ci,)
 STYLE_SCHEMES := MT-Nightshift MT-Dayshift MT-Nord-Night MT-Nord-Day
-# verify-live checks whichever variant is selected; DAYSHIFT=1 switches it.
-LIVE_STYLE := $(if $(DAYSHIFT),mt-dayshift,mt-nightshift)
-LIVE_SCHEME := $(if $(DAYSHIFT),MT-Dayshift,MT-Nightshift)
-LIVE_DECORATION := $(if $(DAYSHIFT),__aurorae__svg__MTDayshift,__aurorae__svg__MTNightshift)
 
 check-style: style
 	@mkdir -p build/style-probe
@@ -106,22 +130,24 @@ style-install: style
 	sudo install -m 644 application-style/kstyle/themes/mtnightshift.themerc /usr/share/kstyle/themes/
 	@echo "installed; start a new app to see the change"
 
-# Install into user-local KDE paths and select the theme in the running session.
-# Install both variants user-locally; the dark one stays selected.
+# Install into user-local KDE paths and select VARIANT's theme in the running
+# session. All four variants stay installed; only the selection moves.
 apply: check apply-install
-	plasma-apply-lookandfeel -a $(LOOKANDFEEL)
+	plasma-apply-lookandfeel -a $(LIVE_LAF)
 	kwriteconfig6 --file kdeglobals --group KDE --key frameContrast 0.05
 	gdbus call --session --dest org.kde.KWin --object-path /KWin --method org.kde.KWin.reconfigure
-	$(MAKE) verify-live
-	@echo "applied; restart the session to pick up any Padding* change"
+	$(MAKE) verify-live VARIANT=$(VARIANT)
+	@echo "$(VARIANT) applied; restart the session to pick up any Padding* change"
 
-# Select the light variant in the running session (both stay installed).
-apply-dayshift: check apply-install
-	plasma-apply-lookandfeel -a $(DAYSHIFT_LOOKANDFEEL)
-	kwriteconfig6 --file kdeglobals --group KDE --key frameContrast 0.05
-	gdbus call --session --dest org.kde.KWin --object-path /KWin --method org.kde.KWin.reconfigure
-	$(MAKE) verify-live DAYSHIFT=1
-	@echo "dayshift applied; switch back with: make apply"
+# Thin aliases: the lookup table above is the only place a mapping is spelled out.
+apply-dayshift:
+	@$(MAKE) apply VARIANT=dayshift
+
+apply-nord-night:
+	@$(MAKE) apply VARIANT=nord-night
+
+apply-nord-day:
+	@$(MAKE) apply VARIANT=nord-day
 
 # Values Plasma and KWin keep in user config rather than in the packages, plus the
 # deployed copies. `make check` cannot see any of this: plasma-apply-lookandfeel
@@ -144,23 +170,27 @@ verify-live:
 	fi; \
 	[ $$bad -eq 0 ] && echo "live session matches the theme"
 
-# Install every theme package user-locally without changing the selection.
+# Install every variant package user-locally without changing the selection.
 apply-install:
-	install -d $(AURORAE_DIR) $(DAYSHIFT_AURORAE_DIR)
-	install -m 644 themes/aurorae/MTNightshift/* $(AURORAE_DIR)/
-	install -m 644 themes/aurorae/MTDayshift/* $(DAYSHIFT_AURORAE_DIR)/
-	install -m 644 color-schemes/MT-Nightshift.colors color-schemes/MT-Dayshift.colors $(SCHEME_DIR)/
-	# Copied whole, like Dayshift: an explicit file list silently missed new slots
+	install -d $(AURORAE_DIR)/MTNightshift $(AURORAE_DIR)/MTDayshift \
+		$(AURORAE_DIR)/MTNordNight $(AURORAE_DIR)/MTNordDay
+	install -m 644 themes/aurorae/MTNightshift/* $(AURORAE_DIR)/MTNightshift/
+	install -m 644 themes/aurorae/MTDayshift/* $(AURORAE_DIR)/MTDayshift/
+	install -m 644 themes/aurorae/MTNordNight/* $(AURORAE_DIR)/MTNordNight/
+	install -m 644 themes/aurorae/MTNordDay/* $(AURORAE_DIR)/MTNordDay/
+	install -m 644 color-schemes/MT-Nightshift.colors color-schemes/MT-Dayshift.colors \
+		color-schemes/MT-Nord-Night.colors color-schemes/MT-Nord-Day.colors $(SCHEME_DIR)/
+	# Copied whole, never a file list: an explicit list silently missed new slots
 	# twice (the palette, then widgets/background).
-	install -d $(DESKTHEME_DIR)/mt-nightshift
-	cp -r themes/mt-nightshift/. $(DESKTHEME_DIR)/mt-nightshift/
-	install -d $(DESKTHEME_DIR)/mt-dayshift/dialogs $(DESKTHEME_DIR)/mt-dayshift/solid/dialogs \
-		$(DESKTHEME_DIR)/mt-dayshift/translucent/dialogs $(DESKTHEME_DIR)/mt-dayshift/widgets
-	cp -r themes/mt-dayshift/. $(DESKTHEME_DIR)/mt-dayshift/
-	kpackagetool6 --type Plasma/LookAndFeel -i themes/mt-nightshift-global || \
-		kpackagetool6 --type Plasma/LookAndFeel -u themes/mt-nightshift-global
-	kpackagetool6 --type Plasma/LookAndFeel -i themes/mt-dayshift-global || \
-		kpackagetool6 --type Plasma/LookAndFeel -u themes/mt-dayshift-global
+	@set -e; for style in mt-nightshift mt-dayshift mt-nord-night mt-nord-day; do \
+		install -d $(DESKTHEME_DIR)/$$style; \
+		cp -r themes/$$style/. $(DESKTHEME_DIR)/$$style/; \
+	done
+	@set -e; for package in mt-nightshift-global mt-dayshift-global \
+			mt-nord-night-global mt-nord-day-global; do \
+		kpackagetool6 --type Plasma/LookAndFeel -i themes/$$package || \
+			kpackagetool6 --type Plasma/LookAndFeel -u themes/$$package; \
+	done
 
 # Drop the cached probe binary so the next check rebuilds from scratch.
 clean:
