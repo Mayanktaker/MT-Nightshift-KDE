@@ -17,6 +17,7 @@ Qt's fallback and those two checks would fail for the wrong reason.
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -57,7 +58,10 @@ SCHEMES = {
 }
 
 FAILURES: list[str] = []
-svg2png_bin = Path.home() / ".cache/mt-nightshift-probe/svg2png"
+# Same cache as check-decoration.py and $(PROBE_CACHE) in the Makefile, so an
+# XDG_CACHE_HOME build of svg2png is found instead of silently skipping corners.
+PROBE_CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "mt-nightshift-probe"
+svg2png_bin = PROBE_CACHE / "svg2png"
 
 
 def check(name: str, ok: bool, detail: str = "") -> None:

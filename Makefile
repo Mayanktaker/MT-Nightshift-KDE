@@ -36,7 +36,6 @@ LIVE_DECORATION := $($(VARIANT)_DECORATION)
 # The LAF package id is derived, so a style rename cannot leave it behind.
 LIVE_LAF := com.mayanktaker.$(LIVE_STYLE).desktop
 
-DECORATION := themes/aurorae/MTNightshift/decoration.svg
 AURORAE_DIR := $(HOME)/.local/share/aurorae/themes
 DESKTHEME_DIR := $(HOME)/.local/share/plasma/desktoptheme
 LF_DIR := $(HOME)/.local/share/plasma/look-and-feel
@@ -49,10 +48,10 @@ QT_LIBS := $(shell pkg-config --libs Qt6Widgets)
 
 all: check
 
-# Regenerate decoration.svg from PARAMS (the SVG is a build artefact).
+# Regenerate all four registered variants from PARAMS (the SVGs are build artefacts).
 decoration:
-	python3 tools/decoration-probe/build-decoration.py
-	xmllint --noout $(DECORATION)
+	python3 tools/decoration-probe/build-decoration.py --all
+	@for f in themes/aurorae/*/decoration.svg; do xmllint --noout "$$f" || exit 1; done
 
 # Fail if the committed SVG drifted from its generator, the raster invariants
 # broke, or the rendered field family regressed.

@@ -15,8 +15,9 @@ identical paths, rects and stroke widths for each button, so a colour fix can
 never quietly move a glyph. The decoration titles are checked here too, since
 inherited "MT Nightshift" titles are the same copy defect.
 
-Palettes come from build-decoration.py itself, so the check cannot drift from
-the generator.
+Palettes come from build-decoration.py itself, but they are also cross-checked
+against the shipped .colors roles, so a scheme retune cannot silently leave the
+artwork on the old tones.
 
 Usage: check-buttons.py
 Exit status is 1 when a check fails.
@@ -24,16 +25,39 @@ Exit status is 1 when a check fails.
 
 from __future__ import annotations
 
+import configparser
 import importlib.util
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent.parent
 BUTTONS = ("close", "minimize", "maximize", "restore", "menu")
 GEOMETRY_ATTRS = ("d", "x", "y", "width", "height", "rx", "stroke-width",
                   "stroke-linecap", "stroke-linejoin")
 SHAPE_TAGS = {"path", "rect"}
+
+# Explicit so a renamed or newly generated variant cannot drop out of the audit.
+SCHEMES = {
+    "nightshift": "color-schemes/MT-Nightshift.colors",
+    "dayshift": "color-schemes/MT-Dayshift.colors",
+    "nord-night": "color-schemes/MT-Nord-Night.colors",
+    "nord-day": "color-schemes/MT-Nord-Day.colors",
+}
+# Generator token to (scheme section, role). foreground_inactive is the active
+# Header group's ForegroundInactive, the glyph tone baked in design.md §12.2;
+# [Colors:Header][Inactive] ForegroundNormal is the dimmed *title* (§9).
+# frame_line is a documented derivation, not a scheme role, so it is not mapped.
+SCHEME_ROLES = {
+    "header_active": ("Colors:Header", "BackgroundNormal"),
+    "header_inactive": ("Colors:Header][Inactive", "BackgroundNormal"),
+    "foreground": ("Colors:Header", "ForegroundNormal"),
+    "foreground_inactive": ("Colors:Header", "ForegroundInactive"),
+    "negative": ("Colors:Header", "ForegroundNegative"),
+    "selection": ("Colors:Selection", "BackgroundNormal"),
+    "selection_text": ("Colors:Selection", "ForegroundNormal"),
+}
 
 failures: list[str] = []
 
@@ -52,6 +76,38 @@ def load_generator():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def load_scheme(path: Path) -> configparser.ConfigParser:
+    """Parse a KDE .colors file; `[Group][Sub]` stays one literal section name."""
+    parser = configparser.ConfigParser(strict=False, interpolation=None)
+    parser.optionxform = str
+    parser.read(path, encoding="utf-8")
+    return parser
+
+
+def scheme_hex(value: str) -> str:
+    """Convert a KDE `r,g,b` triple to the #RRGGBB form the generator uses."""
+    return "#%02X%02X%02X" % tuple(int(part) for part in value.split(","))
+
+
+def check_scheme_palette(name: str, palette: dict[str, str]) -> None:
+    """Assert every baked token still equals its role in the shipped scheme."""
+    relative = SCHEMES.get(name)
+    if not check(relative is not None, "variant %r has a registered scheme" % name):
+        return
+    path = ROOT / relative
+    if not check(path.exists(), "%s exists" % path):
+        return
+    scheme = load_scheme(path)
+    for token, (section, role) in SCHEME_ROLES.items():
+        if not check(section in scheme and role in scheme[section],
+                     "%s defines [%s] %s" % (path, section, role)):
+            continue
+        wanted = scheme_hex(scheme[section][role])
+        check(palette[token].upper() == wanted,
+              "%s %s = [%s] %s (%s; generator has %s)"
+              % (path, token, section, role, wanted, palette[token]))
 
 
 def luminance(colour: str) -> float:
@@ -248,6 +304,7 @@ def main() -> int:
     for name in names:
         spec = generator.VARIANTS[name]
         palette, title = spec["palette"], spec["title"]
+        check_scheme_palette(name, palette)
         others = [generator.VARIANTS[other]["title"] for other in names
                   if generator.VARIANTS[other]["title"] != title]
         directory = spec["out"].parent
@@ -265,7 +322,7 @@ def main() -> int:
                       "%s shares %s's geometry (only colours may vary)"
                       % (directory / (button + ".svg"), button))
         check_decoration(spec["out"], palette, title, others)
-        print("  checked %s: 5 buttons, 8 states, decoration title" % title)
+        print("  checked %s: 5 buttons, 8 states, decoration title, scheme palette" % title)
 
     if failures:
         print("\n".join("  FAIL " + message for message in failures))

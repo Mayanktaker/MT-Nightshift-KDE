@@ -117,10 +117,16 @@ import. `tools/decoration-probe/check-buttons.py` independently parses all 20
 button files, asserts each of their eight state groups paints exactly the
 variant's tones (and no stray colour), and measures real contrast: active and
 pressed text ≥ 4.5:1, inactive glyph and the hover-inactive ring ≥ 3:1 against
-the variant's own header. It also fingerprints every path, rect and stroke
-width against Nightshift to prove the four variants share one geometry. The
-hover-inactive ring is `ForegroundInactive`, not the whisper `frame_line`: the
-old ring measured 1.02–1.46:1 on the surfaces it sits on, while the shipped
+the variant's own header. It fingerprints every path, rect and stroke width
+against Nightshift to prove the four variants share one geometry, and it
+cross-checks each generator token against the shipped `.colors` role (Header,
+Header[Inactive] and Selection), so a scheme retune cannot leave the artwork on
+the old tones. `frame_line` is exempt because it is a documented derivation, not
+a scheme role, and the baked inactive glyph is the active Header group's
+`ForegroundInactive` — `[Colors:Header][Inactive] ForegroundNormal` is the dimmed
+window title, a different role. The hover-inactive ring is `ForegroundInactive`,
+not the whisper `frame_line`: the old ring measured 1.02–1.46:1 on the surfaces
+it sits on, while the shipped
 tone measures 6.33 (Nightshift), 4.99 (Dayshift), 9.25 (Nord Night) and 5.46
 (Nord Day). Both `check-buttons.py` and all four `check-decoration.py` runs are
 wired into `make check`.
