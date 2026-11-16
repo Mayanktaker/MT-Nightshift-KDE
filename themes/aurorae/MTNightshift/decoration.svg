@@ -9,8 +9,9 @@
   Regenerate with: tools/decoration-probe/build-decoration.py
   Verify with:     tools/decoration-probe/check-decoration.py
 
-  Sculpted carbon frame: 15px corners, 1px frame edge at
-  blend(Header, foreground, 0.06), opaque Header/Window fills, and a
+  Sculpted carbon frame: 15px corners, 1px frame edge at the variant's
+  explicit #222529 (chosen at blend(Header, foreground,
+  0.06) or one step stronger), opaque Header/Window fills, and a
   0.26 peak cast shadow filling the 32px ring.
   Slice sizes: left/right 47px, top 71px, bottom 47px, centre 64x64.
   The 15px radius lives in the corner tiles; corner ids must be FrameSvg's names

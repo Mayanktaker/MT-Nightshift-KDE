@@ -34,8 +34,6 @@ HERE = Path(__file__).resolve().parent
 DEFAULT_SVG = HERE.parent.parent / "themes" / "aurorae" / "MTNightshift" / "decoration.svg"
 PROBE_CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "mt-nightshift-probe"
 RADIUS = 21                      # replaced in main() from the slice geometry
-HEADER_FILL = np.array([0x15, 0x18, 0x1C])
-INACTIVE_FILL = np.array([0x10, 0x12, 0x16])
 SIDES = ("topleft", "top", "topright", "left", "center", "right", "bottomleft", "bottom", "bottomright")
 
 failures: list[str] = []
@@ -64,6 +62,23 @@ def geometry(text: str) -> tuple[int, int, dict[str, tuple[int, int, int, int]]]
 def peak_alpha(text: str) -> float:
     """Largest stop-opacity in the shadow gradients."""
     return max(float(v) for v in re.findall(r'stop-opacity="([\d.]+)"', text))
+
+
+def surface_fills(text: str) -> tuple[np.ndarray, np.ndarray]:
+    """Read the active and inactive header fills straight from the artwork.
+
+    The decoration is generated per variant, so the expected header tone must
+    follow the file instead of being a baked Nightshift constant; otherwise a
+    light variant fails a check that is really about geometry and shadow.
+    """
+    def fill(prefix: str) -> np.ndarray:
+        block = re.search(r'^  <g id="%s-top".*?^  </g>' % prefix, text, re.S | re.M).group(0)
+        match = re.search(r'fill="#([0-9A-Fa-f]{6})"', block)
+        if match is None:
+            raise SystemExit("%s-top has no hex surface fill" % prefix)
+        return np.array([int(match.group(1)[i:i + 2], 16) for i in (0, 2, 4)])
+
+    return fill("decoration"), fill("decoration-inactive")
 
 
 def build_probe() -> Path:
@@ -211,6 +226,7 @@ def main() -> int:
     text = svg_path.read_text()
     width, height, layout = geometry(text)
     peak = peak_alpha(text)
+    header_fill, inactive_fill = surface_fills(text)
 
     global RADIUS
     # The corner radius is the arc radius in the corner fill path; the ring is the
@@ -234,9 +250,9 @@ def main() -> int:
         probe = build_probe()
         size = (width, height)
         audit(compose(text, probe, "decoration-", work, size, layout, scale),
-              "active", HEADER_FILL, ring, peak, scale)
+              "active", header_fill, ring, peak, scale)
         audit(compose(text, probe, "decoration-inactive-", work, size, layout, scale),
-              "inactive", INACTIVE_FILL, ring, peak, scale)
+              "inactive", inactive_fill, ring, peak, scale)
 
     print()
     if failures:

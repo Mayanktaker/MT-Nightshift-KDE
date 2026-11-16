@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  MT Nightshift Aurorae window decoration.
+  MT Nord Day Aurorae window decoration.
   © 2026 Mayanktaker Computers & Web Development | https://mayanktaker.com
   SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development
   SPDX-License-Identifier: LGPL-2.0-or-later
@@ -9,8 +9,9 @@
   Regenerate with: tools/decoration-probe/build-decoration.py
   Verify with:     tools/decoration-probe/check-decoration.py
 
-  Sculpted carbon frame: 15px corners, 1px frame edge at
-  blend(Header, foreground, 0.06), opaque Header/Window fills, and a
+  Sculpted carbon frame: 15px corners, 1px frame edge at the variant's
+  explicit #D8DCE4 (chosen at blend(Header, foreground,
+  0.06) or one step stronger), opaque Header/Window fills, and a
   0.26 peak cast shadow filling the 32px ring.
   Slice sizes: left/right 47px, top 71px, bottom 47px, centre 64x64.
   The 15px radius lives in the corner tiles; corner ids must be FrameSvg's names
@@ -21,7 +22,7 @@
   corner tangent points.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="158" height="182" viewBox="0 0 158 182" version="1.1">
-  <title>MT Nightshift window decoration</title>
+  <title>MT Nord Day window decoration</title>
   <desc>Active, inactive and maximized Aurorae decoration slices; 15px corners; 32px shadow padding.</desc>
 
   <defs>
@@ -141,59 +142,59 @@
     <rect x="0" y="0" width="47" height="71" fill="none" stroke="none"/>
     <rect x="0" y="0" width="47" height="47" fill="url(#shadow-topleft)"/>
     <rect x="0" y="47" width="32" height="24" fill="url(#shadow-left)"/>
-    <path d="M 32,47 A 15,15 0 0 1 47,32 L 47,71 L 32,71 Z" fill="#F3F5F8"/>
-    <path d="M 32,47 A 15,15 0 0 1 47,32 L 47,33 A 14,14 0 0 0 33,47 L 33,71 L 32,71 Z" fill="#222529"/>
-    <path d="M 32.58,45.48 A 14.50,14.50 0 0 1 45.48,32.58" fill="none" stroke="#222529" stroke-width="1.00"/>
+    <path d="M 32,47 A 15,15 0 0 1 47,32 L 47,71 L 32,71 Z" fill="#E5E9F0"/>
+    <path d="M 32,47 A 15,15 0 0 1 47,32 L 47,33 A 14,14 0 0 0 33,47 L 33,71 L 32,71 Z" fill="#D8DCE4"/>
+    <path d="M 32.58,45.48 A 14.50,14.50 0 0 1 45.48,32.58" fill="none" stroke="#D8DCE4" stroke-width="1.00"/>
   </g>
   <g id="decoration-top" transform="translate(47,0)">
     <rect x="0" y="0" width="64" height="71" fill="none" stroke="none"/>
     <rect x="0" y="0" width="64" height="32" fill="url(#shadow-top)"/>
-    <rect x="0" y="32" width="64" height="39" fill="#F3F5F8"/>
-    <rect x="0" y="32" width="64" height="1" fill="#222529"/>
+    <rect x="0" y="32" width="64" height="39" fill="#E5E9F0"/>
+    <rect x="0" y="32" width="64" height="1" fill="#D8DCE4"/>
   </g>
   <g id="decoration-topright" transform="translate(111,0)">
     <rect x="0" y="0" width="47" height="71" fill="none" stroke="none"/>
     <rect x="0" y="0" width="47" height="47" fill="url(#shadow-topright)"/>
     <rect x="15" y="47" width="32" height="24" fill="url(#shadow-right)"/>
-    <path d="M 0,32 L 0,71 L 15,71 L 15,47 A 15,15 0 0 0 0,32 Z" fill="#F3F5F8"/>
-    <path d="M 0,32 A 15,15 0 0 1 15,47 L 15,71 L 14,71 L 14,47 A 14,14 0 0 0 0,33 L 0,32 Z" fill="#222529"/>
-    <path d="M 1.52,32.58 A 14.50,14.50 0 0 1 14.42,45.48" fill="none" stroke="#222529" stroke-width="1.00"/>
+    <path d="M 0,32 L 0,71 L 15,71 L 15,47 A 15,15 0 0 0 0,32 Z" fill="#E5E9F0"/>
+    <path d="M 0,32 A 15,15 0 0 1 15,47 L 15,71 L 14,71 L 14,47 A 14,14 0 0 0 0,33 L 0,32 Z" fill="#D8DCE4"/>
+    <path d="M 1.52,32.58 A 14.50,14.50 0 0 1 14.42,45.48" fill="none" stroke="#D8DCE4" stroke-width="1.00"/>
   </g>
   <g id="decoration-left" transform="translate(0,71)">
     <rect x="0" y="0" width="47" height="64" fill="none" stroke="none"/>
     <rect x="0" y="0" width="32" height="64" fill="url(#shadow-left)"/>
-    <rect x="32" y="0" width="15" height="64" fill="#F3F5F8"/>
-    <rect x="32" y="0" width="1" height="64" fill="#222529"/>
+    <rect x="32" y="0" width="15" height="64" fill="#E5E9F0"/>
+    <rect x="32" y="0" width="1" height="64" fill="#D8DCE4"/>
   </g>
   <g id="decoration-center" transform="translate(47,71)">
     <rect x="0" y="0" width="64" height="64" fill="none" stroke="none"/>
-    <rect x="0" y="0" width="64" height="64" fill="#F3F5F8"/>
+    <rect x="0" y="0" width="64" height="64" fill="#E5E9F0"/>
   </g>
   <g id="decoration-right" transform="translate(111,71)">
     <rect x="0" y="0" width="47" height="64" fill="none" stroke="none"/>
     <rect x="15" y="0" width="32" height="64" fill="url(#shadow-right)"/>
-    <rect x="0" y="0" width="15" height="64" fill="#F3F5F8"/>
-    <rect x="14" y="0" width="1" height="64" fill="#222529"/>
+    <rect x="0" y="0" width="15" height="64" fill="#E5E9F0"/>
+    <rect x="14" y="0" width="1" height="64" fill="#D8DCE4"/>
   </g>
   <g id="decoration-bottomleft" transform="translate(0,135)">
     <rect x="0" y="0" width="47" height="47" fill="none" stroke="none"/>
     <rect x="0" y="0" width="47" height="47" fill="url(#shadow-bottomleft)"/>
-    <path d="M 32,0 L 47,0 L 47,15 A 15,15 0 0 1 32,0 Z" fill="#F3F5F8"/>
-    <path d="M 32,0 A 15,15 0 0 0 47,15 L 47,14 A 14,14 0 0 1 33,0 L 32,0 Z" fill="#222529"/>
-    <path d="M 32.58,1.52 A 14.50,14.50 0 0 0 45.48,14.42" fill="none" stroke="#222529" stroke-width="1.00"/>
+    <path d="M 32,0 L 47,0 L 47,15 A 15,15 0 0 1 32,0 Z" fill="#E5E9F0"/>
+    <path d="M 32,0 A 15,15 0 0 0 47,15 L 47,14 A 14,14 0 0 1 33,0 L 32,0 Z" fill="#D8DCE4"/>
+    <path d="M 32.58,1.52 A 14.50,14.50 0 0 0 45.48,14.42" fill="none" stroke="#D8DCE4" stroke-width="1.00"/>
   </g>
   <g id="decoration-bottom" transform="translate(47,135)">
     <rect x="0" y="0" width="64" height="47" fill="none" stroke="none"/>
     <rect x="0" y="15" width="64" height="32" fill="url(#shadow-bottom)"/>
-    <rect x="0" y="0" width="64" height="15" fill="#F3F5F8"/>
-    <rect x="0" y="14" width="64" height="1" fill="#222529"/>
+    <rect x="0" y="0" width="64" height="15" fill="#E5E9F0"/>
+    <rect x="0" y="14" width="64" height="1" fill="#D8DCE4"/>
   </g>
   <g id="decoration-bottomright" transform="translate(111,135)">
     <rect x="0" y="0" width="47" height="47" fill="none" stroke="none"/>
     <rect x="0" y="0" width="47" height="47" fill="url(#shadow-bottomright)"/>
-    <path d="M 0,0 L 15,0 A 15,15 0 0 1 0,15 L 0,0 Z" fill="#F3F5F8"/>
-    <path d="M 15,0 A 15,15 0 0 1 0,15 L 0,14 A 14,14 0 0 0 14,0 L 15,0 Z" fill="#222529"/>
-    <path d="M 14.42,1.52 A 14.50,14.50 0 0 1 1.52,14.42" fill="none" stroke="#222529" stroke-width="1.00"/>
+    <path d="M 0,0 L 15,0 A 15,15 0 0 1 0,15 L 0,0 Z" fill="#E5E9F0"/>
+    <path d="M 15,0 A 15,15 0 0 1 0,15 L 0,14 A 14,14 0 0 0 14,0 L 15,0 Z" fill="#D8DCE4"/>
+    <path d="M 14.42,1.52 A 14.50,14.50 0 0 1 1.52,14.42" fill="none" stroke="#D8DCE4" stroke-width="1.00"/>
   </g>
 
   <!-- Inactive decoration -->
@@ -201,69 +202,69 @@
     <rect x="0" y="0" width="47" height="71" fill="none" stroke="none"/>
     <rect x="0" y="0" width="47" height="47" fill="url(#shadow-topleft)"/>
     <rect x="0" y="47" width="32" height="24" fill="url(#shadow-left)"/>
-    <path d="M 32,47 A 15,15 0 0 1 47,32 L 47,71 L 32,71 Z" fill="#EFF1F5"/>
-    <path d="M 32,47 A 15,15 0 0 1 47,32 L 47,33 A 14,14 0 0 0 33,47 L 33,71 L 32,71 Z" fill="#222529"/>
-    <path d="M 32.58,45.48 A 14.50,14.50 0 0 1 45.48,32.58" fill="none" stroke="#222529" stroke-width="1.00"/>
+    <path d="M 32,47 A 15,15 0 0 1 47,32 L 47,71 L 32,71 Z" fill="#D8DEE9"/>
+    <path d="M 32,47 A 15,15 0 0 1 47,32 L 47,33 A 14,14 0 0 0 33,47 L 33,71 L 32,71 Z" fill="#D8DCE4"/>
+    <path d="M 32.58,45.48 A 14.50,14.50 0 0 1 45.48,32.58" fill="none" stroke="#D8DCE4" stroke-width="1.00"/>
   </g>
   <g id="decoration-inactive-top" transform="translate(47,0)">
     <rect x="0" y="0" width="64" height="71" fill="none" stroke="none"/>
     <rect x="0" y="0" width="64" height="32" fill="url(#shadow-top)"/>
-    <rect x="0" y="32" width="64" height="39" fill="#EFF1F5"/>
-    <rect x="0" y="32" width="64" height="1" fill="#222529"/>
+    <rect x="0" y="32" width="64" height="39" fill="#D8DEE9"/>
+    <rect x="0" y="32" width="64" height="1" fill="#D8DCE4"/>
   </g>
   <g id="decoration-inactive-topright" transform="translate(111,0)">
     <rect x="0" y="0" width="47" height="71" fill="none" stroke="none"/>
     <rect x="0" y="0" width="47" height="47" fill="url(#shadow-topright)"/>
     <rect x="15" y="47" width="32" height="24" fill="url(#shadow-right)"/>
-    <path d="M 0,32 L 0,71 L 15,71 L 15,47 A 15,15 0 0 0 0,32 Z" fill="#EFF1F5"/>
-    <path d="M 0,32 A 15,15 0 0 1 15,47 L 15,71 L 14,71 L 14,47 A 14,14 0 0 0 0,33 L 0,32 Z" fill="#222529"/>
-    <path d="M 1.52,32.58 A 14.50,14.50 0 0 1 14.42,45.48" fill="none" stroke="#222529" stroke-width="1.00"/>
+    <path d="M 0,32 L 0,71 L 15,71 L 15,47 A 15,15 0 0 0 0,32 Z" fill="#D8DEE9"/>
+    <path d="M 0,32 A 15,15 0 0 1 15,47 L 15,71 L 14,71 L 14,47 A 14,14 0 0 0 0,33 L 0,32 Z" fill="#D8DCE4"/>
+    <path d="M 1.52,32.58 A 14.50,14.50 0 0 1 14.42,45.48" fill="none" stroke="#D8DCE4" stroke-width="1.00"/>
   </g>
   <g id="decoration-inactive-left" transform="translate(0,71)">
     <rect x="0" y="0" width="47" height="64" fill="none" stroke="none"/>
     <rect x="0" y="0" width="32" height="64" fill="url(#shadow-left)"/>
-    <rect x="32" y="0" width="15" height="64" fill="#EFF1F5"/>
-    <rect x="32" y="0" width="1" height="64" fill="#222529"/>
+    <rect x="32" y="0" width="15" height="64" fill="#D8DEE9"/>
+    <rect x="32" y="0" width="1" height="64" fill="#D8DCE4"/>
   </g>
   <g id="decoration-inactive-center" transform="translate(47,71)">
     <rect x="0" y="0" width="64" height="64" fill="none" stroke="none"/>
-    <rect x="0" y="0" width="64" height="64" fill="#EFF1F5"/>
+    <rect x="0" y="0" width="64" height="64" fill="#D8DEE9"/>
   </g>
   <g id="decoration-inactive-right" transform="translate(111,71)">
     <rect x="0" y="0" width="47" height="64" fill="none" stroke="none"/>
     <rect x="15" y="0" width="32" height="64" fill="url(#shadow-right)"/>
-    <rect x="0" y="0" width="15" height="64" fill="#EFF1F5"/>
-    <rect x="14" y="0" width="1" height="64" fill="#222529"/>
+    <rect x="0" y="0" width="15" height="64" fill="#D8DEE9"/>
+    <rect x="14" y="0" width="1" height="64" fill="#D8DCE4"/>
   </g>
   <g id="decoration-inactive-bottomleft" transform="translate(0,135)">
     <rect x="0" y="0" width="47" height="47" fill="none" stroke="none"/>
     <rect x="0" y="0" width="47" height="47" fill="url(#shadow-bottomleft)"/>
-    <path d="M 32,0 L 47,0 L 47,15 A 15,15 0 0 1 32,0 Z" fill="#EFF1F5"/>
-    <path d="M 32,0 A 15,15 0 0 0 47,15 L 47,14 A 14,14 0 0 1 33,0 L 32,0 Z" fill="#222529"/>
-    <path d="M 32.58,1.52 A 14.50,14.50 0 0 0 45.48,14.42" fill="none" stroke="#222529" stroke-width="1.00"/>
+    <path d="M 32,0 L 47,0 L 47,15 A 15,15 0 0 1 32,0 Z" fill="#D8DEE9"/>
+    <path d="M 32,0 A 15,15 0 0 0 47,15 L 47,14 A 14,14 0 0 1 33,0 L 32,0 Z" fill="#D8DCE4"/>
+    <path d="M 32.58,1.52 A 14.50,14.50 0 0 0 45.48,14.42" fill="none" stroke="#D8DCE4" stroke-width="1.00"/>
   </g>
   <g id="decoration-inactive-bottom" transform="translate(47,135)">
     <rect x="0" y="0" width="64" height="47" fill="none" stroke="none"/>
     <rect x="0" y="15" width="64" height="32" fill="url(#shadow-bottom)"/>
-    <rect x="0" y="0" width="64" height="15" fill="#EFF1F5"/>
-    <rect x="0" y="14" width="64" height="1" fill="#222529"/>
+    <rect x="0" y="0" width="64" height="15" fill="#D8DEE9"/>
+    <rect x="0" y="14" width="64" height="1" fill="#D8DCE4"/>
   </g>
   <g id="decoration-inactive-bottomright" transform="translate(111,135)">
     <rect x="0" y="0" width="47" height="47" fill="none" stroke="none"/>
     <rect x="0" y="0" width="47" height="47" fill="url(#shadow-bottomright)"/>
-    <path d="M 0,0 L 15,0 A 15,15 0 0 1 0,15 L 0,0 Z" fill="#EFF1F5"/>
-    <path d="M 15,0 A 15,15 0 0 1 0,15 L 0,14 A 14,14 0 0 0 14,0 L 15,0 Z" fill="#222529"/>
-    <path d="M 14.42,1.52 A 14.50,14.50 0 0 1 1.52,14.42" fill="none" stroke="#222529" stroke-width="1.00"/>
+    <path d="M 0,0 L 15,0 A 15,15 0 0 1 0,15 L 0,0 Z" fill="#D8DEE9"/>
+    <path d="M 15,0 A 15,15 0 0 1 0,15 L 0,14 A 14,14 0 0 0 14,0 L 15,0 Z" fill="#D8DCE4"/>
+    <path d="M 14.42,1.52 A 14.50,14.50 0 0 1 1.52,14.42" fill="none" stroke="#D8DCE4" stroke-width="1.00"/>
   </g>
 
   <!-- Maximized header strips (no corners or shadow) -->
   <g id="decoration-maximized-center" transform="translate(0,0)">
     <rect x="0" y="0" width="64" height="64" fill="none" stroke="none"/>
-    <rect x="0" y="0" width="64" height="64" fill="#F3F5F8"/>
+    <rect x="0" y="0" width="64" height="64" fill="#E5E9F0"/>
   </g>
   <g id="decoration-maximized-inactive-center" transform="translate(0,0)">
     <rect x="0" y="0" width="64" height="64" fill="none" stroke="none"/>
-    <rect x="0" y="0" width="64" height="64" fill="#EFF1F5"/>
+    <rect x="0" y="0" width="64" height="64" fill="#D8DEE9"/>
   </g>
 
   <!-- Blur masks: the opaque window surface, without shadow -->

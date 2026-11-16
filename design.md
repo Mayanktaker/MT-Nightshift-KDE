@@ -236,25 +236,26 @@ The Qt Widgets Application Style is implemented separately in §13. It is a comp
 | Active header | `#15181C` (`Header` background) |
 | Inactive header | `#101216` (`Header[Inactive]` background) |
 | Frame sides and bottom | `#101216` (`Window` background) |
-| Frame line | `#222529` = `blend(Header, ForegroundNormal, 0.06)`, deliberately stronger than the derived interior seams so the outer edge stays dominant (§8) |
+| Frame line | `#222529`, an explicit per-variant `frame_line`; Nightshift's value is `blend(Header, ForegroundNormal, 0.06)`, deliberately stronger than the derived interior seams so the outer edge stays dominant (§8) |
 | Active title | `#E8EBF0` |
 | Inactive title | `#C8CED6` |
-| Active button icon | `#C8CED6` |
-| Hover icon / pressed icon | `#E8EBF0` / `#FFFFFF` active; `#C8CED6` / `#FFFFFF` inactive |
-| Inactive button icon | `#8D97A4` |
-| Disabled button icon | `#5F6874` active, `#4A525C` inactive |
-| Hover outline | `#2A7FA8` active, `#3B3D42` inactive |
-| Pressed fill | `#1F6E9C` active, `#174E70` inactive |
-| Close hover / pressed (active) | `#EA717C` (`ForegroundNegative`); the pressed glyph is `#101216` |
+| Active button icon | `#E8EBF0` (`ForegroundNormal`) |
+| Hover icon and outline | `#D08084` (`ForegroundNegative`), no fill |
+| Pressed fill / glyph | `#1F6E9C` (`Selection` background) / `#FFFFFF` (`Selection` text) |
+| Inactive button icon | `#8D97A4` (`ForegroundInactive`) |
+| Disabled button icon | `blend(header, ForegroundInactive, 0.65)` |
+| Hover outline, inactive window | `#222529` (the frame line) |
+
+Every row above is baked per variant by `tools/decoration-probe/build-decoration.py` from the `VARIANTS` palette table; the four decorations and their five button sets share paths, rects and stroke widths and differ only in colour. Each palette carries `header_active`, `header_inactive`, `window`, `foreground`, `foreground_inactive`, `negative`, `selection`, `selection_text` and an explicit `frame_line`. Nord Day's frame line is `#D8DCE4`, one step above the 0.06 mix, because its header-to-foreground span is the narrowest of the four and the 0.06 value left the corner arcs at the light-surface coverage floor. Button tones follow the variant scheme rather than a baked set: Nord Night's selection pill is light `#84A5C6`, so its pressed glyph is dark `#2E3440` where the other three use `#FFFFFF`.
 
 ### 12.3 States
 
-- **Rest**: no button background, icon only.
-- **Hover**: 1px outline with a 6px rounded-square radius, no fill; the icon brightens.
-- **Pressed**: a filled 6px rounded-square disc with a white glyph and no outline.
-- **Disabled**: a dimmed glyph, no disc.
-- **Inactive window**: buttons drop to the inactive icon colour; hover-inactive uses the neutral outline; pressed-inactive uses `#174E70`.
-- State changes never move or resize a control. The close button is the only place the negative colour is used, and only on hover/press.
+- **Rest**: no button background, icon only, in the variant's `ForegroundNormal`.
+- **Hover**: 1px outline with a 6px rounded-square radius, no fill; the outline and icon take the variant's `ForegroundNegative`.
+- **Pressed**: a filled 6px rounded-square disc in the variant's selection background, with the selection text tone as the glyph, and no outline.
+- **Disabled**: a dimmed glyph, no disc, stepped 65% from the header toward `ForegroundInactive`.
+- **Inactive window**: buttons drop to `ForegroundInactive`; hover-inactive keeps that glyph under a frame-line outline; pressed-inactive uses the selection fill with selection text.
+- State changes never move or resize a control. The negative tone is a transient hover cue only, never a resting colour.
 
 ### 12.4 HiDPI and Aurorae constraints
 
@@ -263,7 +264,7 @@ The Qt Widgets Application Style is implemented separately in §13. It is a comp
 - Aurorae v2 derives the window shadow from the decoration's padding ring and cuts it at the window rectangle. The `mask-*` elements are supplied for the blur region; v2 uses them for blur only, and blur is disabled in this theme.
 - **Three knobs tune the shell**, all in `PARAMS`: `peak` (cast-shadow weight), `frame_line_contrast` (how far the outer line sits above the fill) and `frame_line_arc` (arc thickness). `build-decoration.py` takes `--padding/--visible/--peak/--arc` overrides for a one-off trial, and `make check` / `make apply` wrap the verify and install sequences.
 - **Corner tiles must be named `topleft`, `topright`, `bottomleft`, `bottomright`.** `FrameSvg` resolves the corners through `FrameSvgHelpers::borderToElementId()`, so a tile named `tl`/`br` is never requested: the corner stays transparent, the header and side fills lose their ends, and the shadow splits into four detached bars. FrameSvg also scales each corner element to its section rect, which is `leftMargin × topMargin` for the top corners and `leftMargin × bottomMargin` for the bottom ones; keep the element sizes at `45×63` and `45×45` (padding + radius, or padding + header for the top corners) — `tools/decoration-probe/build-decoration.py` derives them from one padding value. Check a change with a real `FrameSvg` render, not a plain SVG preview.
-- **The window-menu button needs `menu.svg`.** `ButtonsOnLeft` defaults to `MSE`, and v2 instantiates the menu button even when the theme has no artwork: without `menu.svg` it falls back to `FallbackMenuDecorationButton`, which paints the full-colour window icon (a blue Dolphin icon on a dark titlebar). `menu.svg` carries the same eight state prefixes as the other buttons and the same three-rule glyph in `#C8CED6`.
+- **The window-menu button needs `menu.svg`.** `ButtonsOnLeft` defaults to `MSE`, and v2 instantiates the menu button even when the theme has no artwork: without `menu.svg` it falls back to `FallbackMenuDecorationButton`, which paints the full-colour window icon (a blue Dolphin icon on a dark titlebar). `menu.svg` carries the same eight state prefixes as the other buttons and the same three-rule glyph in the variant's `ForegroundNormal`.
 - **Button paths are resolved once per KWin process.** `DecorationTheme` keeps every resolved path in a `Q_GLOBAL_STATIC` list and `onDecorationSettingsChanged()` only reparses `auroraerc`; adding or renaming a button SVG therefore has no effect until KWin restarts — `reconfigure`, a new window, or switching the theme away and back all reuse the cached object, so a fresh window shows new `decoration.svg` pixels but keeps the old button paths. Validate a new button file only after a KWin restart. The v1 QML engine (`org.kde.kwin.aurorae`) has no `menu.svg` lookup at all: its `MenuButton.qml` always paints the window icon, so the themed glyph appears only under `org.kde.kwin.aurorae.v2`.
 - `decoration-maximized` and `decoration-maximized-inactive` are top strips; KWin clips decoration painting to the title border. Maximize and restore use separate `maximize.svg` and `restore.svg` files, each carrying all eight button-state prefixes.
 - The title/button row is tuned for the default title font and `ButtonSize` (100%). KWin grows the titlebar when the button-size factor grows, but the SVG header slice is fixed at 39px; the extra height is painted with the `Window` centre colour and the header boundary stays at 39px. Keep the default size for the intended single-tone header.

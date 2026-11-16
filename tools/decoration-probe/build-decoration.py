@@ -2,18 +2,22 @@
 # © Mayanktaker Computers & Web Development | https://mayanktaker.com
 # SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development
 # SPDX-License-Identifier: LGPL-2.0-or-later
-"""Generate themes/aurorae/MTNightshift/decoration.svg from design parameters.
+"""Generate the Aurorae decoration and button SVGs for every variant.
 
 The decoration is nine FrameSvg slices whose sizes, group offsets and gradient
 coordinates are all derived from one padding value. Hand-editing them drifted
 twice (a mask ate the corner shadow, then a strip double-composited over the
 radial ramp), so the geometry now lives in PARAMS and the SVG is generated.
+The five buttons share that geometry across variants: only their palette tones
+differ, so a light-header variant cannot inherit night-toned glyphs.
 
 Usage:
-    build-decoration.py [--check] [path/to/decoration.svg]
+    build-decoration.py [--variant NAME] [--all] [--check] [path/to/decoration.svg]
 
---check regenerates in memory and fails if the file on disk differs, so CI or a
-pre-commit hook can catch an out-of-band edit.
+--check regenerates every variant in memory and fails if the committed artwork
+differs, so CI or a pre-commit hook can catch an out-of-band edit. Without it,
+the selected variant's decoration and five buttons are written; --all writes
+all four variants.
 """
 
 from __future__ import annotations
@@ -54,18 +58,23 @@ PARAMS = {
         (0.2813, 0.346), (0.3750, 0.245), (0.5000, 0.143), (0.6563, 0.070),
         (0.8125, 0.021), (1.0000, 0.000),
     ],
-    # Palette, from color-schemes/MT-Nightshift.colors.
-    "header_active": "#15181C",
-    "header_inactive": "#101216",
-    "window": "#101216",
-    "foreground": "#E8EBF0",
-    # The window's own outer line gets a stronger mix than the derived interior
-    # seams, because Breeze derives its client hairline from the brighter Header
+    # Each variant's frame_line is an explicit token in VARIANTS: the window's
+    # own outer line gets a stronger mix than the derived interior seams,
+    # because Breeze derives its client hairline from the brighter Header
     # background: at equal contrast the client seam wins, and the outer edge
-    # should be the dominant line. 0.06 keeps the outer edge a whisper above the
-    # client seam (which follows [KDE] frameContrast=0.05, shipped by the Global
-    # Theme) instead of a visible border, per the 2026-11 polish pass.
+    # should be the dominant line. The shipped tokens sit at this mix from
+    # Header to ForegroundNormal, except Nord Day one step stronger (#D8DCE4):
+    # its narrow header/foreground span put the arc at the light-surface
+    # coverage floor. They are frozen per variant so a header retune cannot
+    # silently move the shipped edge. Keeping the outer edge a whisper above
+    # the client seam (which follows [KDE] frameContrast=0.05, shipped by the
+    # Global Theme) instead of a visible border is the 2026-11 polish pass.
     "frame_line_contrast": 0.06,
+    # Disabled button glyphs step this fraction of the way from their header to
+    # ForegroundInactive. One ratio for every variant, so the dimming reads the
+    # same on a dark and a light titlebar. Disabled controls are exempt from the
+    # text-contrast floor; the intent is "present but clearly out of action".
+    "deactivated_mix": 0.65,
     # Thickness of the 1px frame line were it rasterised crisply on the corner
     # arcs. A 1px annulus spreads over two pixels at ~50% coverage where the
     # curve runs at 45 degrees, so the corners read as a broken border against
@@ -75,25 +84,72 @@ PARAMS = {
 }
 
 # Palette variants: geometry is shared, only the baked surface tones differ.
-# Dayshift is the light counterpart of Nightshift (color-schemes/MT-Dayshift.colors);
-# its frame line is derived at build time from the light header/foreground mix.
+# header_* / window / foreground come from the matching color-schemes file's
+# Header, Window and Window-text roles; foreground_inactive, negative and the
+# selection pair come from its Header and Selection groups. frame_line is an
+# explicit per-variant token: the blend(header_active, foreground,
+# frame_line_contrast) result, one step stronger on Nord Day where the light
+# header needs it. It is frozen per variant so a header retune cannot silently
+# move the shipped edge.
 VARIANTS = {
     "nightshift": {
+        "title": "MT Nightshift",
         "out": HERE.parent.parent / "themes" / "aurorae" / "MTNightshift" / "decoration.svg",
         "palette": {
             "header_active": "#15181C",
             "header_inactive": "#101216",
             "window": "#101216",
             "foreground": "#E8EBF0",
+            "foreground_inactive": "#8D97A4",
+            "negative": "#D08084",
+            "selection": "#1F6E9C",
+            "selection_text": "#FFFFFF",
+            "frame_line": "#222529",
         },
     },
     "dayshift": {
+        "title": "MT Dayshift",
         "out": HERE.parent.parent / "themes" / "aurorae" / "MTDayshift" / "decoration.svg",
         "palette": {
             "header_active": "#F3F5F8",
             "header_inactive": "#EFF1F5",
             "window": "#EFF1F5",
             "foreground": "#1B1E22",
+            "foreground_inactive": "#606873",
+            "negative": "#AB484D",
+            "selection": "#1F6E9C",
+            "selection_text": "#FFFFFF",
+            "frame_line": "#E6E8EB",
+        },
+    },
+    "nord-night": {
+        "title": "MT Nord Night",
+        "out": HERE.parent.parent / "themes" / "aurorae" / "MTNordNight" / "decoration.svg",
+        "palette": {
+            "header_active": "#3B4252",
+            "header_inactive": "#2E3440",
+            "window": "#2E3440",
+            "foreground": "#ECEFF4",
+            "foreground_inactive": "#D8DEE9",
+            "negative": "#F3B2B8",
+            "selection": "#84A5C6",
+            "selection_text": "#2E3440",
+            "frame_line": "#464C5C",
+        },
+    },
+    "nord-day": {
+        "title": "MT Nord Day",
+        "out": HERE.parent.parent / "themes" / "aurorae" / "MTNordDay" / "decoration.svg",
+        "palette": {
+            "header_active": "#E5E9F0",
+            "header_inactive": "#D8DEE9",
+            "window": "#ECEFF4",
+            "foreground": "#2E3440",
+            "foreground_inactive": "#4C566A",
+            "negative": "#963F4A",
+            "selection": "#4C6B91",
+            "selection_text": "#FFFFFF",
+            "frame_line": "#D8DCE4",
         },
     },
 }
@@ -132,9 +188,8 @@ def blend(base: str, over: str, amount: float) -> str:
     return "#%02X%02X%02X" % tuple(round(a + (b - a) * amount) for a, b in zip(low, high))
 
 
-# The frame line colour is derived, not literals, so a palette retune follows.
-PARAMS["frame"] = blend(PARAMS["header_active"], PARAMS["foreground"],
-                        PARAMS["frame_line_contrast"])
+# The frame line comes from the selected variant's explicit frame_line token;
+# build() reads it from the palette it is handed, never from PARAMS at import.
 
 def stops() -> str:
     """Linear-ramp stops, outer end first: offset 0 is furthest out, offset 1 is the contour."""
@@ -264,7 +319,7 @@ def shadow_rects(name: str) -> list[str]:
     return []
 
 
-def arc_stroke(name: str) -> str:
+def arc_stroke(name: str, frame: str) -> str:
     """Extra arc thickness for a corner: a stroke fully inside the silhouette.
 
     The 1px band already hugs the contour but antialiasing spreads it to ~50%
@@ -292,39 +347,39 @@ def arc_stroke(name: str) -> str:
     x1 = cx + r * math.cos(math.radians(a1))
     y1 = cy + r * math.sin(math.radians(a1))
     return (f'    <path d="M {x0:.2f},{y0:.2f} A {r:.2f},{r:.2f} 0 0 {sweep} {x1:.2f},{y1:.2f}" '
-            f'fill="none" stroke="{PARAMS["frame"]}" stroke-width="{extra:.2f}"/>')
+            f'fill="none" stroke="{frame}" stroke-width="{extra:.2f}"/>')
 
 
-def surface(name: str, fill: str) -> list[str]:
+def surface(name: str, fill: str, frame: str) -> list[str]:
     """Window fill and 1px frame line of one slice."""
     width, height = LAYOUT[name][2], LAYOUT[name][3]
     if name in SHAPES:
         body, line = SHAPES[name]
-        rows = [f'    <path d="{body}" fill="{fill}"/>', f'    <path d="{line}" fill="{PARAMS["frame"]}"/>']
-        extra = arc_stroke(name)
+        rows = [f'    <path d="{body}" fill="{fill}"/>', f'    <path d="{line}" fill="{frame}"/>']
+        extra = arc_stroke(name, frame)
         return rows + ([extra] if extra else [])
     if name == "top":
         return [f'    <rect x="0" y="{P}" width="{width}" height="{H}" fill="{fill}"/>',
-                f'    <rect x="0" y="{P}" width="{width}" height="1" fill="{PARAMS["frame"]}"/>']
+                f'    <rect x="0" y="{P}" width="{width}" height="1" fill="{frame}"/>']
     if name == "bottom":
         return [f'    <rect x="0" y="0" width="{width}" height="{R}" fill="{fill}"/>',
-                f'    <rect x="0" y="{R - 1}" width="{width}" height="1" fill="{PARAMS["frame"]}"/>']
+                f'    <rect x="0" y="{R - 1}" width="{width}" height="1" fill="{frame}"/>']
     if name == "left":
         return [f'    <rect x="{P}" y="0" width="{R}" height="{height}" fill="{fill}"/>',
-                f'    <rect x="{P}" y="0" width="1" height="{height}" fill="{PARAMS["frame"]}"/>']
+                f'    <rect x="{P}" y="0" width="1" height="{height}" fill="{frame}"/>']
     if name == "right":
         return [f'    <rect x="0" y="0" width="{R}" height="{height}" fill="{fill}"/>',
-                f'    <rect x="{R - 1}" y="0" width="1" height="{height}" fill="{PARAMS["frame"]}"/>']
+                f'    <rect x="{R - 1}" y="0" width="1" height="{height}" fill="{frame}"/>']
     return [f'    <rect x="0" y="0" width="{width}" height="{height}" fill="{fill}"/>']
 
 
-def group(element_id: str, name: str, fill: str, shadow: bool) -> str:
+def group(element_id: str, name: str, fill: str, frame: str, shadow: bool) -> str:
     """One FrameSvg slice group."""
     x, y, width, height = LAYOUT[name]
     rows = [f'  <g id="{element_id}" transform="translate({x},{y})">',
             f'    <rect x="0" y="0" width="{width}" height="{height}" fill="none" stroke="none"/>']
     rows += shadow_rects(name) if shadow else []
-    rows += surface(name, fill)
+    rows += surface(name, fill, frame)
     rows.append("  </g>")
     return "\n".join(rows)
 
@@ -356,27 +411,28 @@ def masks() -> str:
     return "\n".join(rows)
 
 
-def build() -> str:
-    """Assemble the whole document."""
-    slices = [group(f"decoration-{n}", n, PARAMS["header_active"], True)
+def build(palette: dict[str, str], title: str) -> str:
+    """Assemble the whole decoration document for one variant palette."""
+    frame = palette["frame_line"]
+    slices = [group(f"decoration-{n}", n, palette["header_active"], frame, True)
               for n in ("topleft", "top", "topright", "left", "center", "right",
                         "bottomleft", "bottom", "bottomright")]
-    inactive = [group(f"decoration-inactive-{n}", n, PARAMS["header_inactive"], True)
+    inactive = [group(f"decoration-inactive-{n}", n, palette["header_inactive"], frame, True)
                 for n in ("topleft", "top", "topright", "left", "center", "right",
                           "bottomleft", "bottom", "bottomright")]
     maximized = [
         f'''  <g id="decoration-maximized-center" transform="translate(0,0)">
     <rect x="0" y="0" width="{C}" height="{C}" fill="none" stroke="none"/>
-    <rect x="0" y="0" width="{C}" height="{C}" fill="{PARAMS["header_active"]}"/>
+    <rect x="0" y="0" width="{C}" height="{C}" fill="{palette["header_active"]}"/>
   </g>''',
         f'''  <g id="decoration-maximized-inactive-center" transform="translate(0,0)">
     <rect x="0" y="0" width="{C}" height="{C}" fill="none" stroke="none"/>
-    <rect x="0" y="0" width="{C}" height="{C}" fill="{PARAMS["header_inactive"]}"/>
+    <rect x="0" y="0" width="{C}" height="{C}" fill="{palette["header_inactive"]}"/>
   </g>''',
     ]
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <!--
-  MT Nightshift Aurorae window decoration.
+  {title} Aurorae window decoration.
   © {2026} Mayanktaker Computers & Web Development | https://mayanktaker.com
   SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development
   SPDX-License-Identifier: LGPL-2.0-or-later
@@ -385,8 +441,9 @@ def build() -> str:
   Regenerate with: tools/decoration-probe/build-decoration.py
   Verify with:     tools/decoration-probe/check-decoration.py
 
-  Sculpted carbon frame: {R}px corners, 1px frame edge at
-  blend(Header, foreground, {PARAMS["frame_line_contrast"]:.2f}), opaque Header/Window fills, and a
+  Sculpted carbon frame: {R}px corners, 1px frame edge at the variant's
+  explicit {frame} (chosen at blend(Header, foreground,
+  {PARAMS["frame_line_contrast"]:.2f}) or one step stronger), opaque Header/Window fills, and a
   {"%.2f peak cast shadow fading to zero at %dpx inside a %dpx ring" % (PARAMS["peak"], PARAMS["visible"], P) if PARAMS["visible"] < P else "%.2f peak cast shadow filling the %dpx ring" % (PARAMS["peak"], P)}.
   Slice sizes: left/right {P + R}px, top {P + H}px, bottom {P + R}px, centre {C}x{C}.
   The {R}px radius lives in the corner tiles; corner ids must be FrameSvg's names
@@ -397,7 +454,7 @@ def build() -> str:
   corner tangent points.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="{W_FRAME}" height="{H_FRAME}" viewBox="0 0 {W_FRAME} {H_FRAME}" version="1.1">
-  <title>MT Nightshift window decoration</title>
+  <title>{title} window decoration</title>
   <desc>Active, inactive and maximized Aurorae decoration slices; {R}px corners; {P}px shadow padding.</desc>
 
   <defs>
@@ -419,8 +476,114 @@ def build() -> str:
 """
 
 
+def button_state(element_id: str, glyph: str, ring: str | None = None,
+                 disc: str | None = None) -> str:
+    """One button state group: optional 19px hover ring, optional 20px disc."""
+    rows = [f'  <g id="{element_id}">',
+            '  <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>']
+    if ring:
+        rows.append(f'  <rect x="2.5" y="2.5" width="19" height="19" rx="6" fill="none" '
+                    f'stroke="{ring}" stroke-width="1"/>')
+    if disc:
+        rows.append(f'  <rect x="2" y="2" width="20" height="20" rx="6" fill="{disc}"/>')
+    rows.append("  " + glyph)
+    rows.append("  </g>")
+    return "\n".join(rows)
+
+
+# Glyph geometry, byte-for-byte the original artwork; {tone} is the only variable.
+BUTTON_GLYPHS = {
+    "close": '<path d="M 8,8 L 16,16 M 16,8 L 8,16" fill="none" stroke="{tone}" '
+             'stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>',
+    "minimize": '<path d="M 8,12.5 L 16,12.5" fill="none" stroke="{tone}" '
+                'stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>',
+    "maximize": '<rect x="8" y="8" width="8" height="8" rx="1.5" fill="none" stroke="{tone}" '
+                'stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>',
+    "restore": '<rect x="7.5" y="9.5" width="7" height="7" rx="1.2" fill="none" stroke="{tone}" '
+               'stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>'
+               '<path d="M 10.5,7.5 H 15.5 Q 16.5,7.5 16.5,8.5 V 13.5" fill="none" stroke="{tone}" '
+               'stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>',
+    "menu": '<path d="M 8,8.5 L 16,8.5 M 8,12.5 L 16,12.5 M 8,16.5 L 16,16.5" fill="none" '
+            'stroke="{tone}" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>',
+}
+
+BUTTON_LABELS = {
+    "close": "close",
+    "minimize": "minimize",
+    "maximize": "maximize",
+    "restore": "restore",
+    "menu": "window menu",
+}
+
+BUTTON_NOTES = {
+    "menu": '\n  KWin\'s default left button group is "MSE"; without this file the window'
+            "\n  menu button falls back to the full-colour application icon.",
+}
+
+BUTTON_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  {title} Aurorae {label} button.
+  © 2026 Mayanktaker Computers & Web Development | https://mayanktaker.com
+  SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development
+  SPDX-License-Identifier: LGPL-2.0-or-later
+
+  GENERATED FILE — edit tools/decoration-probe/build-decoration.py instead.
+  Original artwork; 24x24 button, 20x20 state disc.{note}
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" version="1.1">
+  <title>{title} {label} button</title>
+{states}
+</svg>
+"""
+
+
+def build_buttons(palette: dict[str, str], title: str) -> dict[str, str]:
+    """The five 24x24 button SVGs for one variant: fixed geometry, palette tones.
+
+    All five files carry the same eight state groups as the original artwork.
+    Active and hover tones come from the variant's text and negative roles,
+    pressed uses its selection pair (Nord Night's pill is light, so its glyph is
+    dark), the inactive ring is the variant's frame line, and disabled glyphs are
+    the inactive tone dimmed toward the header by PARAMS["deactivated_mix"].
+    """
+    foreground = palette["foreground"]
+    inactive = palette["foreground_inactive"]
+    negative = palette["negative"]
+    selection = palette["selection"]
+    selection_text = palette["selection_text"]
+    frame_line = palette["frame_line"]
+    disabled_active = blend(palette["header_active"], inactive, PARAMS["deactivated_mix"])
+    disabled_inactive = blend(palette["header_inactive"], inactive, PARAMS["deactivated_mix"])
+
+    documents = {}
+    for name, glyph in BUTTON_GLYPHS.items():
+        states = [
+            button_state("active-center", glyph.format(tone=foreground)),
+            button_state("hover-center", glyph.format(tone=negative), ring=negative),
+            button_state("pressed-center", glyph.format(tone=selection_text), disc=selection),
+            button_state("deactivated-center", glyph.format(tone=disabled_active)),
+            button_state("inactive-center", glyph.format(tone=inactive)),
+            button_state("hover-inactive-center", glyph.format(tone=inactive), ring=frame_line),
+            button_state("pressed-inactive-center", glyph.format(tone=selection_text), disc=selection),
+            button_state("deactivated-inactive-center", glyph.format(tone=disabled_inactive)),
+        ]
+        documents[name] = BUTTON_TEMPLATE.format(
+            title=title, label=BUTTON_LABELS[name],
+            note=BUTTON_NOTES.get(name, ""), states="\n".join(states))
+    return documents
+
+
+def expected_artwork(name: str) -> dict[Path, str]:
+    """Every generated file for one variant, as {path: document}."""
+    spec = VARIANTS[name]
+    documents = {spec["out"]: build(spec["palette"], spec["title"])}
+    for button, document in build_buttons(spec["palette"], spec["title"]).items():
+        documents[spec["out"].parent / (button + ".svg")] = document
+    return documents
+
+
 def main() -> int:
-    """Write the SVG, or compare it with the file on disk.
+    """Write the artwork, or compare it with the files on disk.
 
     Geometry and weight can be overridden for a one-off trial without editing
     PARAMS, e.g. `--padding 24 --visible 24` or `--peak 0.22`. Nothing is written
@@ -430,6 +593,8 @@ def main() -> int:
     overrides = {"--padding": "padding", "--visible": "visible", "--peak": "peak",
                  "--arc": "frame_line_arc"}
     variant = "nightshift"
+    check = False
+    write_all = False
     rest = []
     index = 0
     while index < len(argv):
@@ -446,38 +611,53 @@ def main() -> int:
                 raise SystemExit("unknown variant %r (have: %s)" % (variant, ", ".join(VARIANTS)))
             index += 2
             continue
+        if token == "--check":
+            check = True
+            index += 1
+            continue
+        if token == "--all":
+            write_all = True
+            index += 1
+            continue
         rest.append(token)
         index += 1
-    PARAMS.update(VARIANTS[variant]["palette"])
-    args = [a for a in rest if a != "--check"]
-    target = Path(args[0]) if args else VARIANTS[variant]["out"]
-    if "--check" in sys.argv and not args:
-        # Drift-check every variant's committed artwork, not just the default.
-        stale = []
-        for name, spec in VARIANTS.items():
-            backup = dict(PARAMS)
-            PARAMS.update(spec["palette"])
-            document = build()
-            PARAMS.clear()
-            PARAMS.update(backup)
-            current = spec["out"].read_text() if spec["out"].exists() else ""
+
+    if rest:
+        # A one-off trial path holds the decoration only; buttons stay untouched.
+        if write_all:
+            raise SystemExit("--all writes the registered packages; drop the path argument")
+        target = Path(rest[0])
+        document = build(VARIANTS[variant]["palette"], VARIANTS[variant]["title"])
+        if check:
+            current = target.read_text() if target.exists() else ""
             if current != document:
-                stale.append(str(spec["out"]))
+                print("%s is stale: run tools/decoration-probe/build-decoration.py" % target)
+                return 1
+            print("%s matches the generator" % target)
+            return 0
+        target.write_text(document)
+        print("wrote %s (%d lines)" % (target, document.count("\n")))
+        return 0
+
+    if check:
+        # Drift-check every variant's committed decoration and buttons.
+        stale = [str(path)
+                 for name in VARIANTS
+                 for path, document in expected_artwork(name).items()
+                 if (path.read_text() if path.exists() else "") != document]
         if stale:
-            print("stale decoration artwork: %s" % ", ".join(stale))
+            print("stale artwork: %s" % ", ".join(stale))
             return 1
-        print("all %d decoration variants match the generator" % len(VARIANTS))
+        print("all %d variants' decoration and button artwork match the generator"
+              % len(VARIANTS))
         return 0
-    document = build()
-    if "--check" in sys.argv:
-        current = target.read_text() if target.exists() else ""
-        if current != document:
-            print("decoration.svg is stale: run tools/decoration-probe/build-decoration.py")
-            return 1
-        print("decoration.svg matches the generator")
-        return 0
-    target.write_text(document)
-    print("wrote %s (%d lines)" % (target, document.count("\n")))
+
+    for name in (list(VARIANTS) if write_all else [variant]):
+        documents = expected_artwork(name)
+        for path, document in documents.items():
+            path.write_text(document)
+        print("wrote %s and %d buttons (%d files)"
+              % (VARIANTS[name]["out"], len(documents) - 1, len(documents)))
     return 0
 
 
