@@ -48,6 +48,28 @@ The script exits non-zero and names the failing pair, so a regression looks like
 proven to reject both defect classes that shipped before it existed: a drifted
 copy and a dimmed negative.
 
+### Measured floors
+
+The audit's summary line names the lowest text ratio and its pair; the rings and
+the selection fill are reported per surface. Current measurements, all above the
+floors:
+
+| Variant | Text floor | Window focus / hover | Button focus / hover | Selection vs Window |
+| --- | --- | --- | --- | --- |
+| Nightshift | 4.66 (Selection/Positive) | 5.67 / 4.20 | 5.00 / 3.70 | 3.36 |
+| Dayshift | 4.66 (Selection/Positive) | 3.95 / 3.28 | 4.13 / 3.42 | 4.93 |
+| Nord Night | 4.79 (Selection/Negative) | 6.24 / 4.86 | 5.03 / 3.92 | 4.86 |
+| Nord Day | 4.69 (Selection/Visited) | 4.77 / 3.50 | 4.52 / 3.31 | 4.77 |
+
+The Nord schemes keep the design's canonical tones wherever they clear the
+floors. `Selection.BackgroundAlternate` was adjusted in both variants, because
+plain nord10 `#5E81AC` left dark pill text at 3.10:1 on Night and white pill
+text at 4.03:1 on Day; the alternates are now `#93B3D1` (Night, lighter than the
+pill) and `#405A79` (Day, deeper). Semantic tones were also tuned where the
+canonical value missed: Night lifted negative, positive, active, link and
+visited; Day deepened negative, active, link and visited. Every other tone is
+the design's first pass verbatim.
+
 ## Decoration artwork — `tools/decoration-probe/`
 
 `build-decoration.py --check` regenerates every variant in memory and fails when

@@ -1,0 +1,19 @@
+# © Mayanktaker Computers & Web Development | https://mayanktaker.com
+# SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development
+# SPDX-License-Identifier: LGPL-2.0-or-later
+#
+# Aurorae window decoration for the MT Nord Day desktop (light variant).
+# Plain directory theme: Aurorae discovers this file via
+# XDG_DATA_HOME or XDG_DATA_DIRS, under aurorae/themes/MTNordDay/.
+
+[Desktop Entry]
+Type=Service
+Name=MT Nord Day
+Comment=Sculpted Snow Storm window decoration with 15px corners, a 1px frame edge and the Nord frost accents.
+X-KDE-PluginInfo-Author=Mayanktaker Computers & Web Development
+X-KDE-PluginInfo-Name=MTNordDay
+X-KDE-PluginInfo-Version=1.6.0
+X-KDE-PluginInfo-Category=
+X-KDE-PluginInfo-Depends=
+X-KDE-PluginInfo-License=LGPL
+X-KDE-PluginInfo-EnabledByDefault=true

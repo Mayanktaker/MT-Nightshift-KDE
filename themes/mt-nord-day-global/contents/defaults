@@ -1,0 +1,23 @@
+# © Mayanktaker Computers & Web Development | https://mayanktaker.com
+# MT Nord Day global theme defaults for Plasma 6.8 — the light counterpart of
+# MT Nord Night. Layouts, icons, cursor, wallpaper and splash are intentionally
+# omitted so applying this theme keeps the user's current layout, Tela-circle
+# icons, cursor, wallpaper and splash.
+
+[kdeglobals][KDE]
+# The widget style plugin is palette-driven: the same MTNightshift style draws
+# pill surfaces from whichever scheme is active, so Nord Day reuses it.
+widgetStyle=MTNightshift
+# Seam contrast follows the same dimmed-border pass as Nord Night (0.05).
+frameContrast=0.05
+
+[kdeglobals][General]
+ColorScheme=MT-Nord-Day
+
+[plasmarc][Theme]
+name=mt-nord-day
+
+# Aurorae decoration is provided by the MT Nord Day decoration package.
+[kwinrc][org.kde.kdecoration2]
+library=org.kde.kwin.aurorae.v2
+theme=__aurorae__svg__MTNordDay

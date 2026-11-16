@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MT Nightshift Aurorae minimize button.
+  © 2026 Mayanktaker Computers & Web Development | https://mayanktaker.com
+  SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development
+  SPDX-License-Identifier: LGPL-2.0-or-later
+  Original artwork; 24x24 button, 20x20 state disc.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" version="1.1">
+  <title>MT Nightshift minimize button</title>
+  <g id="active-center">
+  <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>
+  <path d="M 8,12.5 L 16,12.5" fill="none" stroke="#C8CED6" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
+  </g>
+  <g id="hover-center">
+  <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>
+  <rect x="2.5" y="2.5" width="19" height="19" rx="6" fill="none" stroke="#2A7FA8" stroke-width="1"/>
+  <path d="M 8,12.5 L 16,12.5" fill="none" stroke="#E8EBF0" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
+  </g>
+  <g id="pressed-center">
+  <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>
+  <rect x="2" y="2" width="20" height="20" rx="6" fill="#1F6E9C"/>
+  <path d="M 8,12.5 L 16,12.5" fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
+  </g>
+  <g id="deactivated-center">
+  <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>
+  <path d="M 8,12.5 L 16,12.5" fill="none" stroke="#5F6874" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
+  </g>
+  <g id="inactive-center">
+  <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>
+  <path d="M 8,12.5 L 16,12.5" fill="none" stroke="#8D97A4" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
+  </g>
+  <g id="hover-inactive-center">
+  <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>
+  <rect x="2.5" y="2.5" width="19" height="19" rx="6" fill="none" stroke="#3B3D42" stroke-width="1"/>
+  <path d="M 8,12.5 L 16,12.5" fill="none" stroke="#C8CED6" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
+  </g>
+  <g id="pressed-inactive-center">
+  <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>
+  <rect x="2" y="2" width="20" height="20" rx="6" fill="#174E70"/>
+  <path d="M 8,12.5 L 16,12.5" fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
+  </g>
+  <g id="deactivated-inactive-center">
+  <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>
+  <path d="M 8,12.5 L 16,12.5" fill="none" stroke="#4A525C" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
+  </g>
+</svg>

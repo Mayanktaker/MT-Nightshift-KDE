@@ -75,6 +75,22 @@ VARIANTS = [
         "laf": "themes/mt-dayshift-global",
         "aurorae": "themes/aurorae/MTDayshift",
     },
+    {
+        "name": "NordNight",
+        "style_id": "mt-nord-night",
+        "scheme": "color-schemes/MT-Nord-Night.colors",
+        "style": "themes/mt-nord-night",
+        "laf": "themes/mt-nord-night-global",
+        "aurorae": "themes/aurorae/MTNordNight",
+    },
+    {
+        "name": "NordDay",
+        "style_id": "mt-nord-day",
+        "scheme": "color-schemes/MT-Nord-Day.colors",
+        "style": "themes/mt-nord-day",
+        "laf": "themes/mt-nord-day-global",
+        "aurorae": "themes/aurorae/MTNordDay",
+    },
 ]
 
 FAILURES: list[str] = []

@@ -1,0 +1,24 @@
+# © Mayanktaker Computers & Web Development | https://mayanktaker.com
+# MT Nord Night global theme defaults for Plasma 6.8.
+# Layouts, icons, cursor, wallpaper and splash are intentionally omitted so applying
+# this theme keeps the user's current layout, Tela-circle icons, cursor, wallpaper and splash.
+
+[kdeglobals][KDE]
+widgetStyle=MTNightshift
+# Seam contrast. KDE derives ColorScheme-Frame as blend(background, text, this),
+# so 0.05 keeps interior seams below the decoration's own frame line instead of
+# the stock 0.20, which made the client hairline the brightest line on screen.
+# The decoration's frame line follows the same 2026-11 polish pass at 0.06 from
+# the Header group, so no edge reads as a visible border (design.md §8, §12.2).
+frameContrast=0.05
+
+[kdeglobals][General]
+ColorScheme=MT-Nord-Night
+
+[plasmarc][Theme]
+name=mt-nord-night
+
+# Aurorae decoration is provided by the MT Nord Night decoration package.
+[kwinrc][org.kde.kdecoration2]
+library=org.kde.kwin.aurorae.v2
+theme=__aurorae__svg__MTNordNight

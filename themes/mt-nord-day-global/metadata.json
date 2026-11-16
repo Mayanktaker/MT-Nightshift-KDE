@@ -1,0 +1,19 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Mayanktaker Computers & Web Development"
+            },
+            {
+                "Name": "KDE Visual Design Group"
+            }
+        ],
+        "Category": "",
+        "Description": "Nord Day global theme for Plasma 6: selects the MT Nord Day Plasma Style, MT Nord Day color scheme and the MT Nord Day Aurorae decoration without replacing the desktop layout, icons, cursor, wallpaper or splash screen. Derived from Breeze by the KDE Visual Design Group; adaptation by Mayanktaker Computers & Web Development (https://mayanktaker.com).",
+        "Id": "com.mayanktaker.mt-nord-day.desktop",
+        "Name": "MT Nord Day",
+        "Version": "1.6.0",
+        "Website": "https://mayanktaker.com/"
+    }
+}
