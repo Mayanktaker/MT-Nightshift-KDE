@@ -108,6 +108,15 @@ were written; the live list is [`PLAN.md`](PLAN.md).
 - [x] `apply-install` now copies the Nightshift Plasma Style whole (like Dayshift) instead of listing files: the explicit list had silently
   missed the palette once and `widgets/background` now, which `make verify-live` caught both times.
 
+- [x] Live maximized and inactive-window captures (2026-11-16), closing the screenshot gap the SVG probes left: a Konsole window was
+  maximized through KWin's `Window Maximize` global shortcut (invoked over DBus, since this Wayland session has no pointer-injection
+  tool) and captured with `spectacle -b -n` (`/tmp/opencode/nightshift-maximized-active.png`). A second window was then raised so the
+  maximized Dolphin frame rendered inactive (`/tmp/opencode/nightshift-maximized-dolphin-inactive.png`). Measured titlebar fill
+  `#15181C` active against `#101216` inactive, a continuous maximized strip with no doubled seam, and clean 15px corner arcs in both
+  states; no artwork change. The Opaque panel state was also exercised by writing `opacityMode=1` under `[PlasmaViews][Panel 58]`
+  with `--notify` and capturing the solid `#101216` panel (`panel-mode-1.png`), then deleted again so the session returned to its
+  original adaptive/translucent panel.
+
 ## Verification
 
 

@@ -8,10 +8,8 @@ the current state rather than the history.
 
 ## Steps
 
-- [ ] Capture the maximized and inactive-window states live; the SVG probes already assert the maximized strip and the
-  inactive fills, but no screenshot covers them.
-- [ ] In a hands-on desktop pass, set the panel to Opaque and open a panel context menu and tooltip; session application and base panel appearance were checked, while these individual popup states were not manually opened.
-- [ ] Confirm the editable path field by clicking it (no KIO development headers here, so a harness cannot instantiate a real KUrlNavigator): the expected result is our 15px accent ring around a Base fill.
+- [ ] In a hands-on desktop pass, open the panel context menu and a tooltip (the panel Opaque state and the launcher/widget-explorer popups were checked on 2026-11-16; right-click and hover cannot be injected into this Wayland session — no `ydotool`/`kdotool` or `/dev/uinput`).
+- [ ] Click the editable path field once by hand to confirm the 15px accent ring around a Base fill. The editable field itself was verified live on 2026-11-16 (15px taper, `#0A0B0D` fill, no frame pixels) after Dolphin's "Editable Location" action; AT-SPI's `SetFocus`/`Press` actions did not focus `KUrlNavigator` on Wayland, so the ring remains unconfirmed live and is still asserted offscreen by `check-style.py`.
 
 ## Chosen direction
 
