@@ -10,14 +10,6 @@ A modern, sculptured evolution of KDE Breeze for KDE Plasma 6. Built around **Ni
 
 ---
 
-## Visual Previews
-
-| Rounded Context Menus & Path Bar | Dolphin Statusbar & 12px Gutters | One Dark Pro Live Desktop |
-|---|---|---|
-| ![Rounded Menus](docs/screenshots/preview-menu.png) | ![Dolphin Widgets](docs/screenshots/preview-dolphin.png) | ![One Dark Pro](docs/screenshots/preview-desktop-odp.png) |
-
----
-
 ## Features
 
 - **5 Hand-Crafted Variants**: Seamlessly switch between Nightshift (OLED carbon), Dayshift (crisp light), Nord Night (Polar Night slate), Nord Day (Snow Storm), and One Dark Pro (vibrant dark).
