@@ -152,11 +152,22 @@ def main() -> int:
     hover_height, hover_taper = taper(outdir / "menu-hover.png")
     check("menu hover pill taper", hover_height > 8 and hover_taper >= 8,
           f"h={hover_height} taper={hover_taper}px (>= 8px)")
+    hover_rgb = np.array(Image.open(outdir / "menu-hover.png").convert("RGB")).astype(int)
+    on_pill = int((np.abs(hover_rgb - pill_text_rgb).sum(axis=2) < 120).sum())
+    check("menu hover text on pill", on_pill > 20,
+          f"pill-text px={on_pill} (want > 20)")
 
     for state in ("hover", "pressed", "checked"):
         h, t = taper(outdir / f"tool-{state}.png")
         check(f"tool {state} corner taper", h > 8 and t >= 8,
               f"h={h} taper={t}px (>= 8px)")
+    idle_height, idle_taper = taper(outdir / "tool-idle.png")
+    check("tool idle unchanged", idle_taper < 8,
+          f"h={idle_height} taper={idle_taper}px (Breeze idle surface, not our pill)")
+    idle_rgb = np.array(Image.open(outdir / "tool-idle.png").convert("RGB")).astype(int)
+    menu_rgb = np.array(Image.open(outdir / "tool-menu.png").convert("RGB")).astype(int)
+    arrow_px = int((np.abs(idle_rgb[:, -25:] - menu_rgb[:, -25:]).sum(axis=2) > 20).sum())
+    check("tool menu arrow drawn", arrow_px > 20, f"right-edge diff px={arrow_px}")
 
     # Breeze's tight frame must not be stamped over our pill (needs Breeze).
     if not ci:

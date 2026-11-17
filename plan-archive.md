@@ -141,9 +141,9 @@ were written; the live list is [`PLAN.md`](PLAN.md).
 
 ## Rounded hover states (2026-11-17)
 
-- [x] QMenu rows: `CE_MenuItem` paints an inset 15px pill for MouseOver/Selected rows and delegates icon/text to Breeze with those state flags cleared; idle rows and separators are unchanged. Offscreen RED 0px (text-only forced render), GREEN 10px with text intact.
+- [x] QMenu rows: `CE_MenuItem` paints an inset 15px pill for MouseOver/Selected rows and delegates icon/text to Breeze with those flags cleared. QMenu marks its current row `State_Selected`, so Breeze's label is recoloured to `HighlightedText` before delegation — the missing swap left Nord Night's text at ~2.5:1 on the accent pill (0 matching pill-text pixels offscreen) and is now fixed across all five schemes (62–113 matching pixels). Idle rows and separators are unchanged. Offscreen RED 0px, GREEN 10px corner recession with text intact.
 - [x] Tool buttons: Qt 6 has no `CE_ToolButton` control element — the surface is `PE_PanelButtonTool`, which now paints a rounded hover/pressed/checked fill while idle buttons delegate to Breeze. Offscreen RED 2px on all three states, GREEN 12px each.
-- [x] Probe coverage: added `menu-hover.png` and `tool-{idle,hover,pressed,checked}.png` renders with ≥8px corner assertions; full `make check` green. Live hover screenshots were prevented by the session auto-lock; documented in `validation.md`.
+- [x] Probe coverage: added `menu-hover.png` (forced `State_Selected | State_Active`), `tool-{idle,hover,pressed,checked}.png` and a `CC_ToolButton` + `HasMenu` render. Assertions cover ≥8px corner recession on state pills, pill-text pixels on the accent fill, idle tool taper staying at Breeze's 2px, and 28–32px of arrow difference at the right edge. Full `make check` green. Live hover screenshots were prevented by the session auto-lock; documented in `validation.md`.
 
 ## Verification
 

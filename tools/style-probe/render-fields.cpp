@@ -430,7 +430,7 @@ int main(int argc, char **argv)
         item.text = QStringLiteral("Hover me");
         item.menuItemType = QStyleOptionMenuItem::Normal;
         item.checkType = QStyleOptionMenuItem::NotCheckable;
-        item.state |= QStyle::State_Enabled | QStyle::State_Active | QStyle::State_MouseOver;
+        item.state |= QStyle::State_Enabled | QStyle::State_Active | QStyle::State_Selected;
         QApplication::style()->drawControl(QStyle::CE_MenuItem, &item, &p, &menu);
     }
     hover.save(QStringLiteral("%1/menu-hover.png").arg(outdir));
@@ -455,6 +455,22 @@ int main(int argc, char **argv)
     drawToolState(QStyle::State_MouseOver, "tool-hover");
     drawToolState(QStyle::State_Sunken, "tool-pressed");
     drawToolState(QStyle::State_On, "tool-checked");
+
+    // Tool button with a popup indicator: CC_ToolButton draws the arrow.
+    QPixmap menuArrow(120, 36);
+    menuArrow.fill(Qt::transparent);
+    {
+        QPainter p(&menuArrow);
+        QStyleOptionToolButton tb;
+        tb.initFrom(&toolHost);
+        tb.rect = menuArrow.rect();
+        tb.text = QStringLiteral("Tool");
+        tb.toolButtonStyle = Qt::ToolButtonTextOnly;
+        tb.features = QStyleOptionToolButton::HasMenu;
+        tb.state |= QStyle::State_Enabled;
+        QApplication::style()->drawComplexControl(QStyle::CC_ToolButton, &tb, &p, &toolHost);
+    }
+    menuArrow.save(QStringLiteral("%1/tool-menu.png").arg(outdir));
 
     // Disabled field family: the Login Screen settings page greys out whole
     // groups of combos and edits, so their surface must stay legible.

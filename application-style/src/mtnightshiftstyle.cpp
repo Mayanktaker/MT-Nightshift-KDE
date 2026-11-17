@@ -447,6 +447,20 @@ bool MTNightshiftStyle::paintToolButton(const QStyleOption *option, QPainter *pa
     return true;
 }
 
+// Shared hover/selection fill for pill-shaped states in menus and item views.
+QColor stateFill(const QStyleOption *option)
+{
+    const QPalette &palette = option->palette;
+    const QColor windowTone = palette.color(QPalette::Window);
+    if (!option->state.testFlag(QStyle::State_Selected)) {
+        return blend(windowTone, palette.color(QPalette::WindowText), kItemHoverContrast);
+    }
+    if (option->state.testFlag(QStyle::State_Active)) {
+        return palette.color(QPalette::Active, QPalette::Highlight);
+    }
+    return blend(windowTone, palette.color(QPalette::WindowText), kItemInactiveContrast);
+}
+
 // Paints the hover/selection pill for one menu item, in the item-view tone.
 bool MTNightshiftStyle::paintMenuPill(const QStyleOption *option, QPainter *painter) const
 {
@@ -454,13 +468,7 @@ bool MTNightshiftStyle::paintMenuPill(const QStyleOption *option, QPainter *pain
     if (!item || !painter || item->rect.isEmpty()) {
         return false;
     }
-    const QPalette &palette = option->palette;
-    const QColor windowTone = palette.color(QPalette::Window);
-    const QColor fill = option->state.testFlag(QStyle::State_Selected)
-        ? (option->state.testFlag(QStyle::State_Active)
-           ? palette.color(QPalette::Active, QPalette::Highlight)
-           : blend(windowTone, palette.color(QPalette::WindowText), kItemInactiveContrast))
-        : blend(windowTone, palette.color(QPalette::WindowText), kItemHoverContrast);
+    const QColor fill = stateFill(option);
     const QRectF rect = QRectF(item->rect).adjusted(kItemInsetX, kItemInsetY,
                                                    -kItemInsetX, -kItemInsetY);
     if (rect.isEmpty()) {
@@ -662,6 +670,16 @@ void MTNightshiftStyle::drawControl(ControlElement element, const QStyleOption *
             && paintMenuPill(option, painter)) {
             QStyleOptionMenuItem stripped(*item);
             stripped.state &= ~(State_MouseOver | State_Selected);
+            if (item->state.testFlag(State_Selected)) {
+                // QMenu marks its current row Selected; Breeze would paint the
+                // label in Text on our Highlight fill, so move it to on-pill ink.
+                const auto group = colorGroup(item);
+                const QColor onPill = item->palette.color(group, QPalette::HighlightedText);
+                stripped.palette.setColor(QPalette::Active, QPalette::Text, onPill);
+                stripped.palette.setColor(QPalette::Inactive, QPalette::Text, onPill);
+                stripped.palette.setColor(QPalette::Active, QPalette::WindowText, onPill);
+                stripped.palette.setColor(QPalette::Inactive, QPalette::WindowText, onPill);
+            }
             baseStyle()->drawControl(CE_MenuItem, &stripped, painter, widget);
             return;
         }
@@ -754,16 +772,7 @@ bool MTNightshiftStyle::paintItemPill(const QStyleOption *option, QPainter *pain
     if (!selected && !hovered) {
         return false;
     }
-    const QPalette &palette = option->palette;
-    const QColor windowTone = palette.color(QPalette::Window);
-    QColor fill;
-    if (selected) {
-        fill = option->state.testFlag(QStyle::State_Active)
-            ? palette.color(QPalette::Active, QPalette::Highlight)
-            : blend(windowTone, palette.color(QPalette::WindowText), kItemInactiveContrast);
-    } else {
-        fill = blend(windowTone, palette.color(QPalette::WindowText), kItemHoverContrast);
-    }
+    const QColor fill = stateFill(option);
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing, true);
     painter->setPen(Qt::NoPen);

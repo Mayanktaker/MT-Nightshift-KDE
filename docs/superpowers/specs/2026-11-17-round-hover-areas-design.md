@@ -45,8 +45,9 @@ same Sculpted language. Status bars and QML popups are out of scope.
   cleared so Breeze draws icon/text without its old highlight. Separators and
   non-hover rows delegate unchanged.
 - `paintToolButton(const QStyleOptionToolButton*, QPainter*)` fills a rounded
-  hover/pressed/checked surface; `drawControl(PE_PanelButtonTool)` paints it, then
-  delegates PE_PanelButtonToolLabel to Breeze. Idle buttons keep Breeze's look.
+  hover/pressed/checked surface; `drawPrimitive(PE_PanelButtonTool)` paints it.
+  Labels and popup arrows stay with Breeze's `CC_ToolButton` paint path. Idle
+  buttons keep Breeze's look.
 - `render-fields.cpp` gains forced-state renders (menu with hovered row, tool
   buttons in normal/hover/pressed/checked); `check-style.py` asserts corner
   recession ≥ 8px on the state surfaces and that idle rows remain unchanged.
@@ -55,5 +56,5 @@ same Sculpted language. Status bars and QML popups are out of scope.
 
 - Breeze may still stamp its own highlight when flags are cleared; the probe
   must compare pixel evidence, not assume.
-- Tool buttons with popup indicators may lose their arrow if PE_PanelButtonTool is
-  owned; verify the hamburger button visually.
+- Tool buttons with popup indicators may lose their arrow if the panel is
+  owned; the probe renders `CC_ToolButton` with `HasMenu` to guard it.
