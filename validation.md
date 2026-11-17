@@ -200,6 +200,21 @@ affect running apps.
 
 **Hover states (2026-11-17).** `render-fields.cpp` renders a forced `CE_MenuItem` row with `State_Selected | State_Active` — the state QMenu actually sets on its current row — plus tool-button hover/pressed/checked surfaces, a tool-idle baseline and a `CC_ToolButton` render with `HasMenu` to guard the popup arrow. The owned pills measure 10px (menu row) and 12px (tool buttons) corner recession against Breeze's 2px idle surface. The menu render also asserts that pixels matching the scheme's `pill_text_rgb` survive inside the accent pill: Nord Night failed at 0 before the palette swap and measures 62–113 on the five schemes after it. The idle tool render keeps Breeze's 2px taper, and the arrow render differs from idle by 28–32 pixels at the right edge. Live screenshots of these states were blocked by this host's auto-lock, which kept a dimmed lock layer active after unlock attempts; the forced-state renders are the evidence, and the outer menu corners remain covered by the earlier live captures.
 
+**Selected-item active state (2026-11-17).** Dolphin's Places delegate passes
+`State_Selected` **without** `State_Active` on its selected row, while the option's
+palette group is `Active` — measured live with temporary instrumentation in the
+style plugin (`state=0x8001 active=0 paletteGroup=0`, where 0 is `QPalette::Active`).
+The pill fill and colour-group helpers previously keyed only off `State_Active`, so
+the active row painted the muted inactive grey until further interaction changed the
+state. Both helpers now treat an `Active` palette group as active too. The probe
+renders `item-selected-palette-active.png` (Selected, no State_Active, Active palette)
+and asserts the accent fill; RED was "no accent fill", GREEN on all five schemes.
+A genuine inactive row uses `item-selected-inactive.png` with the palette group set
+to Inactive and stays muted. Live: `/tmp/opencode/accent-fix-dolphin.png` shows the
+blue accent pill on Home on first open, with no clicking (this session's
+`AccentColor` override tints it `(31,77,107)`, but the active/inactive distinction
+is the fix).
+
 ## Plasma Style assets
 
 `make check` validates every SVG as XML, the metadata as JSON, and the panel

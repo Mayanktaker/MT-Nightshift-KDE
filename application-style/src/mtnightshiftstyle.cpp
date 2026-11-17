@@ -32,7 +32,6 @@
 #include <QStyleOptionSpinBox>
 
 #include <cmath>
-#include <cstdio>
 
 namespace
 {
@@ -262,7 +261,12 @@ QPalette::ColorGroup colorGroup(const QStyleOption *option)
     if (!option->state.testFlag(QStyle::State_Enabled)) {
         return QPalette::Disabled;
     }
-    return option->state.testFlag(QStyle::State_Active) ? QPalette::Active : QPalette::Inactive;
+    // KDE delegates (e.g. Dolphin's Places view) often omit State_Active on
+    // selected items even in an active window; the palette's current group is
+    // the reliable signal in that case.
+    return option->state.testFlag(QStyle::State_Active)
+        || option->palette.currentColorGroup() == QPalette::Active
+        ? QPalette::Active : QPalette::Inactive;
 }
 
 // Fills a rounded Sculpted surface and keeps its state outline inside the rect.
@@ -455,7 +459,9 @@ QColor stateFill(const QStyleOption *option)
     if (!option->state.testFlag(QStyle::State_Selected)) {
         return blend(windowTone, palette.color(QPalette::WindowText), kItemHoverContrast);
     }
-    if (option->state.testFlag(QStyle::State_Active)) {
+    const bool active = option->state.testFlag(QStyle::State_Active)
+        || palette.currentColorGroup() == QPalette::Active;
+    if (active) {
         return palette.color(QPalette::Active, QPalette::Highlight);
     }
     return blend(windowTone, palette.color(QPalette::WindowText), kItemInactiveContrast);

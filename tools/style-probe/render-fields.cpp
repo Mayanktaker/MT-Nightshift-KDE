@@ -380,18 +380,21 @@ int main(int argc, char **argv)
     listView.resize(220, 130);
     grab(listView, QStringLiteral("itemview-selected"), outdir);
 
-    const auto pillRender = [&](QStyle::State state, const QString &name) {
+    const auto pillRender = [&](QStyle::State state, const QString &name,
+                                QPalette::ColorGroup group = QPalette::Active) {
         saveRendered(QSize(220, 30), name, outdir, name, [&](QPainter *p) {
             QStyleOptionViewItem option;
             option.initFrom(&listView);
             option.rect = QRect(0, 0, 220, 30);
             option.state |= QStyle::State_Enabled | state;
+            option.palette.setCurrentColorGroup(group);
             app.style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &option, p, &listView);
         });
     };
     pillRender(QStyle::State_MouseOver, QStringLiteral("item-hover"));
     pillRender(QStyle::State_Selected | QStyle::State_Active, QStringLiteral("item-selected"));
-    pillRender(QStyle::State_Selected, QStringLiteral("item-selected-inactive"));
+    pillRender(QStyle::State_Selected, QStringLiteral("item-selected-palette-active"));
+    pillRender(QStyle::State_Selected, QStringLiteral("item-selected-inactive"), QPalette::Inactive);
 
     // Keyboard-focus pill: replaces the squarish focus outline; suppressed
     // while the item is selected.

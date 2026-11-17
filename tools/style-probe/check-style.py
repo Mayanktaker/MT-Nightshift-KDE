@@ -235,8 +235,8 @@ def main() -> int:
         ink = (diff > 12) & (alpha > 10)
         return bool(ink.any()), f"ink px {int(ink.sum())}"
 
-    for name, blue in [("item-selected", True), ("item-hover", False),
-                       ("item-selected-inactive", False)]:
+    for name, blue in [("item-selected", True), ("item-selected-palette-active", True),
+                       ("item-hover", False), ("item-selected-inactive", False)]:
         ok, detail = pill_shape(outdir / f"{name}.png", blue)
         check(f"{name} pill", ok, detail)
 

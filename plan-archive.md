@@ -145,6 +145,12 @@ were written; the live list is [`PLAN.md`](PLAN.md).
 - [x] Tool buttons: Qt 6 has no `CE_ToolButton` control element — the surface is `PE_PanelButtonTool`, which now paints a rounded hover/pressed/checked fill while idle buttons delegate to Breeze. Offscreen RED 2px on all three states, GREEN 12px each.
 - [x] Probe coverage: added `menu-hover.png` (forced `State_Selected | State_Active`), `tool-{idle,hover,pressed,checked}.png` and a `CC_ToolButton` + `HasMenu` render. Assertions cover ≥8px corner recession on state pills, pill-text pixels on the accent fill, idle tool taper staying at Breeze's 2px, and 28–32px of arrow difference at the right edge. Full `make check` green. Live hover screenshots were prevented by the session auto-lock; documented in `validation.md`.
 
+## Active-state accent fix (2026-11-17)
+
+- [x] Root cause traced with temporary in-plugin instrumentation: Dolphin's Places delegate paints its selected row with `State_Selected` but no `State_Active`; the option's `palette.currentColorGroup()` is `Active`. `stateFill()` and `colorGroup()` used only the state flag, so a freshly opened Dolphin showed the muted inactive pill until extra clicks changed the state.
+- [x] Fix: both helpers now treat an `Active` palette group as active when `State_Active` is absent. Probe adds `item-selected-palette-active.png` (RED: no accent fill; GREEN across all five schemes) and keeps `item-selected-inactive.png` with an explicit Inactive palette group to prove genuinely inactive rows stay muted. Full `make check` green.
+- [x] Live verification with the rebuilt plugin through `QT_PLUGIN_PATH`: `/tmp/opencode/accent-fix-dolphin.png` shows the accent pill on the Places Home row immediately on first open; `/tmp/opencode/accent-fix-zoom.png` crops it. No system install was needed for the check.
+
 ## Verification
 
 
