@@ -148,6 +148,11 @@ def main() -> int:
         check(f"menu corner {corner} taper", height >= 80 and recession >= 8,
               f"h={height} taper={recession}px (>= 8px at ~100px menu height)")
 
+    # Hovered menu row: the highlight must be a deep pill, not Breeze's flat band.
+    hover_height, hover_taper = taper(outdir / "menu-hover.png")
+    check("menu hover pill taper", hover_height > 8 and hover_taper >= 8,
+          f"h={hover_height} taper={hover_taper}px (>= 8px)")
+
     # Breeze's tight frame must not be stamped over our pill (needs Breeze).
     if not ci:
         frame_alpha = np.array(Image.open(outdir / "framed-lineedit-framecheck.png").convert("RGBA").split()[3])

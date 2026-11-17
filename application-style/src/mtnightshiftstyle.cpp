@@ -420,6 +420,35 @@ void paintMark(QPainter *painter, const QRectF &rect, const QColor &color, bool 
 // Builds the style on the installed Breeze style, or the native style when absent.
 MTNightshiftStyle::MTNightshiftStyle() : QProxyStyle(QStyleFactory::create(QStringLiteral("Breeze"))) {}
 
+// Paints the hover/selection pill for one menu item, in the item-view tone.
+bool MTNightshiftStyle::paintMenuPill(const QStyleOption *option, QPainter *painter) const
+{
+    const auto *item = qstyleoption_cast<const QStyleOptionMenuItem *>(option);
+    if (!item || !painter || item->rect.isEmpty()) {
+        return false;
+    }
+    const QPalette &palette = option->palette;
+    const QColor windowTone = palette.color(QPalette::Window);
+    const QColor fill = option->state.testFlag(QStyle::State_Selected)
+        ? (option->state.testFlag(QStyle::State_Active)
+           ? palette.color(QPalette::Active, QPalette::Highlight)
+           : blend(windowTone, palette.color(QPalette::WindowText), kItemInactiveContrast))
+        : blend(windowTone, palette.color(QPalette::WindowText), kItemHoverContrast);
+    const QRectF rect = QRectF(item->rect).adjusted(kItemInsetX, kItemInsetY,
+                                                   -kItemInsetX, -kItemInsetY);
+    if (rect.isEmpty()) {
+        return false;
+    }
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, true);
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(fill);
+    const qreal radius = qMin(kControlRadius, rect.height() / 2.0);
+    painter->drawRoundedRect(rect, radius, radius);
+    painter->restore();
+    return true;
+}
+
 // Owns the QMenu surface; Window fill and hairline follow the control language.
 bool MTNightshiftStyle::paintMenuPanel(const QStyleOption *option, QPainter *painter) const
 {
@@ -591,6 +620,19 @@ void MTNightshiftStyle::drawControl(ControlElement element, const QStyleOption *
 {
     if (element == CE_PushButton && paintPushButton(option, painter, widget)) {
         return;
+    }
+    // Hovered/selected menu rows get the pill; Breeze draws icon and text from
+    // a state-stripped option so its old flat highlight cannot be painted.
+    if (element == CE_MenuItem) {
+        const auto *item = qstyleoption_cast<const QStyleOptionMenuItem *>(option);
+        if (item && painter
+            && (item->state.testFlag(State_MouseOver) || item->state.testFlag(State_Selected))
+            && paintMenuPill(option, painter)) {
+            QStyleOptionMenuItem stripped(*item);
+            stripped.state &= ~(State_MouseOver | State_Selected);
+            baseStyle()->drawControl(CE_MenuItem, &stripped, painter, widget);
+            return;
+        }
     }
     // KDE capacity meters (Dolphin's free-space meter and other KCapacityBar
     // users) arrive under Breeze's custom element id; the generic progress bars

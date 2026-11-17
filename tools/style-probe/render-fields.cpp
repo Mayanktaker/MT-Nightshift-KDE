@@ -23,6 +23,7 @@
 #include "status-card-widget.h"
 #include <QLineEdit>
 #include <QMenu>
+#include <QMouseEvent>
 #include <QListView>
 #include <QStringListModel>
 #include <QPalette>
@@ -418,6 +419,22 @@ int main(int argc, char **argv)
     menu.addAction(QStringLiteral("Quit"));
     menu.resize(menu.sizeHint());
     menu.grab().save(QStringLiteral("%1/menu.png").arg(outdir));
+
+    // Forced hover state: draw one menu item with MouseOver on a transparent surface.
+    QPixmap hover(240, 40);
+    hover.fill(Qt::transparent);
+    {
+        QPainter p(&hover);
+        QStyleOptionMenuItem item;
+        item.initFrom(&menu);
+        item.rect = hover.rect();
+        item.text = QStringLiteral("Hover me");
+        item.menuItemType = QStyleOptionMenuItem::Normal;
+        item.checkType = QStyleOptionMenuItem::NotCheckable;
+        item.state |= QStyle::State_Enabled | QStyle::State_Active | QStyle::State_MouseOver;
+        QApplication::style()->drawControl(QStyle::CE_MenuItem, &item, &p, &menu);
+    }
+    hover.save(QStringLiteral("%1/menu-hover.png").arg(outdir));
 
     // Disabled field family: the Login Screen settings page greys out whole
     // groups of combos and edits, so their surface must stay legible.

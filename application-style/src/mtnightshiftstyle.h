@@ -48,6 +48,10 @@ public:
                     const QWidget *widget = nullptr) const override;
 
 private:
+    // Paints a rounded hover/selection pill inside a QMenu item.
+    bool paintMenuPill(const QStyleOption *option, QPainter *painter) const;
+    // Paints a rounded hover/pressed/checked surface for a tool button.
+    bool paintToolButton(const QStyleOption *option, QPainter *painter) const;
     // Paints a QMenu surface with the 15px control radius.
     bool paintMenuPanel(const QStyleOption *option, QPainter *painter) const;
     // Suppresses Breeze's square menu frame; the panel already carries the edge.
