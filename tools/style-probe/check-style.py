@@ -148,6 +148,14 @@ def main() -> int:
         check(f"menu corner {corner} taper", height >= 80 and recession >= 8,
               f"h={height} taper={recession}px (>= 8px at ~100px menu height)")
 
+    for state in ("active", "inactive"):
+        th, tt = taper(outdir / f"tab-{state}.png")
+        check(f"tab {state} corner taper", th > 8 and tt >= 8,
+              f"h={th} taper={tt}px (>= 8px)")
+        tab_img = np.array(Image.open(outdir / f"tab-{state}.png").convert("RGBA"))
+        check(f"tab {state} label drawn", int((tab_img[:, :, 3] > 10).sum()) > 200,
+              f"alpha px={int((tab_img[:, :, 3] > 10).sum())}")
+
     # Hovered menu row: the highlight must be a deep pill, not Breeze's flat band.
     hover_height, hover_taper = taper(outdir / "menu-hover.png")
     check("menu hover pill taper", hover_height > 8 and hover_taper >= 8,

@@ -23,6 +23,7 @@
 #include "status-card-widget.h"
 #include <QLineEdit>
 #include <QMenu>
+#include <QTabBar>
 #include <QListView>
 #include <QStringListModel>
 #include <QPalette>
@@ -437,6 +438,28 @@ int main(int argc, char **argv)
         QApplication::style()->drawControl(QStyle::CE_MenuItem, &item, &p, &menu);
     }
     hover.save(QStringLiteral("%1/menu-hover.png").arg(outdir));
+
+    // Tab bar shapes: active and inactive tabs drawn by the style.
+    QTabBar tabBar;
+    tabBar.addTab(QStringLiteral("Welcome"));
+    tabBar.addTab(QStringLiteral("Sessions"));
+    tabBar.resize(220, 30);
+    auto tabRender = [&](QStyle::State state, const char *name) {
+        QPixmap pm(120, 30);
+        pm.fill(Qt::transparent);
+        QPainter p(&pm);
+        QStyleOptionTab tab;
+        tab.initFrom(&tabBar);
+        tab.rect = pm.rect();
+        tab.text = QStringLiteral("Welcome");
+        tab.position = QStyleOptionTab::OnlyOneTab;
+        tab.state |= QStyle::State_Enabled | state;
+        QApplication::style()->drawControl(QStyle::CE_TabBarTabShape, &tab, &p, &tabBar);
+        QApplication::style()->drawControl(QStyle::CE_TabBarTabLabel, &tab, &p, &tabBar);
+        pm.save(QStringLiteral("%1/%2.png").arg(outdir, QString::fromLatin1(name)));
+    };
+    tabRender(QStyle::State_Selected | QStyle::State_Active, "tab-active");
+    tabRender(QStyle::State_None, "tab-inactive");
 
     // Tool button states: one transparent render per state, drawn by the style.
     QWidget toolHost;

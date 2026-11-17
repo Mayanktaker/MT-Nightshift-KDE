@@ -48,6 +48,8 @@ public:
                     const QWidget *widget = nullptr) const override;
 
 private:
+    // Paints a rounded tab shape; labels stay with Breeze.
+    bool paintTabShape(const QStyleOption *option, QPainter *painter) const;
     // Paints a rounded hover/selection pill inside a QMenu item.
     bool paintMenuPill(const QStyleOption *option, QPainter *painter) const;
     // Paints a rounded hover/pressed/checked surface for a tool button.

@@ -467,6 +467,24 @@ QColor stateFill(const QStyleOption *option)
     return blend(windowTone, palette.color(QPalette::WindowText), kItemInactiveContrast);
 }
 
+// Rounds a tab top while leaving its label and icon to Breeze.
+bool MTNightshiftStyle::paintTabShape(const QStyleOption *option, QPainter *painter) const
+{
+    const auto *tab = qstyleoption_cast<const QStyleOptionTab *>(option);
+    if (!tab || !painter || tab->rect.isEmpty()) {
+        return false;
+    }
+    const QPalette &palette = option->palette;
+    const QColor fill = option->state.testFlag(QStyle::State_Selected)
+        ? stateFill(option)
+        : blend(palette.color(QPalette::Window),
+                palette.color(QPalette::WindowText), kItemHoverContrast);
+    const QRectF rect = QRectF(tab->rect).adjusted(0.5, 0.5, -0.5, -0.5);
+    const qreal radius = qMin(kControlRadius, rect.height() / 2.0);
+    fillSurface(painter, rect, radius, fill);
+    return true;
+}
+
 // Paints the hover/selection pill for one menu item, in the item-view tone.
 bool MTNightshiftStyle::paintMenuPill(const QStyleOption *option, QPainter *painter) const
 {
@@ -665,6 +683,9 @@ void MTNightshiftStyle::drawControl(ControlElement element, const QStyleOption *
                                     const QWidget *widget) const
 {
     if (element == CE_PushButton && paintPushButton(option, painter, widget)) {
+        return;
+    }
+    if (element == CE_TabBarTabShape && paintTabShape(option, painter)) {
         return;
     }
     // Hovered/selected menu rows get the pill; Breeze draws icon and text from
