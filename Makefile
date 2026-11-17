@@ -47,7 +47,7 @@ MOC := $(shell pkg-config --variable=libexecdir Qt6Core)/moc
 QT_CFLAGS := $(shell pkg-config --cflags Qt6Widgets)
 QT_LIBS := $(shell pkg-config --libs Qt6Widgets)
 
-.PHONY: all decoration check check-style check-dpr2 style style-preview apply apply-dayshift apply-nord-night apply-nord-day apply-one-dark-pro apply-install style-install verify-live clean
+.PHONY: all decoration check check-style check-dpr2 style style-preview wallpapers apply apply-dayshift apply-nord-night apply-nord-day apply-one-dark-pro apply-install style-install verify-live clean
 
 all: check
 
@@ -55,6 +55,10 @@ all: check
 decoration:
 	python3 tools/decoration-probe/build-decoration.py --all
 	@for f in themes/aurorae/*/decoration.svg; do xmllint --noout "$$f" || exit 1; done
+
+# Generate all wallpapers across the five variants from source masters.
+wallpapers:
+	./tools/wallpapers/build-wallpapers.py
 
 # Fail if the committed SVG drifted from its generator, the raster invariants
 # broke, or the rendered field family regressed.
@@ -70,6 +74,7 @@ check:
 	./tools/theme-audit/check-theme.py
 	./tools/plasma-theme/dialog-frame.py --check
 	./tools/plasma-theme/applet-background.py --check
+	./tools/wallpapers/build-wallpapers.py --check
 	$(MAKE) check-style
 	@echo "all theme checks passed"
 

@@ -16,6 +16,10 @@ the current state rather than the history.
 
 Five named looks are installed and selectable: `nightshift` (default), `dayshift`, `nord-night`, `nord-day` and `one-dark-pro`. `make apply VARIANT=<name>` selects one and `make verify-live VARIANT=<name>` checks it; `apply-dayshift`, `apply-nord-night`, `apply-nord-day` and `apply-one-dark-pro` are aliases. All theme packages are 1.6.0, the Qt style plugin is unchanged at 1.4.0, and the decoration's frame line and five buttons are generated from each variant's palette. Qt Widgets menus (including submenus) and their hovered rows, plus hovered/pressed/checked tool buttons, now use the same 15px surface language as the field family; Plasma QML popups and the notification history are unchanged. The closed Nord, One Dark Pro and rounded-menu work, with its measurements and live capture paths, is in [`plan-archive.md`](plan-archive.md).
 
+## Desktop Wallpapers (2026-11-17)
+
+A complete 20-wallpaper abstract suite matching the exact palette blocks of all five looks is provided in `Wallpapers/` (Full HD 1920x1080, Dual-FHD 3840x1080 32:9, Dual-QHD 5120x1440 32:9, and 4K UHD 3840x2160). Managed by `tools/wallpapers/build-wallpapers.py` with lossless source masters under `Wallpapers/sources/`, rebuildable via `make wallpapers` and verified by `make check`. Detailed prompts, resolutions and provenance are documented in [`Wallpapers/README.md`](Wallpapers/README.md).
+
 ## Chosen direction
 
 Nightshift OLED is the selected mockup: dark, calm, and high-contrast without turning every surface pure black. Keep Breeze's blue identity, but use it selectively for focus, selection, and active controls. Favor opaque, solid surfaces and deliberate edges over gradients, blur, and glow.
