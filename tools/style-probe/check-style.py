@@ -148,6 +148,10 @@ def main() -> int:
         check(f"menu corner {corner} taper", height >= 80 and recession >= 8,
               f"h={height} taper={recession}px (>= 8px at ~100px menu height)")
 
+    sb_height, sb_taper = taper(outdir / "statusbar.png")
+    check("statusbar corner taper", sb_height > 8 and sb_taper >= 8,
+          f"h={sb_height} taper={sb_taper}px (>= 8px)")
+
     for state in ("active", "inactive"):
         th, tt = taper(outdir / f"tab-{state}.png")
         check(f"tab {state} corner taper", th > 8 and tt >= 8,

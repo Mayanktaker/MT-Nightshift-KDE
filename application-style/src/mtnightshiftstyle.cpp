@@ -536,6 +536,19 @@ void MTNightshiftStyle::drawPrimitive(PrimitiveElement element, const QStyleOpti
                                       const QWidget *widget) const
 {
     switch (element) {
+    case PE_PanelStatusBar: {
+        if (!option || !painter || option->rect.isEmpty()) {
+            break;
+        }
+        const QPalette &palette = option->palette;
+        const auto group = colorGroup(option);
+        const QColor fill = palette.color(group, QPalette::Window);
+        const QColor line = blend(fill, palette.color(group, QPalette::WindowText), kFrameContrast);
+        const QRectF rect = QRectF(option->rect).adjusted(0.5, 0.5, -0.5, -0.5);
+        const qreal radius = qMin(kControlRadius, rect.height() / 2.0);
+        paintSurface(painter, rect, radius, kOutlineWidth, fill, line);
+        return;
+    }
     case PE_PanelButtonTool:
         if (paintToolButton(option, painter)) {
             return;

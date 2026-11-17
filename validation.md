@@ -215,6 +215,16 @@ blue accent pill on Home on first open, with no clicking (this session's
 `AccentColor` override tints it `(31,77,107)`, but the active/inactive distinction
 is the fix).
 
+**Tab bars and status strip (2026-11-17).** `CE_TabBarTabShape` and
+`PE_PanelStatusBar` are owned by the proxy style; labels and status text stay with
+Breeze. A scratch instrumented build confirmed Dolphin asks `PE_PanelStatusBar`
+13 times, so the strip is style-reachable after all. Forced renders
+(`tab-active.png`, `tab-inactive.png`, `statusbar.png`) fail on Breeze at 2px/0px
+and pass at 11px corner recession across all five schemes, with tab labels still
+drawn. Live previews with the built plugin through `QT_PLUGIN_PATH`:
+`/tmp/opencode/tab-kate.png` shows the rounded active Welcome tab, and
+`/tmp/opencode/tab-dolphin.png` shows the rounded status strip.
+
 ## Plasma Style assets
 
 `make check` validates every SVG as XML, the metadata as JSON, and the panel

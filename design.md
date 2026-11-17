@@ -113,6 +113,7 @@ Plasma Style assets do not carry fonts, and this theme deliberately does not ove
 
 - **Interaction states follow the surface.** A hovered or keyboard-selected QMenu row and a hovered, pressed or checked QToolButton fill an inset 15px pill in the same tone family as item-view highlights; idle rows and buttons stay with Breeze. These are QStyle primitives (`CE_MenuItem`, `PE_PanelButtonTool`), not Plasma SVG assets.
 
+- **Tab bars and status strips join the language.** Qt tab shapes and `PE_PanelStatusBar` are painted by the style proxy with the same clamped radius; their text and labels stay with Breeze. Plasma QML panels remain outside this reach.
 - **Content inset 4px** (`hint-*-margin`) for panels, dialogs and tooltips — Breeze's value. Text sits 4px inside a panel edge; controls add their own padding on top. Applet popups keep their **14px** inset, which is what Breeze's current widgets are laid out for; the generator preserves it while changing only the radius.
 - **Panels** keep Breeze's 6px margins, so panel thickness and widget spacing are unchanged.
 - **Edge treatment:** a 1px `ColorScheme-Frame` line on the outer contour of the frame assets this theme ships, inside the surface. KDE derives that colour as a mix of the `Window` background and text, tuned by `[KDE] frameContrast`, so the edge stays in family if the palette is retuned.

@@ -151,6 +151,12 @@ were written; the live list is [`PLAN.md`](PLAN.md).
 - [x] Fix: both helpers now treat an `Active` palette group as active when `State_Active` is absent. Probe adds `item-selected-palette-active.png` (RED: no accent fill; GREEN across all five schemes) and keeps `item-selected-inactive.png` with an explicit Inactive palette group to prove genuinely inactive rows stay muted. Full `make check` green.
 - [x] Live verification with the rebuilt plugin through `QT_PLUGIN_PATH`: `/tmp/opencode/accent-fix-dolphin.png` shows the accent pill on the Places Home row immediately on first open; `/tmp/opencode/accent-fix-zoom.png` crops it. No system install was needed for the check.
 
+## Rounded tab bars and status strip (2026-11-17)
+
+- [x] Qt tab bars: `CE_TabBarTabShape` paints a rounded active/inactive tab (radius clamped to tab height), with `CE_TabBarTabLabel` delegated to Breeze. Offscreen RED 2px on both states, GREEN 11px across all five schemes with label pixels intact. Live `/tmp/opencode/tab-kate.png` shows the rounded active Welcome tab.
+- [x] Status strip: a scratch instrumented build proved Dolphin requests `PE_PanelStatusBar` (13 calls), so the flat strip was style-reachable. The primitive now paints a rounded `Window` fill with the 1px Frame hairline; offscreen RED 0px, GREEN 11px on all five schemes. Live `/tmp/opencode/tab-dolphin.png` shows the rounded status strip.
+- [x] Probe coverage added for both surfaces; full `make check` green.
+
 ## Verification
 
 

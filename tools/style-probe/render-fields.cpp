@@ -24,6 +24,7 @@
 #include <QLineEdit>
 #include <QMenu>
 #include <QTabBar>
+#include <QStatusBar>
 #include <QListView>
 #include <QStringListModel>
 #include <QPalette>
@@ -460,6 +461,20 @@ int main(int argc, char **argv)
     };
     tabRender(QStyle::State_Selected | QStyle::State_Active, "tab-active");
     tabRender(QStyle::State_None, "tab-inactive");
+
+    // Status bar surface: Dolphin's strip asks PE_PanelStatusBar.
+    QStatusBar statusBar;
+    statusBar.resize(260, 28);
+    QPixmap statusPm(260, 28);
+    statusPm.fill(Qt::transparent);
+    {
+        QPainter p(&statusPm);
+        QStyleOption statusOption;
+        statusOption.initFrom(&statusBar);
+        statusOption.rect = statusPm.rect();
+        QApplication::style()->drawPrimitive(QStyle::PE_PanelStatusBar, &statusOption, &p, &statusBar);
+    }
+    statusPm.save(QStringLiteral("%1/statusbar.png").arg(outdir));
 
     // Tool button states: one transparent render per state, drawn by the style.
     QWidget toolHost;
