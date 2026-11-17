@@ -186,9 +186,12 @@ vacuously. CI passes `--ci`, which skips the two assertions that need Breeze
 installed (frame suppression, 12px clamp).
 
 **Menu corners (2026-11-17).** The probe also renders a `QMenu` into `menu.png`
-(69x100 at this Qt build) and asserts a top-left corner recession of at least 8px;
-the Breeze-only surface measures 2px and fails, the owned surface measures 12px
-and passes. This is a pixel measurement of the outer surface only: the offscreen
+(69x100 at this Qt build), asserts the dimension range (60-80 x 90-110) and
+measures all four corners by mirroring each into the top-left position; each
+corner needs at least 8px recession. The Breeze-only surface measures 2px and
+fails, the owned surface measures 12px on all four corners and passes. A
+synthetic square-cornered render fails all four assertions, confirming the
+guard can catch a one-corner regression. This is a pixel measurement of the outer surface only: the offscreen
 menu has no selected row, so it cannot prove that a live highlight stays inside
 the corner. Live Dolphin captures cover that case below; the plugin must be
 installed system-wide (`make style-install`) or the preview launched with

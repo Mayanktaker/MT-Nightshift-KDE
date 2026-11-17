@@ -78,8 +78,8 @@ def check(name: str, ok: bool, detail: str = "") -> None:
         FAILURES.append(name)
 
 
-def taper(path: Path) -> tuple[int, int]:
-    alpha = np.array(Image.open(path).convert("RGBA").split()[3])
+def alpha_taper(alpha: np.ndarray) -> tuple[int, int]:
+    """Height and maximum left-edge recession of the top-left quarter of a shape."""
     ys, xs = np.where(alpha > 10)
     if len(xs) == 0:
         return 0, 0
@@ -91,6 +91,20 @@ def taper(path: Path) -> tuple[int, int]:
         if len(row):
             recession.append(int(row.min()) - x0)
     return height, (max(recession) if recession else 0)
+
+
+def taper(path: Path) -> tuple[int, int]:
+    return alpha_taper(np.array(Image.open(path).convert("RGBA").split()[3]))
+
+
+def corner_recession(path: Path, corner: str) -> tuple[int, int]:
+    """Measure any corner by mirroring it into the top-left position."""
+    alpha = np.array(Image.open(path).convert("RGBA").split()[3])
+    if "r" in corner:
+        alpha = np.fliplr(alpha)
+    if "b" in corner:
+        alpha = np.flipud(alpha)
+    return alpha_taper(alpha)
 
 
 def main() -> int:
@@ -125,9 +139,14 @@ def main() -> int:
               f"h={height} taper={recession}px")
 
     # QMenu outer corners carry the 15px control language, not Breeze's small arc.
-    menu_height, menu_taper = taper(outdir / "menu.png")
-    check("menu outer corner taper", menu_height >= 80 and menu_taper >= 8,
-          f"h={menu_height} taper={menu_taper}px (>= 8px at ~100px menu height)")
+    menu_path = outdir / "menu.png"
+    menu_size = Image.open(menu_path).size
+    check("menu dimensions", 60 <= menu_size[0] <= 80 and 90 <= menu_size[1] <= 110,
+          f"size={menu_size} (60-80 x 90-110)")
+    for corner in ("tl", "tr", "bl", "br"):
+        height, recession = corner_recession(menu_path, corner)
+        check(f"menu corner {corner} taper", height >= 80 and recession >= 8,
+              f"h={height} taper={recession}px (>= 8px at ~100px menu height)")
 
     # Breeze's tight frame must not be stamped over our pill (needs Breeze).
     if not ci:
