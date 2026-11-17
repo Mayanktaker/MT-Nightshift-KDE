@@ -446,21 +446,55 @@ int main(int argc, char **argv)
     tabBar.addTab(QStringLiteral("Sessions"));
     tabBar.resize(220, 30);
     auto tabRender = [&](QStyle::State state, const char *name) {
-        QPixmap pm(120, 30);
-        pm.fill(Qt::transparent);
-        QPainter p(&pm);
-        QStyleOptionTab tab;
-        tab.initFrom(&tabBar);
-        tab.rect = pm.rect();
-        tab.text = QStringLiteral("Welcome");
-        tab.position = QStyleOptionTab::OnlyOneTab;
-        tab.state |= QStyle::State_Enabled | state;
-        QApplication::style()->drawControl(QStyle::CE_TabBarTabShape, &tab, &p, &tabBar);
-        QApplication::style()->drawControl(QStyle::CE_TabBarTabLabel, &tab, &p, &tabBar);
-        pm.save(QStringLiteral("%1/%2.png").arg(outdir, QString::fromLatin1(name)));
+        for (int withLabel = 0; withLabel < 2; ++withLabel) {
+            QPixmap pm(120, 30);
+            pm.fill(Qt::transparent);
+            QPainter p(&pm);
+            QStyleOptionTab tab;
+            tab.initFrom(&tabBar);
+            tab.rect = pm.rect();
+            tab.text = QStringLiteral("Welcome");
+            tab.position = QStyleOptionTab::OnlyOneTab;
+            tab.state |= QStyle::State_Enabled | state;
+            QApplication::style()->drawControl(QStyle::CE_TabBarTabShape, &tab, &p, &tabBar);
+            if (withLabel) {
+                QApplication::style()->drawControl(QStyle::CE_TabBarTabLabel, &tab, &p, &tabBar);
+            }
+            const QString suffix = withLabel ? QString() : QStringLiteral("-shape");
+            pm.save(QStringLiteral("%1/%2%3.png").arg(outdir, QString::fromLatin1(name), suffix));
+        }
     };
     tabRender(QStyle::State_Selected | QStyle::State_Active, "tab-active");
     tabRender(QStyle::State_None, "tab-inactive");
+
+    // Multi-tab seam: three positions as a connected bar of separate shapes.
+    QTabBar multiBar;
+    multiBar.addTab(QStringLiteral("One"));
+    multiBar.addTab(QStringLiteral("Two"));
+    multiBar.addTab(QStringLiteral("Three"));
+    multiBar.resize(360, 30);
+    QPixmap multiPm(360, 30);
+    multiPm.fill(Qt::transparent);
+    {
+        QPainter p(&multiPm);
+        const QStyleOptionTab::TabPosition positions[] = {
+            QStyleOptionTab::Beginning, QStyleOptionTab::Middle, QStyleOptionTab::End
+        };
+        for (int i = 0; i < 3; ++i) {
+            QStyleOptionTab tab;
+            tab.initFrom(&multiBar);
+            tab.rect = QRect(i * 120, 0, 120, 30);
+            tab.text = multiBar.tabText(i);
+            tab.position = positions[i];
+            tab.state |= QStyle::State_Enabled;
+            if (i == 1) {
+                tab.state |= QStyle::State_Selected | QStyle::State_Active;
+            }
+            QApplication::style()->drawControl(QStyle::CE_TabBarTabShape, &tab, &p, &multiBar);
+            QApplication::style()->drawControl(QStyle::CE_TabBarTabLabel, &tab, &p, &multiBar);
+        }
+    }
+    multiPm.save(QStringLiteral("%1/tab-multi.png").arg(outdir));
 
     // Status bar surface: Dolphin's strip asks PE_PanelStatusBar.
     QStatusBar statusBar;

@@ -220,10 +220,18 @@ is the fix).
 Breeze. A scratch instrumented build confirmed Dolphin asks `PE_PanelStatusBar`
 13 times, so the strip is style-reachable after all. Forced renders
 (`tab-active.png`, `tab-inactive.png`, `statusbar.png`) fail on Breeze at 2px/0px
-and pass at 11px corner recession across all five schemes, with tab labels still
-drawn. Live previews with the built plugin through `QT_PLUGIN_PATH`:
-`/tmp/opencode/tab-kate.png` shows the rounded active Welcome tab, and
-`/tmp/opencode/tab-dolphin.png` shows the rounded status strip.
+and pass at 11px corner recession across all five schemes. Label survival is
+proved by rendering each tab twice — shape only and shape plus label — and
+counting pixels that differ (229–245 across the schemes), rather than by counting
+opaque pixels, which would pass on a label-less fill. A synthetic label-less
+render fails that assertion (0 px), proving it can catch the regression. The
+inactive fill's dominant tone is asserted to differ from the scheme accent.
+Multi-tab seams are a deliberate card-tab look: each tab is an individual rounded
+surface, verified by the `tab-multi.png` probe and live
+`/tmp/opencode/tab-multi-live.png` (two Kate tabs). Live previews with the built
+plugin through `QT_PLUGIN_PATH`: `/tmp/opencode/tab-kate.png` shows the rounded
+active Welcome tab, and `/tmp/opencode/tab-dolphin.png` shows the rounded status
+strip.
 
 ## Plasma Style assets
 

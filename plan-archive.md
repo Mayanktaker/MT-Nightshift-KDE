@@ -155,7 +155,7 @@ were written; the live list is [`PLAN.md`](PLAN.md).
 
 - [x] Qt tab bars: `CE_TabBarTabShape` paints a rounded active/inactive tab (radius clamped to tab height), with `CE_TabBarTabLabel` delegated to Breeze. Offscreen RED 2px on both states, GREEN 11px across all five schemes with label pixels intact. Live `/tmp/opencode/tab-kate.png` shows the rounded active Welcome tab.
 - [x] Status strip: a scratch instrumented build proved Dolphin requests `PE_PanelStatusBar` (13 calls), so the flat strip was style-reachable. The primitive now paints a rounded `Window` fill with the 1px Frame hairline; offscreen RED 0px, GREEN 11px on all five schemes. Live `/tmp/opencode/tab-dolphin.png` shows the rounded status strip.
-- [x] Probe coverage added for both surfaces; full `make check` green.
+- [x] Probe coverage added for both surfaces; full `make check` green. Review hardening: the label assertion uses a shape-only vs shape+label pixel diff (RED 0 px on a synthetic label-less render, GREEN 229–245 px) and the inactive fill's dominant tone is asserted different from the accent. Multi-tab seams are intentionally individual rounded cards, verified by `tab-multi.png` and `/tmp/opencode/tab-multi-live.png`.
 
 ## Verification
 

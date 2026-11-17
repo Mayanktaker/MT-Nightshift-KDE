@@ -467,7 +467,7 @@ QColor stateFill(const QStyleOption *option)
     return blend(windowTone, palette.color(QPalette::WindowText), kItemInactiveContrast);
 }
 
-// Rounds a tab top while leaving its label and icon to Breeze.
+// Rounds a tab surface while leaving its label and icon to Breeze.
 bool MTNightshiftStyle::paintTabShape(const QStyleOption *option, QPainter *painter) const
 {
     const auto *tab = qstyleoption_cast<const QStyleOptionTab *>(option);

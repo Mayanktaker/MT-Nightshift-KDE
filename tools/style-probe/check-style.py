@@ -156,9 +156,17 @@ def main() -> int:
         th, tt = taper(outdir / f"tab-{state}.png")
         check(f"tab {state} corner taper", th > 8 and tt >= 8,
               f"h={th} taper={tt}px (>= 8px)")
-        tab_img = np.array(Image.open(outdir / f"tab-{state}.png").convert("RGBA"))
-        check(f"tab {state} label drawn", int((tab_img[:, :, 3] > 10).sum()) > 200,
-              f"alpha px={int((tab_img[:, :, 3] > 10).sum())}")
+        full = np.array(Image.open(outdir / f"tab-{state}.png").convert("RGB")).astype(int)
+        shape = np.array(Image.open(outdir / f"tab-{state}-shape.png").convert("RGB")).astype(int)
+        glyph_px = int((np.abs(full - shape).sum(axis=2) > 20).sum())
+        check(f"tab {state} label drawn", glyph_px > 20,
+              f"label diff px={glyph_px} (want > 20)")
+    inactive_rgb = np.array(Image.open(outdir / "tab-inactive.png").convert("RGB")).astype(int)
+    tones, counts = np.unique(inactive_rgb.reshape(-1, 3), axis=0, return_counts=True)
+    dominant = tones[np.argmax(counts)]
+    accent = scheme["accent_rgb"]
+    check("tab inactive tone muted", int(np.abs(dominant - np.array(accent)).sum()) > 60,
+          f"dominant={tuple(dominant)} accent={accent}")
 
     # Hovered menu row: the highlight must be a deep pill, not Breeze's flat band.
     hover_height, hover_taper = taper(outdir / "menu-hover.png")
