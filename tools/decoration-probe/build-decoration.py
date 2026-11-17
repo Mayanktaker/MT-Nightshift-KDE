@@ -17,7 +17,7 @@ Usage:
 --check regenerates every variant in memory and fails if the committed artwork
 differs, so CI or a pre-commit hook can catch an out-of-band edit. Without it,
 the selected variant's decoration and five buttons are written; --all writes
-all four variants.
+all five variants.
 """
 
 from __future__ import annotations

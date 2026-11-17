@@ -10,7 +10,7 @@ its own light header. This script therefore reads the committed state groups,
 compares every tone with its variant's palette and measures contrast against
 that variant's header, instead of trusting the file to exist.
 
-It also proves the shared-geometry promise: all four variants must have
+It also proves the shared-geometry promise: all five variants must have
 identical paths, rects and stroke widths for each button, so a colour fix can
 never quietly move a glyph. The decoration titles are checked here too, since
 inherited "MT Nightshift" titles are the same copy defect.

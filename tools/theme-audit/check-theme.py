@@ -120,6 +120,11 @@ def config(path: Path) -> configparser.ConfigParser:
     return parser
 
 
+def aurorae_id(variant: dict) -> str:
+    """The Aurorae id is the package directory name, not its display name."""
+    return Path(variant["aurorae"]).name
+
+
 def luminance(rgb: tuple[int, int, int]) -> float:
     """WCAG 2.1 relative luminance of an sRGB colour."""
 
@@ -251,15 +256,15 @@ def audit_metadata(variant: dict) -> str:
     check(f"{name} LAF selects the style", defaults["plasmarc][Theme"]["name"] == variant["style_id"],
           defaults["plasmarc][Theme"]["name"])
     # Derive from the package directory: display names may contain spaces.
-    aurorae_id = Path(variant["aurorae"]).name
+    decoration_id = aurorae_id(variant)
     decoration = defaults["kwinrc][org.kde.kdecoration2"]["theme"]
-    check(f"{name} LAF selects its decoration", decoration == f"__aurorae__svg__{aurorae_id}", decoration)
+    check(f"{name} LAF selects its decoration", decoration == f"__aurorae__svg__{decoration_id}", decoration)
     check(f"{name} LAF selects the widget style", defaults["kdeglobals][KDE"]["widgetStyle"] == "MTNightshift",
           defaults["kdeglobals][KDE"]["widgetStyle"])
 
     aurorae = ROOT / variant["aurorae"]
     entry = config(aurorae / "metadata.desktop")["Desktop Entry"]
-    check(f"{name} decoration name", entry["X-KDE-PluginInfo-Name"] == aurorae_id,
+    check(f"{name} decoration name", entry["X-KDE-PluginInfo-Name"] == decoration_id,
           entry["X-KDE-PluginInfo-Name"])
     check(f"{name} decoration version", entry["X-KDE-PluginInfo-Version"] == version,
           f"{entry['X-KDE-PluginInfo-Version']} vs {version}")
@@ -273,7 +278,7 @@ def audit_decoration(variant: dict) -> None:
     generator = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(generator)  # type: ignore[union-attr]
     params = generator.PARAMS
-    rc = config(ROOT / variant["aurorae"] / f"{Path(variant['aurorae']).name}rc")
+    rc = config(ROOT / variant["aurorae"] / f"{aurorae_id(variant)}rc")
     for key in ("PaddingTop", "PaddingBottom", "PaddingLeft", "PaddingRight"):
         check(f"{variant['name']} decoration {key}", int(rc["Layout"][key]) == params["padding"],
               f"{rc['Layout'][key]} vs {params['padding']}")

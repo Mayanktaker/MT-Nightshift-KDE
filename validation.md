@@ -71,11 +71,12 @@ canonical value missed: Night lifted negative, positive, active, link and
 visited; Day deepened negative, active, link and visited. Every other tone is
 the design's first pass verbatim.
 
-**One Dark Pro lifts.** The first-pass mapping in `design.md` keeps every
-background verbatim, including the relatively light `#404754` button face. On
-that surface the muted foregrounds fall below the 4.66 floor, so the audit
-rejects them by name and each was lifted the minimum that clears it while
-keeping its hue: inactive `#9DA5B4` → `#B2B8C4`, active/link `#61AFEF` →
+**One Dark Pro lifts.** The spec's computed first-pass palette mapping
+(`docs/superpowers/specs/2026-11-17-mt-one-dark-pro-variant-design.md`) keeps
+every background verbatim, including the relatively light `#404754` button
+face. On that surface the muted foregrounds fall below the 4.66 floor, so the
+audit rejects them by name and each was lifted the minimum that clears it
+while keeping its hue: inactive `#9DA5B4` → `#B2B8C4`, active/link `#61AFEF` →
 `#7FBEF2`, visited `#CF7CE7` → `#E0A8F2`, negative `#F07B86` → `#F4A1A9`,
 neutral `#D19A66` → `#DBAF86`, positive `#8CC265` → `#93C66E`, and the hover
 ring `#528BFF` → `#5990FF` (the 3:1 non-text floor). The focus ring keeps the
@@ -86,8 +87,8 @@ the `#528BFF` / `#61AFEF` selection fills, the `#1D1F23` selection ink and all
 eight group backgrounds are the design's first pass unchanged. The binding
 floor is now 4.67 (Button/Neutral); the spec's 5.92 / 4.33 focus-over-hover
 claim becomes 5.92 / 4.57 after the ring lift. The seven lifts are the only
-tones that differ from the spec's computed first pass; every other role is the
-table in `design.md` §15 verbatim.
+tones that differ from the spec's computed first pass; every other role matches
+the §15 role descriptions in `design.md`.
 
 **One Dark Pro provenance.** The palette is derived from Binaryify's One Dark
 Pro (`oneDarkPro.ts`, the standard variant — not Flat or Mix), MIT licensed,

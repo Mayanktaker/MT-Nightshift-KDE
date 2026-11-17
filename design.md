@@ -272,7 +272,7 @@ Measured contrast for the generated buttons (`check-buttons.py`), all above the
 | Nord Day | 10.26 | 6.06 | 5.55 | 5.50 | 5.46 |
 | One Dark Pro | 10.00 | 7.73 | 7.01 | 5.10 | 7.73 |
 
-The five decorations and their five button sets each share paths, rects and stroke widths and differ only in colour; `check-buttons.py` fingerprints that geometry so the promise holds. Each palette carries `header_active`, `header_inactive`, `window`, `foreground`, `foreground_inactive`, `negative`, `selection`, `selection_text` and an explicit `frame_line`. Nord Day's frame line is `#D8DCE4`, one step above the 0.06 mix, because its header-to-foreground span is the narrowest of the four and the 0.06 value left the corner arcs at the light-surface coverage floor. Button tones follow the variant scheme rather than a baked set: Nord Night's selection pill is light `#84A5C6`, so its pressed glyph is dark `#2E3440` where the other three use `#FFFFFF`.
+The five decorations and their five button sets each share paths, rects and stroke widths and differ only in colour; `check-buttons.py` fingerprints that geometry so the promise holds. Each palette carries `header_active`, `header_inactive`, `window`, `foreground`, `foreground_inactive`, `negative`, `selection`, `selection_text` and an explicit `frame_line`. Nord Day's frame line is `#D8DCE4`, one step above the 0.06 mix, because its header-to-foreground span is the narrowest of the five and the 0.06 value left the corner arcs at the light-surface coverage floor. Button tones follow the variant scheme rather than a baked set: Nord Night's selection pill is light `#84A5C6`, so its pressed glyph is dark `#2E3440` where Nightshift, Dayshift and Nord Day use `#FFFFFF` (One Dark Pro uses `#1D1F23`).
 
 ### 12.3 States
 
