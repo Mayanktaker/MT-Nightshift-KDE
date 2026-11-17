@@ -1,0 +1,164 @@
+# © Mayanktaker Computers & Web Development | https://mayanktaker.com
+# MT One Dark Pro global colour scheme — derived from the One Dark Pro palette (Binaryify, MIT).
+# Values and the audited lifts are documented in design.md and validation.md; keep this file,
+# themes/mt-one-dark-pro/colors and themes/mt-one-dark-pro-global/contents/colors byte-identical.
+# SPDX-FileCopyrightText: Andrew Lake <jamboarder@gmail.com>
+# SPDX-FileCopyrightText: Marco Martin <notmart@gmail.com>
+# SPDX-FileCopyrightText: Nate Graham <nate@kde.org>
+# SPDX-FileCopyrightText: Noah Davis <noahadvs@gmail.com>
+# SPDX-FileCopyrightText: Neal Gompa <ngompa@kde.org>
+# SPDX-FileCopyrightText: David Redondo <kde@david-redondo.de>
+# SPDX-FileCopyrightText: Thomas Duckworth <tduck973564@gmail.com>
+# SPDX-FileCopyrightText: 2013-2022 Binaryify
+# SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development <https://mayanktaker.com>
+# SPDX-License-Identifier: LGPL-2.0-or-later
+# Palette values derived from One Dark Pro under the MIT license; see LICENSES/MIT.txt.
+# The KDE contributor notices and LGPL boundary for the Breeze-derived assets are unchanged.
+
+[ColorEffects:Disabled]
+Color=56,56,56
+ColorAmount=0
+ColorEffect=0
+ContrastAmount=0.65
+ContrastEffect=1
+IntensityAmount=0.1
+IntensityEffect=2
+
+[ColorEffects:Inactive]
+ChangeSelectionColor=true
+Color=112,111,110
+ColorAmount=0.025
+ColorEffect=2
+ContrastAmount=0.1
+ContrastEffect=2
+Enable=false
+IntensityAmount=0
+IntensityEffect=0
+
+[Colors:Button]
+BackgroundAlternate=48,51,61
+BackgroundNormal=64,71,84
+DecorationFocus=97,175,239
+DecorationHover=89,144,255
+ForegroundActive=127,190,242
+ForegroundInactive=178,184,196
+ForegroundLink=127,190,242
+ForegroundNegative=244,161,169
+ForegroundNeutral=219,175,134
+ForegroundNormal=215,218,224
+ForegroundPositive=147,198,110
+ForegroundVisited=224,168,242
+
+[Colors:Complementary]
+BackgroundAlternate=29,31,35
+BackgroundNormal=33,37,43
+DecorationFocus=97,175,239
+DecorationHover=89,144,255
+ForegroundActive=127,190,242
+ForegroundInactive=178,184,196
+ForegroundLink=127,190,242
+ForegroundNegative=244,161,169
+ForegroundNeutral=219,175,134
+ForegroundNormal=215,218,224
+ForegroundPositive=147,198,110
+ForegroundVisited=224,168,242
+
+[Colors:Header]
+BackgroundAlternate=33,37,43
+BackgroundNormal=40,44,52
+DecorationFocus=97,175,239
+DecorationHover=89,144,255
+ForegroundActive=127,190,242
+ForegroundInactive=178,184,196
+ForegroundLink=127,190,242
+ForegroundNegative=244,161,169
+ForegroundNeutral=219,175,134
+ForegroundNormal=215,218,224
+ForegroundPositive=147,198,110
+ForegroundVisited=224,168,242
+
+[Colors:Header][Inactive]
+BackgroundAlternate=40,44,52
+BackgroundNormal=33,37,43
+DecorationFocus=97,175,239
+DecorationHover=89,144,255
+ForegroundActive=127,190,242
+ForegroundInactive=178,184,196
+ForegroundLink=127,190,242
+ForegroundNegative=244,161,169
+ForegroundNeutral=219,175,134
+ForegroundNormal=215,218,224
+ForegroundPositive=147,198,110
+ForegroundVisited=224,168,242
+
+[Colors:Selection]
+BackgroundAlternate=97,175,239
+BackgroundNormal=82,139,255
+DecorationFocus=215,218,224
+DecorationHover=215,218,224
+ForegroundActive=29,31,35
+ForegroundInactive=29,31,35
+ForegroundLink=29,31,35
+ForegroundNegative=29,31,35
+ForegroundNeutral=29,31,35
+ForegroundNormal=29,31,35
+ForegroundPositive=29,31,35
+ForegroundVisited=29,31,35
+
+[Colors:Tooltip]
+BackgroundAlternate=44,49,58
+BackgroundNormal=33,37,43
+DecorationFocus=97,175,239
+DecorationHover=89,144,255
+ForegroundActive=127,190,242
+ForegroundInactive=178,184,196
+ForegroundLink=127,190,242
+ForegroundNegative=244,161,169
+ForegroundNeutral=219,175,134
+ForegroundNormal=215,218,224
+ForegroundPositive=147,198,110
+ForegroundVisited=224,168,242
+
+[Colors:View]
+BackgroundAlternate=29,31,35
+BackgroundNormal=29,31,35
+DecorationFocus=97,175,239
+DecorationHover=89,144,255
+ForegroundActive=127,190,242
+ForegroundInactive=178,184,196
+ForegroundLink=127,190,242
+ForegroundNegative=244,161,169
+ForegroundNeutral=219,175,134
+ForegroundNormal=215,218,224
+ForegroundPositive=147,198,110
+ForegroundVisited=224,168,242
+
+[Colors:Window]
+BackgroundAlternate=33,37,43
+BackgroundNormal=40,44,52
+DecorationFocus=97,175,239
+DecorationHover=89,144,255
+ForegroundActive=127,190,242
+ForegroundInactive=178,184,196
+ForegroundLink=127,190,242
+ForegroundNegative=244,161,169
+ForegroundNeutral=219,175,134
+ForegroundNormal=215,218,224
+ForegroundPositive=147,198,110
+ForegroundVisited=224,168,242
+
+[General]
+ColorScheme=MT-One-Dark-Pro
+Name=MT One Dark Pro
+shadeSortColumn=true
+
+[KDE]
+contrast=4
+
+[WM]
+activeBackground=40,44,52
+activeBlend=215,218,224
+activeForeground=215,218,224
+inactiveBackground=33,37,43
+inactiveBlend=178,184,196
+inactiveForeground=178,184,196

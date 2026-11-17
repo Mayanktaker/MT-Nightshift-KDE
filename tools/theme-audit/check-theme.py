@@ -91,6 +91,14 @@ VARIANTS = [
         "laf": "themes/mt-nord-day-global",
         "aurorae": "themes/aurorae/MTNordDay",
     },
+    {
+        "name": "One Dark Pro",
+        "style_id": "mt-one-dark-pro",
+        "scheme": "color-schemes/MT-One-Dark-Pro.colors",
+        "style": "themes/mt-one-dark-pro",
+        "laf": "themes/mt-one-dark-pro-global",
+        "aurorae": "themes/aurorae/MTOneDarkPro",
+    },
 ]
 
 FAILURES: list[str] = []
@@ -242,14 +250,16 @@ def audit_metadata(variant: dict) -> str:
           defaults["kdeglobals][General"]["ColorScheme"])
     check(f"{name} LAF selects the style", defaults["plasmarc][Theme"]["name"] == variant["style_id"],
           defaults["plasmarc][Theme"]["name"])
+    # Derive from the package directory: display names may contain spaces.
+    aurorae_id = Path(variant["aurorae"]).name
     decoration = defaults["kwinrc][org.kde.kdecoration2"]["theme"]
-    check(f"{name} LAF selects its decoration", decoration == f"__aurorae__svg__MT{name}", decoration)
+    check(f"{name} LAF selects its decoration", decoration == f"__aurorae__svg__{aurorae_id}", decoration)
     check(f"{name} LAF selects the widget style", defaults["kdeglobals][KDE"]["widgetStyle"] == "MTNightshift",
           defaults["kdeglobals][KDE"]["widgetStyle"])
 
     aurorae = ROOT / variant["aurorae"]
     entry = config(aurorae / "metadata.desktop")["Desktop Entry"]
-    check(f"{name} decoration name", entry["X-KDE-PluginInfo-Name"] == f"MT{name}",
+    check(f"{name} decoration name", entry["X-KDE-PluginInfo-Name"] == aurorae_id,
           entry["X-KDE-PluginInfo-Name"])
     check(f"{name} decoration version", entry["X-KDE-PluginInfo-Version"] == version,
           f"{entry['X-KDE-PluginInfo-Version']} vs {version}")
@@ -263,7 +273,7 @@ def audit_decoration(variant: dict) -> None:
     generator = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(generator)  # type: ignore[union-attr]
     params = generator.PARAMS
-    rc = config(ROOT / variant["aurorae"] / f"MT{variant['name']}rc")
+    rc = config(ROOT / variant["aurorae"] / f"{Path(variant['aurorae']).name}rc")
     for key in ("PaddingTop", "PaddingBottom", "PaddingLeft", "PaddingRight"):
         check(f"{variant['name']} decoration {key}", int(rc["Layout"][key]) == params["padding"],
               f"{rc['Layout'][key]} vs {params['padding']}")

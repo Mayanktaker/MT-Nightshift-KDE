@@ -16,6 +16,8 @@ A personal, darker and more solid evolution of KDE Breeze Dark. The selected dir
 
 The upstream projects are [KDE Breeze](https://invent.kde.org/plasma/breeze) and [KDE libplasma](https://invent.kde.org/plasma/libplasma). Plasma Style files are under `src/desktoptheme/`; the global palette is `colors/BreezeDark.colors` in KDE Breeze. Package-provided assets are from the host's official Fedora KDE packages, so the baseline matches Plasma 6.8.2.
 
+The MT One Dark Pro palette is derived from Binaryify's [One Dark Pro](https://github.com/Binaryify/OneDark-Pro) (MIT, Copyright (c) 2013-2022 Binaryify); the verbatim license is in [`LICENSES/MIT.txt`](LICENSES/MIT.txt) and the credit appears in every copy of the scheme. This derivation leaves the KDE contributor notices and the LGPL boundary for the Breeze-derived assets unchanged; it does not relicense them or imply KDE endorsement.
+
 ## Attribution and licensing
 
 The upstream Breeze Dark metadata identifies the KDE Visual Design Group and labels that package LGPL, but the Fedora RPMs include files under multiple licenses. Preserve each source file's notices and check its upstream license before redistributing modified assets; the derived Plasma Style therefore does not claim one blanket license in its metadata. Original code and artwork marked `LGPL-2.0-or-later` are covered by the full license text in [`LICENSES/LGPL-2.0.txt`](LICENSES/LGPL-2.0.txt). The `upstream/` files retain their own terms and notices; see [`LICENSES/README.md`](LICENSES/README.md). This project does not claim KDE authorship or relicense upstream files.

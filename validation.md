@@ -60,6 +60,7 @@ floors:
 | Dayshift | 4.66 (Selection/Positive) | 3.95 / 3.28 | 4.13 / 3.42 | 4.93 |
 | Nord Night | 4.79 (Selection/Negative) | 6.24 / 4.86 | 5.03 / 3.92 | 4.86 |
 | Nord Day | 4.69 (Selection/Visited) | 4.77 / 3.50 | 4.52 / 3.31 | 4.77 |
+| One Dark Pro | 4.67 (Button/Neutral) | 5.92 / 4.57 | 3.95 / 3.05 | 4.33 |
 
 The Nord schemes keep the design's canonical tones wherever they clear the
 floors. `Selection.BackgroundAlternate` was adjusted in both variants, because
@@ -69,6 +70,22 @@ pill) and `#405A79` (Day, deeper). Semantic tones were also tuned where the
 canonical value missed: Night lifted negative, positive, active, link and
 visited; Day deepened negative, active, link and visited. Every other tone is
 the design's first pass verbatim.
+
+**One Dark Pro lifts.** The first-pass mapping in `design.md` keeps every
+background verbatim, including the relatively light `#404754` button face. On
+that surface the muted foregrounds fall below the 4.66 floor, so the audit
+rejects them by name and each was lifted the minimum that clears it while
+keeping its hue: inactive `#9DA5B4` → `#B2B8C4`, active/link `#61AFEF` →
+`#7FBEF2`, visited `#CF7CE7` → `#E0A8F2`, negative `#F07B86` → `#F4A1A9`,
+neutral `#D19A66` → `#DBAF86`, positive `#8CC265` → `#93C66E`, and the hover
+ring `#528BFF` → `#5990FF` (the 3:1 non-text floor). The focus ring keeps the
+signature `#61AFEF` verbatim — it only needs 3:1 and measures 3.95 on the button
+face — which also keeps it stronger than the lifted hover on both audited
+surfaces (5.92 / 4.57 on Window, 3.95 / 3.05 on Button). Body text `#D7DAE0`,
+the `#528BFF` / `#61AFEF` selection fills, the `#1D1F23` selection ink and all
+eight group backgrounds are the design's first pass unchanged. The binding
+floor is now 4.67 (Button/Neutral); the spec's 5.92 / 4.33 focus-over-hover
+claim becomes 5.92 / 4.57 after the ring lift.
 
 **Inactive-header derivation.** Breeze paints a selected/active row from the
 focus token at 80% over its background (§2 of `design.md`), so a scheme's focus

@@ -1,0 +1,19 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Mayanktaker Computers & Web Development"
+            },
+            {
+                "Name": "KDE Visual Design Group"
+            }
+        ],
+        "Category": "",
+        "Description": "One Dark Pro global theme for Plasma 6: selects the MT One Dark Pro Plasma Style, MT One Dark Pro color scheme and the MT One Dark Pro Aurorae decoration without replacing the desktop layout, icons, cursor, wallpaper or splash. Palette derived from One Dark Pro by Binaryify (MIT, LICENSES/MIT.txt); KDE Breeze-derived assets remain LGPL. Adaptation by Mayanktaker Computers & Web Development (https://mayanktaker.com).",
+        "Id": "com.mayanktaker.mt-one-dark-pro.desktop",
+        "Name": "MT One Dark Pro",
+        "Version": "1.6.0",
+        "Website": "https://mayanktaker.com/"
+    }
+}
