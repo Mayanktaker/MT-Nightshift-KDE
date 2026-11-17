@@ -36,9 +36,16 @@ if ! python3 tools/decoration-probe/build-decoration.py --check; then
     exit 1
 fi
 
-if ! ./tools/decoration-probe/check-decoration.py; then
-    echo "  decoration checks failed; fix the artwork before committing" >&2
+if ! python3 tools/decoration-probe/check-buttons.py; then
+    echo "  button tones or geometry do not match the variant palettes" >&2
     exit 1
 fi
+
+for svg in themes/aurorae/MT*/decoration.svg; do
+    if ! ./tools/decoration-probe/check-decoration.py "$svg"; then
+        echo "  decoration checks failed for $svg; fix the artwork before committing" >&2
+        exit 1
+    fi
+done
 
 echo "pre-commit: decoration checks passed"

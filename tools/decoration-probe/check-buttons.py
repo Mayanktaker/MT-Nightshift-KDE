@@ -33,6 +33,10 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
+
+from buttons import BUTTON_LABELS  # noqa: E402
 BUTTONS = ("close", "minimize", "maximize", "restore", "menu")
 GEOMETRY_ATTRS = ("d", "x", "y", "width", "height", "rx", "stroke-width",
                   "stroke-linecap", "stroke-linejoin")
@@ -310,7 +314,7 @@ def main() -> int:
         directory = spec["out"].parent
         for button in BUTTONS:
             shapes = check_button(directory / (button + ".svg"),
-                                  generator.BUTTON_LABELS[button], palette, title,
+                                  BUTTON_LABELS[button], palette, title,
                                   others, generator.blend,
                                   generator.PARAMS["deactivated_mix"])
             if shapes is None:

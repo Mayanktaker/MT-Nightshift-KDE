@@ -27,6 +27,10 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
+
+from buttons import build_buttons
 DEFAULT_OUT = HERE.parent.parent / "themes" / "aurorae" / "MTNightshift" / "decoration.svg"
 
 PARAMS = {
@@ -476,108 +480,11 @@ def build(palette: dict[str, str], title: str) -> str:
 """
 
 
-def button_state(element_id: str, glyph: str, ring: str | None = None,
-                 disc: str | None = None) -> str:
-    """One button state group: optional 19px hover ring, optional 20px disc."""
-    rows = [f'  <g id="{element_id}">',
-            '  <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>']
-    if ring:
-        rows.append(f'  <rect x="2.5" y="2.5" width="19" height="19" rx="6" fill="none" '
-                    f'stroke="{ring}" stroke-width="1"/>')
-    if disc:
-        rows.append(f'  <rect x="2" y="2" width="20" height="20" rx="6" fill="{disc}"/>')
-    rows.append("  " + glyph)
-    rows.append("  </g>")
-    return "\n".join(rows)
-
-
-# Glyph geometry, byte-for-byte the original artwork; {tone} is the only variable.
-BUTTON_GLYPHS = {
-    "close": '<path d="M 8,8 L 16,16 M 16,8 L 8,16" fill="none" stroke="{tone}" '
-             'stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>',
-    "minimize": '<path d="M 8,12.5 L 16,12.5" fill="none" stroke="{tone}" '
-                'stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>',
-    "maximize": '<rect x="8" y="8" width="8" height="8" rx="1.5" fill="none" stroke="{tone}" '
-                'stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>',
-    "restore": '<rect x="7.5" y="9.5" width="7" height="7" rx="1.2" fill="none" stroke="{tone}" '
-               'stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>'
-               '<path d="M 10.5,7.5 H 15.5 Q 16.5,7.5 16.5,8.5 V 13.5" fill="none" stroke="{tone}" '
-               'stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>',
-    "menu": '<path d="M 8,8.5 L 16,8.5 M 8,12.5 L 16,12.5 M 8,16.5 L 16,16.5" fill="none" '
-            'stroke="{tone}" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>',
-}
-
-BUTTON_LABELS = {
-    "close": "close",
-    "minimize": "minimize",
-    "maximize": "maximize",
-    "restore": "restore",
-    "menu": "window menu",
-}
-
-BUTTON_NOTES = {
-    "menu": '\n  KWin\'s default left button group is "MSE"; without this file the window'
-            "\n  menu button falls back to the full-colour application icon.",
-}
-
-BUTTON_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
-<!--
-  {title} Aurorae {label} button.
-  © 2026 Mayanktaker Computers & Web Development | https://mayanktaker.com
-  SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development
-  SPDX-License-Identifier: LGPL-2.0-or-later
-
-  GENERATED FILE — edit tools/decoration-probe/build-decoration.py instead.
-  Original artwork; 24x24 button, 20x20 state disc.{note}
--->
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" version="1.1">
-  <title>{title} {label} button</title>
-{states}
-</svg>
-"""
-
-
-def build_buttons(palette: dict[str, str], title: str) -> dict[str, str]:
-    """The five 24x24 button SVGs for one variant: fixed geometry, palette tones.
-
-    All five files carry the same eight state groups as the original artwork.
-    Active and hover tones come from the variant's text and negative roles,
-    pressed uses its selection pair (Nord Night's pill is light, so its glyph is
-    dark), the hover-inactive ring is ForegroundInactive so that cue clears the
-    3:1 non-text floor against the inactive header, and disabled glyphs are the
-    inactive tone dimmed toward the header by PARAMS["deactivated_mix"].
-    """
-    foreground = palette["foreground"]
-    inactive = palette["foreground_inactive"]
-    negative = palette["negative"]
-    selection = palette["selection"]
-    selection_text = palette["selection_text"]
-    disabled_active = blend(palette["header_active"], inactive, PARAMS["deactivated_mix"])
-    disabled_inactive = blend(palette["header_inactive"], inactive, PARAMS["deactivated_mix"])
-
-    documents = {}
-    for name, glyph in BUTTON_GLYPHS.items():
-        states = [
-            button_state("active-center", glyph.format(tone=foreground)),
-            button_state("hover-center", glyph.format(tone=negative), ring=negative),
-            button_state("pressed-center", glyph.format(tone=selection_text), disc=selection),
-            button_state("deactivated-center", glyph.format(tone=disabled_active)),
-            button_state("inactive-center", glyph.format(tone=inactive)),
-            button_state("hover-inactive-center", glyph.format(tone=inactive), ring=inactive),
-            button_state("pressed-inactive-center", glyph.format(tone=selection_text), disc=selection),
-            button_state("deactivated-inactive-center", glyph.format(tone=disabled_inactive)),
-        ]
-        documents[name] = BUTTON_TEMPLATE.format(
-            title=title, label=BUTTON_LABELS[name],
-            note=BUTTON_NOTES.get(name, ""), states="\n".join(states))
-    return documents
-
-
 def expected_artwork(name: str) -> dict[Path, str]:
     """Every generated file for one variant, as {path: document}."""
     spec = VARIANTS[name]
     documents = {spec["out"]: build(spec["palette"], spec["title"])}
-    for button, document in build_buttons(spec["palette"], spec["title"]).items():
+    for button, document in build_buttons(spec["palette"], spec["title"], blend, PARAMS["deactivated_mix"]).items():
         documents[spec["out"].parent / (button + ".svg")] = document
     return documents
 

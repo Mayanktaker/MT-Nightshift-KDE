@@ -5,7 +5,7 @@
   SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development
   SPDX-License-Identifier: LGPL-2.0-or-later
 
-  GENERATED FILE — edit tools/decoration-probe/build-decoration.py instead.
+  GENERATED FILE — edit tools/decoration-probe/buttons.py instead.
   Original artwork; 24x24 button, 20x20 state disc.
   KWin's default left button group is "MSE"; without this file the window
   menu button falls back to the full-colour application icon.

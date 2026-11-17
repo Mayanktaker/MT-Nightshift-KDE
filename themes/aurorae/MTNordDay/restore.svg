@@ -5,7 +5,7 @@
   SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development
   SPDX-License-Identifier: LGPL-2.0-or-later
 
-  GENERATED FILE — edit tools/decoration-probe/build-decoration.py instead.
+  GENERATED FILE — edit tools/decoration-probe/buttons.py instead.
   Original artwork; 24x24 button, 20x20 state disc.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" version="1.1">
