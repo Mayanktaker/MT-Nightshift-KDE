@@ -107,7 +107,8 @@ Plasma Style assets do not carry fonts, and this theme deliberately does not ove
 
 ## 6. Shape, spacing, depth
 
-- **Two radii, one language.** Dialogs, menus and tooltips keep Breeze's `6px` band with a `32×32` centre; the floating panel and the applet/popup background use **14px**, because they are the surfaces that detach from the screen edge or sit under a shadow and read as cards. Both are drawn as a quarter-round with a 1px band inside the contour, so the difference is size, not construction.
+- **Two radii, one language.** Dialogs and Plasma QML menus/tooltips keep Breeze's `6px` band with a `32×32` centre; the floating panel and the applet/popup background use **14px**, because they are the surfaces that detach from the screen edge or sit under a shadow and read as cards. Both are drawn as a quarter-round with a 1px band inside the contour, so the difference is size, not construction.
+- **Qt Widgets menus use the control radius.** A `QMenu` — including Dolphin's hamburger menu and every submenu — is painted by the style proxy, not by Plasma's SVG assets, so its outer surface takes the same **15px** radius as the field family with a 1px `ColorScheme-Frame` hairline. Item rendering and Breeze's menu margins stay delegated. Plasma QML menus (`solid/widgets/tooltip`) are unaffected.
 - **Applet popups are the 14px case.** `widgets/background` covers the notification history, tray, Kickoff and widget explorer; it keeps Breeze's 14px content insets so popup layout is unchanged.
 - **Content inset 4px** (`hint-*-margin`) for panels, dialogs and tooltips — Breeze's value. Text sits 4px inside a panel edge; controls add their own padding on top. Applet popups keep their **14px** inset, which is what Breeze's current widgets are laid out for; the generator preserves it while changing only the radius.
 - **Panels** keep Breeze's 6px margins, so panel thickness and widget spacing are unchanged.

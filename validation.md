@@ -185,6 +185,16 @@ grabbed list actually paints) so the light and Nord passes cannot pass
 vacuously. CI passes `--ci`, which skips the two assertions that need Breeze
 installed (frame suppression, 12px clamp).
 
+**Menu corners (2026-11-17).** The probe also renders a `QMenu` into `menu.png`
+(69x100 at this Qt build) and asserts a top-left corner recession of at least 8px;
+the Breeze-only surface measures 2px and fails, the owned surface measures 12px
+and passes. This is a pixel measurement of the outer surface only: the offscreen
+menu has no selected row, so it cannot prove that a live highlight stays inside
+the corner. Live Dolphin captures cover that case below; the plugin must be
+installed system-wide (`make style-install`) or the preview launched with
+`QT_PLUGIN_PATH` for the change to appear — the build directory alone does not
+affect running apps.
+
 ## Plasma Style assets
 
 `make check` validates every SVG as XML, the metadata as JSON, and the panel
