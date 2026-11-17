@@ -12,7 +12,7 @@ SHELL := /bin/bash
 # Named variants: one row per look. `make apply VARIANT=nord-day` selects it,
 # `make apply-dayshift` and friends are aliases over the same variable.
 VARIANT ?= nightshift
-VARIANTS := nightshift dayshift nord-night nord-day
+VARIANTS := nightshift dayshift nord-night nord-day one-dark-pro
 nightshift_STYLE := mt-nightshift
 nightshift_SCHEME := MT-Nightshift
 nightshift_DECORATION := __aurorae__svg__MTNightshift
@@ -25,6 +25,9 @@ nord-night_DECORATION := __aurorae__svg__MTNordNight
 nord-day_STYLE := mt-nord-day
 nord-day_SCHEME := MT-Nord-Day
 nord-day_DECORATION := __aurorae__svg__MTNordDay
+one-dark-pro_STYLE := mt-one-dark-pro
+one-dark-pro_SCHEME := MT-One-Dark-Pro
+one-dark-pro_DECORATION := __aurorae__svg__MTOneDarkPro
 
 ifeq ($(filter $(VARIANT),$(VARIANTS)),)
   $(error unknown VARIANT '$(VARIANT)'; use one of: $(VARIANTS))
@@ -44,11 +47,11 @@ MOC := $(shell pkg-config --variable=libexecdir Qt6Core)/moc
 QT_CFLAGS := $(shell pkg-config --cflags Qt6Widgets)
 QT_LIBS := $(shell pkg-config --libs Qt6Widgets)
 
-.PHONY: all decoration check check-style check-dpr2 style style-preview apply apply-dayshift apply-nord-night apply-nord-day apply-install style-install verify-live clean
+.PHONY: all decoration check check-style check-dpr2 style style-preview apply apply-dayshift apply-nord-night apply-nord-day apply-one-dark-pro apply-install style-install verify-live clean
 
 all: check
 
-# Regenerate all four registered variants from PARAMS (the SVGs are build artefacts).
+# Regenerate all five registered variants from PARAMS (the SVGs are build artefacts).
 decoration:
 	python3 tools/decoration-probe/build-decoration.py --all
 	@for f in themes/aurorae/*/decoration.svg; do xmllint --noout "$$f" || exit 1; done
@@ -62,6 +65,7 @@ check:
 	./tools/decoration-probe/check-decoration.py themes/aurorae/MTDayshift/decoration.svg
 	./tools/decoration-probe/check-decoration.py themes/aurorae/MTNordNight/decoration.svg
 	./tools/decoration-probe/check-decoration.py themes/aurorae/MTNordDay/decoration.svg
+	./tools/decoration-probe/check-decoration.py themes/aurorae/MTOneDarkPro/decoration.svg
 	@for f in themes/aurorae/*/*.svg; do xmllint --noout "$$f" || exit 1; done
 	./tools/theme-audit/check-theme.py
 	./tools/plasma-theme/dialog-frame.py --check
@@ -79,7 +83,7 @@ check:
 # exists, so apply reinstalls it explicitly before selecting the theme.
 SCHEME_DIR := $(HOME)/.local/share/color-schemes
 STYLE_CHECK_ARGS := $(if $(GITHUB_ACTIONS),--ci,)
-STYLE_SCHEMES := MT-Nightshift MT-Dayshift MT-Nord-Night MT-Nord-Day
+STYLE_SCHEMES := MT-Nightshift MT-Dayshift MT-Nord-Night MT-Nord-Day MT-One-Dark-Pro
 
 check-style: style
 	@mkdir -p build/style-probe
@@ -130,7 +134,7 @@ style-install: style
 	@echo "installed; start a new app to see the change"
 
 # Install into user-local KDE paths and select VARIANT's theme in the running
-# session. All four variants stay installed; only the selection moves.
+# session. All five variants stay installed; only the selection moves.
 apply: check apply-install
 	plasma-apply-lookandfeel -a $(LIVE_LAF)
 	kwriteconfig6 --file kdeglobals --group KDE --key frameContrast 0.05
@@ -147,6 +151,9 @@ apply-nord-night:
 
 apply-nord-day:
 	@$(MAKE) apply VARIANT=nord-day
+
+apply-one-dark-pro:
+	@$(MAKE) apply VARIANT=one-dark-pro
 
 # Values Plasma and KWin keep in user config rather than in the packages, plus the
 # deployed copies. `make check` cannot see any of this: plasma-apply-lookandfeel
@@ -172,21 +179,24 @@ verify-live:
 # Install every variant package user-locally without changing the selection.
 apply-install:
 	install -d $(AURORAE_DIR)/MTNightshift $(AURORAE_DIR)/MTDayshift \
-		$(AURORAE_DIR)/MTNordNight $(AURORAE_DIR)/MTNordDay
+		$(AURORAE_DIR)/MTNordNight $(AURORAE_DIR)/MTNordDay $(AURORAE_DIR)/MTOneDarkPro
 	install -m 644 themes/aurorae/MTNightshift/* $(AURORAE_DIR)/MTNightshift/
 	install -m 644 themes/aurorae/MTDayshift/* $(AURORAE_DIR)/MTDayshift/
 	install -m 644 themes/aurorae/MTNordNight/* $(AURORAE_DIR)/MTNordNight/
 	install -m 644 themes/aurorae/MTNordDay/* $(AURORAE_DIR)/MTNordDay/
+	install -m 644 themes/aurorae/MTOneDarkPro/* $(AURORAE_DIR)/MTOneDarkPro/
 	install -m 644 color-schemes/MT-Nightshift.colors color-schemes/MT-Dayshift.colors \
-		color-schemes/MT-Nord-Night.colors color-schemes/MT-Nord-Day.colors $(SCHEME_DIR)/
+		color-schemes/MT-Nord-Night.colors color-schemes/MT-Nord-Day.colors \
+		color-schemes/MT-One-Dark-Pro.colors $(SCHEME_DIR)/
 	# Copied whole, never a file list: an explicit list silently missed new slots
 	# twice (the palette, then widgets/background).
-	@set -e; for style in mt-nightshift mt-dayshift mt-nord-night mt-nord-day; do \
+	@set -e; for style in mt-nightshift mt-dayshift mt-nord-night mt-nord-day \
+			mt-one-dark-pro; do \
 		install -d $(DESKTHEME_DIR)/$$style; \
 		cp -r themes/$$style/. $(DESKTHEME_DIR)/$$style/; \
 	done
 	@set -e; for package in mt-nightshift-global mt-dayshift-global \
-			mt-nord-night-global mt-nord-day-global; do \
+			mt-nord-night-global mt-nord-day-global mt-one-dark-pro-global; do \
 		kpackagetool6 --type Plasma/LookAndFeel -i themes/$$package || \
 			kpackagetool6 --type Plasma/LookAndFeel -u themes/$$package; \
 	done

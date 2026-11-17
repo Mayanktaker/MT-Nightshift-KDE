@@ -28,7 +28,7 @@ from PIL import Image
 # Per-scheme reference tones. `window_rgb` is the Base tone a grabbed list or
 # viewport paints, which is one step below Colors:Window; `pill_text_rgb` is the
 # tone CE_ItemViewItem draws the selected row's text in, so it flips polarity on
-# Nord Night; `accent_rgb` is the Selection background and `accent_blue` declares
+# Nord Night and One Dark Pro; `accent_rgb` is the Selection background and `accent_blue` declares
 # its blue-dominance, the premise behind every blue-family assertion below.
 SCHEMES = {
     "MT-Nightshift": {
@@ -53,6 +53,12 @@ SCHEMES = {
         "window_rgb": (247, 249, 252),
         "pill_text_rgb": (255, 255, 255),
         "accent_rgb": (76, 107, 145),
+        "accent_blue": True,
+    },
+    "MT-One-Dark-Pro": {
+        "window_rgb": (29, 31, 35),
+        "pill_text_rgb": (29, 31, 35),
+        "accent_rgb": (82, 139, 255),
         "accent_blue": True,
     },
 }
