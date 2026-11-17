@@ -9,7 +9,7 @@ state live in `PLAN.md`.
 ## One entry point
 
 ```bash
-make check        # decoration drift + raster invariants, palette/metadata audit, style probe (four schemes)
+make check        # decoration drift + raster invariants, palette/metadata audit, style probe (five schemes)
 make check-dpr2   # the same artwork rendered at 2x, where the corner arc is 1px
 make verify-live  # the running session: config values, deployed copies, system plugin
 ```
@@ -85,7 +85,23 @@ surfaces (5.92 / 4.57 on Window, 3.95 / 3.05 on Button). Body text `#D7DAE0`,
 the `#528BFF` / `#61AFEF` selection fills, the `#1D1F23` selection ink and all
 eight group backgrounds are the design's first pass unchanged. The binding
 floor is now 4.67 (Button/Neutral); the spec's 5.92 / 4.33 focus-over-hover
-claim becomes 5.92 / 4.57 after the ring lift.
+claim becomes 5.92 / 4.57 after the ring lift. The seven lifts are the only
+tones that differ from the spec's computed first pass; every other role is the
+table in `design.md` §15 verbatim.
+
+**One Dark Pro provenance.** The palette is derived from Binaryify's One Dark
+Pro (`oneDarkPro.ts`, the standard variant — not Flat or Mix), MIT licensed,
+Copyright (c) 2013-2022 Binaryify. `LICENSES/MIT.txt` is the verbatim upstream
+`LICENSE.txt` (verified by `diff -u` against
+`https://raw.githubusercontent.com/Binaryify/OneDark-Pro/master/LICENSE.txt`);
+`LICENSES/README.md` and `README.md` carry the pointer. The three shipped copies
+of the scheme — `color-schemes/MT-One-Dark-Pro.colors`,
+`themes/mt-one-dark-pro/colors` and
+`themes/mt-one-dark-pro-global/contents/colors` — carry one
+`SPDX-FileCopyrightText: 2013-2022 Binaryify` line each and keep the existing KDE
+contributor notices. The audit verifies the three are byte-for-byte identical;
+the KDE/LGPL boundary for the Breeze-derived assets is unchanged and no
+endorsement is implied.
 
 **Inactive-header derivation.** Breeze paints a selected/active row from the
 focus token at 80% over its background (§2 of `design.md`), so a scheme's focus
@@ -110,7 +126,7 @@ the alternate to `#93B3D1` (147,179,209) makes it **lighter** than the normal
 ink set works on both row states. Day inverted the fix: white pill text on
 nord10 was 4.03:1, so its alternate was deepened to `#405A79`, which stays
 darker than the normal `#4C6B91` pill. The offscreen style probe renders a
-forced selected pill under each of the four schemes and asserts readable text
+forced selected pill under each of the five schemes and asserts readable text
 inside the pill's own bounding box (115/210/180/210 text pixels for
 Nightshift/Dayshift/Nord Night/Nord Day), so the lighter Night alternate cannot
 regress to a sub-floor fill unnoticed.
@@ -135,7 +151,7 @@ button files, asserts each of their eight state groups paints exactly the
 variant's tones (and no stray colour), and measures real contrast: active and
 pressed text ≥ 4.5:1, inactive glyph and the hover-inactive ring ≥ 3:1 against
 the variant's own header. It fingerprints every path, rect and stroke width
-against Nightshift to prove the four variants share one geometry, and it
+against Nightshift to prove the five variants share one geometry, and it
 cross-checks each generator token against the shipped `.colors` role (Header,
 Header[Inactive] and Selection), so a scheme retune cannot leave the artwork on
 the old tones. `frame_line` is exempt because it is a documented derivation, not
@@ -144,9 +160,9 @@ a scheme role, and the baked inactive glyph is the active Header group's
 window title, a different role. The hover-inactive ring is `ForegroundInactive`,
 not the whisper `frame_line`: the old ring measured 1.02–1.46:1 on the surfaces
 it sits on, while the shipped
-tone measures 6.33 (Nightshift), 4.99 (Dayshift), 9.25 (Nord Night) and 5.46
-(Nord Day). Both `check-buttons.py` and all four `check-decoration.py` runs are
-wired into `make check`.
+tone measures 6.33 (Nightshift), 4.99 (Dayshift), 9.25 (Nord Night), 5.46
+(Nord Day) and 7.73 (One Dark Pro). Both `check-buttons.py` and all five
+`check-decoration.py` runs are wired into `make check`.
 
 ## Application style — `tools/style-probe/`
 
@@ -157,7 +173,7 @@ Breeze's frame suppressed over the pill, 1px focus ring, disabled tone step plus
 dimmed hairline, inset pills with the accent fill, the pill ring, the free-space
 meter not a black slab, and a 12px scrollbar gutter.
 
-The family is rendered once per scheme — all four, into
+The family is rendered once per scheme — all five, into
 `build/style-probe/out-<scheme>` — because the style is palette-driven.
 `check-style.py --scheme <name>` is required and selects that scheme's reference
 `window`, pill-text and accent tones; an unknown name exits 2 instead of
@@ -203,7 +219,7 @@ one command covers every installed look:
 | Value | Expected |
 | --- | --- |
 | `[KDE] frameContrast` in `kdeglobals` | `0.05` — `plasma-apply-lookandfeel` resets it to the stock 0.2 on every run, which triples the strength of every derived seam |
-| Installed scheme, Plasma Style, Aurorae files | byte-identical to the repo, for **all four** variants |
+| Installed scheme, Plasma Style, Aurorae files | byte-identical to the repo, for **all five** variants |
 | `/usr/lib64/qt6/plugins/styles/mtnightshiftstyle.so` | byte-identical to `build/style/mtnightshiftstyle.so` |
 
 The three selection values are per variant (the Look-and-Feel id is derived from
@@ -215,19 +231,35 @@ the style id, `com.mayanktaker.<style>.desktop`):
 | `dayshift` | `MT-Dayshift` | `mt-dayshift` | `__aurorae__svg__MTDayshift` |
 | `nord-night` | `MT-Nord-Night` | `mt-nord-night` | `__aurorae__svg__MTNordNight` |
 | `nord-day` | `MT-Nord-Day` | `mt-nord-day` | `__aurorae__svg__MTNordDay` |
+| `one-dark-pro` | `MT-One-Dark-Pro` | `mt-one-dark-pro` | `__aurorae__svg__MTOneDarkPro` |
 
 A session that fails one of these renders the previous build indefinitely — the
 failure mode that hid a stale 1.2.0 Plasma Style and an un-updated 1.3.0 plugin.
 
 The old `DAYSHIFT=1` switch is inert: `make verify-live VARIANT=dayshift` checks
-the light selection, and `VARIANT=nord-night` / `VARIANT=nord-day` check the two
-Nord selections. `make apply VARIANT=<name>` installs and selects any of the four
-(`make apply-dayshift` and its Nord aliases are thin wrappers over the same
-variable). Running the check against a variant that is not active is the best
+the light selection, `VARIANT=nord-night` / `VARIANT=nord-day` check the two
+Nord selections, and `VARIANT=one-dark-pro` checks the fifth. `make apply
+VARIANT=<name>` installs and selects any of the five (`make apply-dayshift` and
+its Nord / One Dark Pro aliases are thin wrappers over the same variable).
+Running the check against a variant that is not active is the best
 self-test: it names every mismatch rather than reporting a bare failure. On
-2026-11-16 all four were applied and verified live in turn; the Nord captures
-are `/tmp/opencode/nord-night.png` and `/tmp/opencode/nord-day.png`, and the
-session was restored to the original `nightshift` variant afterwards.
+2026-11-16 the four original variants were applied and verified live in turn;
+the Nord captures are `/tmp/opencode/nord-night.png` and
+`/tmp/opencode/nord-day.png`. On 2026-11-17 `make apply VARIANT=one-dark-pro`
+and `make verify-live VARIANT=one-dark-pro` both reported a matching session.
+The desktop was captured on a bright wallpaper
+(`/tmp/opencode/one-dark-pro-light.png`, plus the maximized
+`/tmp/opencode/one-dark-pro-maximized-light.png`) and on the dark DarkestHour
+wallpaper (`/tmp/opencode/one-dark-pro-dark.png`): the One Dark Pro titlebar
+buttons (minimize / maximize / close) and the 1px frame line stay legible on
+both, and the header/frame fill reads `#282C34` against both backgrounds.
+The session was then returned to the canonical `nightshift` baseline and plain
+`make verify-live` passed. This Wayland host has two 1920×1080 outputs and no
+pointer-injection tool; windows were driven through KWin global shortcuts over
+DBus and captured with `spectacle -b -n -o`. A wallpaper switch was needed for
+the light-background review (the stock wallpaper's dark regions hid the frame),
+and the original per-output wallpapers were restored byte-for-byte from a
+backup of `plasma-org.kde.plasma.desktop-appletsrc`.
 
 One session-level limit: Plasma's `[General] AccentColor` preference overrides
 the `Selection` palette group for Qt Widgets. In the captured session it is

@@ -173,7 +173,7 @@ The outline is drawn with the `ColorScheme-Frame` class, so its colour follows K
 
 ## 9. Accessibility
 
-- Every `Foreground*` role ≥ **4.66:1** against *both* the `BackgroundNormal` and `BackgroundAlternate` of its own group — 64 checks, 128 measurements, `Header[Inactive]` and the selection fill included. Body text runs 11.9–16.5:1. All four variants are re-measured mechanically by `tools/theme-audit/check-theme.py` in `make check`, so a retuned colour cannot ship below the floor again.
+- Every `Foreground*` role ≥ **4.66:1** against *both* the `BackgroundNormal` and `BackgroundAlternate` of its own group — 64 checks, 128 measurements, `Header[Inactive]` and the selection fill included. Body text runs 11.9–16.5:1. All five variants are re-measured mechanically by `tools/theme-audit/check-theme.py` in `make check`, so a retuned colour cannot ship below the floor again.
 - Non-text UI (outlines, indicators, toggle tracks) ≥ 3:1 against their own surface; selection fill 3.4:1 against `Window`.
 - Focus is never conveyed by colour alone: focus draws a ring (Breeze draws a double outline) *and* is the strongest outline accent in the palette, 5.7:1 against the panel and 5.0:1 against a button. On a light surface the same rule reads as the *darkest* outline — Dayshift's focus is `#2A7FA8` against a hover of `#2E8DBE` (§14).
 - Inactive windows are not washed out (`[ColorEffects:Inactive]` stays disabled); only the header group gets a deliberately dimmer title (`#C8CED6`, 11:1), which is enough to tell windows apart without making them hard to read.
@@ -197,7 +197,7 @@ The binding token is the dim label, not the body text: `ForegroundInactive` is d
 
 ## 10. Maintenance
 
-- Change a colour in `color-schemes/<variant>.colors`, then copy it over `themes/<style>/colors` and `themes/<style>-global/contents/colors` in the same commit, naming the token from §2. The three copies must be byte-identical; `tools/theme-audit/check-theme.py` fails when they differ and re-measures the contrast floors of all four variants.
+- Change a colour in `color-schemes/<variant>.colors`, then copy it over `themes/<style>/colors` and `themes/<style>-global/contents/colors` in the same commit, naming the token from §2. The three copies must be byte-identical; `tools/theme-audit/check-theme.py` fails when they differ and re-measures the contrast floors of all five variants.
 - Do not add overrides for assets that already respond to `ColorScheme-*`; check the asset for `class="ColorScheme-…"` before copying it.
 - Keep the `6px`/`32×32` frame geometry if an asset is re-derived, or panel and dialog margins will drift.
 - Re-derive **all three slots at once** (`<path>`, `solid/<path>`, `translucent/<path>`). They are one surface, so they must stay byte-identical; verify with `sha256sum themes/mt-nightshift/{,solid/,translucent/}widgets/tooltip.svgz`, which must print a single hash.
@@ -247,19 +247,19 @@ The Qt Widgets Application Style is implemented separately in §13. It is a comp
 | Hover outline, inactive window | `#8D97A4` (`ForegroundInactive`, 6.3:1 on the inactive header) |
 
 The table above names Nightshift's tones; the matrix below covers every baked
-role for all four variants. Those tones are baked per variant by
+role for all five variants. Those tones are baked per variant by
 `tools/decoration-probe/build-decoration.py` from the `VARIANTS` palette table:
 
-| Element | Nightshift | Dayshift | Nord Night | Nord Day |
-| --- | --- | --- | --- | --- |
-| Active / inactive header (and frame sides) | `#15181C` / `#101216` | `#F3F5F8` / `#EFF1F5` | `#3B4252` / `#2E3440` | `#E5E9F0` / `#D8DEE9` |
-| Frame line | `#222529` | `#E6E8EB` | `#464C5C` | `#D8DCE4` |
-| Active glyph | `#E8EBF0` | `#1B1E22` | `#ECEFF4` | `#2E3440` |
-| Inactive glyph | `#8D97A4` | `#606873` | `#D8DEE9` | `#4C566A` |
-| Hover glyph + outline | `#D08084` | `#AB484D` | `#F3B2B8` | `#963F4A` |
-| Pressed fill / glyph | `#1F6E9C` / `#FFFFFF` | `#1F6E9C` / `#FFFFFF` | `#84A5C6` / `#2E3440` | `#4C6B91` / `#FFFFFF` |
-| Hover-inactive ring / glyph | `#8D97A4` | `#606873` | `#D8DEE9` | `#4C566A` |
-| Disabled glyph | `blend(header, ForegroundInactive, 0.65)` of that variant, all four |
+| Element | Nightshift | Dayshift | Nord Night | Nord Day | One Dark Pro |
+| --- | --- | --- | --- | --- | --- |
+| Active / inactive header (and frame sides) | `#15181C` / `#101216` | `#F3F5F8` / `#EFF1F5` | `#3B4252` / `#2E3440` | `#E5E9F0` / `#D8DEE9` | `#282C34` / `#21252B` |
+| Frame line | `#222529` | `#E6E8EB` | `#464C5C` | `#D8DCE4` | `#32363E` |
+| Active glyph | `#E8EBF0` | `#1B1E22` | `#ECEFF4` | `#2E3440` | `#D7DAE0` |
+| Inactive glyph | `#8D97A4` | `#606873` | `#D8DEE9` | `#4C566A` | `#B2B8C4` |
+| Hover glyph + outline | `#D08084` | `#AB484D` | `#F3B2B8` | `#963F4A` | `#F4A1A9` |
+| Pressed fill / glyph | `#1F6E9C` / `#FFFFFF` | `#1F6E9C` / `#FFFFFF` | `#84A5C6` / `#2E3440` | `#4C6B91` / `#FFFFFF` | `#528BFF` / `#1D1F23` |
+| Hover-inactive ring / glyph | `#8D97A4` | `#606873` | `#D8DEE9` | `#4C566A` | `#B2B8C4` |
+| Disabled glyph | `blend(header, ForegroundInactive, 0.65)` of that variant, all five |
 
 Measured contrast for the generated buttons (`check-buttons.py`), all above the
 3:1 non-text and 4.5:1 text floors:
@@ -270,8 +270,9 @@ Measured contrast for the generated buttons (`check-buttons.py`), all above the
 | Dayshift | 15.32 | 5.16 | 5.11 | 5.57 | 4.99 |
 | Nord Night | 8.73 | 7.45 | 5.69 | 4.86 | 9.25 |
 | Nord Day | 10.26 | 6.06 | 5.55 | 5.50 | 5.46 |
+| One Dark Pro | 10.00 | 7.73 | 7.01 | 5.10 | 7.73 |
 
-The four decorations and their five button sets share paths, rects and stroke widths and differ only in colour; `check-buttons.py` fingerprints that geometry so the promise holds. Each palette carries `header_active`, `header_inactive`, `window`, `foreground`, `foreground_inactive`, `negative`, `selection`, `selection_text` and an explicit `frame_line`. Nord Day's frame line is `#D8DCE4`, one step above the 0.06 mix, because its header-to-foreground span is the narrowest of the four and the 0.06 value left the corner arcs at the light-surface coverage floor. Button tones follow the variant scheme rather than a baked set: Nord Night's selection pill is light `#84A5C6`, so its pressed glyph is dark `#2E3440` where the other three use `#FFFFFF`.
+The five decorations and their five button sets each share paths, rects and stroke widths and differ only in colour; `check-buttons.py` fingerprints that geometry so the promise holds. Each palette carries `header_active`, `header_inactive`, `window`, `foreground`, `foreground_inactive`, `negative`, `selection`, `selection_text` and an explicit `frame_line`. Nord Day's frame line is `#D8DCE4`, one step above the 0.06 mix, because its header-to-foreground span is the narrowest of the four and the 0.06 value left the corner arcs at the light-surface coverage floor. Button tones follow the variant scheme rather than a baked set: Nord Night's selection pill is light `#84A5C6`, so its pressed glyph is dark `#2E3440` where the other three use `#FFFFFF`.
 
 ### 12.3 States
 
@@ -312,7 +313,7 @@ The keyboard-focus indicator in item views is ours too: Breeze's squarish focus 
 Kate's welcome page exposed the delegate-routed path: its recent-files and session lists go through `CE_ItemViewItem`, where Breeze paints its own square band and — for boxed views — a loud `Highlight` frame. The style intercepts `CE_ItemViewItem` (paints the pill, strips the band from Breeze's content rendering, recolours list text for contrast on the accent fill) and `CE_ShapedFrame` for item-view panels (dimmed rounded hairline instead of the blue square outline). A `PM_DefaultFrameWidth` floor of one pixel for boxed item views keeps their viewport from swallowing the frame.
 ## 14. MT Dayshift — the light counterpart
 
-Dayshift is the light sibling of Nightshift, the way Breeze pairs with Breeze Dark: identical geometry and shape language, inverted surface tones. `color-schemes/MT-Dayshift.colors` carries cool carbon-whites (Window `239,241,245`, Base `250,251,253`, Button `244,246,249`, Header `243,245,248`) with the same restrained Breeze-blue accents and the shared Selection group; list alternation stays unified with the row background per §13. Semantic colours are re-tuned for light surfaces rather than reused: every `Foreground*` role clears 4.66:1 against both backgrounds of its group there too, so Active is `#256D9F`, Link `#1F6AAE`, Visited `#7358AD`, Negative `#AB484D`, Neutral `#8E5D10`, Positive `#1B7740`, and the dimmed inactive header keeps its own pair (`#1F5E89` active, `#616873` inactive, `#5C636C` normal). The accent pair inverts with the surface, because on light contrast means *darker*: focus is `#2A7FA8` (3.95:1 on `Window`) and hover is the quieter `#2E8DBE` (3.28:1) — the same "hover quiet, focus unmistakable" rule as §2, with the strengths swapped because the background did. Breeze's list artwork still paints the selected-row pill from the focus token at 80%, which composites to `#5498B9` over a light row; the theme's dark text clears 5.2:1 on it. Packages mirror the dark set: `themes/mt-dayshift/` (Plasma Style, same palette-driven SVG assets — including the 14px rounded panel background), `themes/mt-dayshift-global/` (Look-and-Feel selecting the Dayshift scheme, style and decoration), and `themes/aurorae/MTDayshift/` (decoration generated from the same `PARAMS` geometry with the light palette through `build-decoration.py --variant dayshift`; button geometry is shared with Nightshift and button tones are generated per variant). The application style plugin is palette-driven and needs no variant: the same `MTNightshift` style draws its pill surfaces from whichever scheme is active. `make apply` installs all four variants and keeps Nightshift selected; `make apply-dayshift` selects the light one, and `make apply VARIANT=nord-night` / `VARIANT=nord-day` select the Nord pair.
+Dayshift is the light sibling of Nightshift, the way Breeze pairs with Breeze Dark: identical geometry and shape language, inverted surface tones. `color-schemes/MT-Dayshift.colors` carries cool carbon-whites (Window `239,241,245`, Base `250,251,253`, Button `244,246,249`, Header `243,245,248`) with the same restrained Breeze-blue accents and the shared Selection group; list alternation stays unified with the row background per §13. Semantic colours are re-tuned for light surfaces rather than reused: every `Foreground*` role clears 4.66:1 against both backgrounds of its group there too, so Active is `#256D9F`, Link `#1F6AAE`, Visited `#7358AD`, Negative `#AB484D`, Neutral `#8E5D10`, Positive `#1B7740`, and the dimmed inactive header keeps its own pair (`#1F5E89` active, `#616873` inactive, `#5C636C` normal). The accent pair inverts with the surface, because on light contrast means *darker*: focus is `#2A7FA8` (3.95:1 on `Window`) and hover is the quieter `#2E8DBE` (3.28:1) — the same "hover quiet, focus unmistakable" rule as §2, with the strengths swapped because the background did. Breeze's list artwork still paints the selected-row pill from the focus token at 80%, which composites to `#5498B9` over a light row; the theme's dark text clears 5.2:1 on it. Packages mirror the dark set: `themes/mt-dayshift/` (Plasma Style, same palette-driven SVG assets — including the 14px rounded panel background), `themes/mt-dayshift-global/` (Look-and-Feel selecting the Dayshift scheme, style and decoration), and `themes/aurorae/MTDayshift/` (decoration generated from the same `PARAMS` geometry with the light palette through `build-decoration.py --variant dayshift`; button geometry is shared with Nightshift and button tones are generated per variant). The application style plugin is palette-driven and needs no variant: the same `MTNightshift` style draws its pill surfaces from whichever scheme is active. `make apply` installs all five variants and keeps Nightshift selected; `make apply-dayshift` selects the light one, `make apply VARIANT=nord-night` / `VARIANT=nord-day` select the Nord pair, and `make apply VARIANT=one-dark-pro` selects the fifth (§15).
 
 Nord Night and Nord Day are the second pair: the same geometry, generated
 decoration and palette-driven Qt style, with the canonical Nord Polar Night /
@@ -336,3 +337,42 @@ The field family was completed after live screenshots exposed Breeze's default r
 Scrollbars keep Breeze painting and interaction behavior. `PM_ScrollBarExtent` caps their gutter at 12 logical pixels, preserving Breeze's 8px handle. In Dolphin only, the scrollbar owned by the public KIO `KFilePlacesView` in the main window gets a 0px extent, removing its gutter; dialog-hosted Places views retain the slim scrollbar. Detection uses the application name and Qt meta-object class name without linking Dolphin/KIO internals. Overflow in that panel has no visible scrollbar cue, but wheel, keyboard and touch scrolling remain available. The updated plugin is installed; offscreen Qt tests confirm 0px for the Dolphin Places view, 12px for other views and Dolphin dialogs, and wheel scrolling with a long list while the bar has zero width. A fresh Dolphin screenshot confirms the sidebar has no scrollbar; live keyboard/touch testing in Dolphin remains outstanding.
 
 KDE's Qt platform theme prefers the complete `[Colors:*]` groups in `kdeglobals` over the `General/ColorScheme` fallback. An accent-color update can leave partial groups that omit `BackgroundNormal`; KColorScheme then supplies Breeze Light's white default even though `ColorScheme=MT-Nightshift`. If a fresh Qt app reports `QPalette::Base=#ffffff`, switch to another scheme and reapply MT Nightshift so Plasma rewrites the complete palette groups. Verify `Colors:View/BackgroundNormal=10,11,13` and `Colors:Window/BackgroundNormal=16,18,22`.
+
+## 15. MT One Dark Pro — the fifth variant
+
+One Dark Pro is a dark, blue-accented look carried over from Binaryify's
+[One Dark Pro](https://github.com/Binaryify/OneDark-Pro) (MIT, Copyright (c)
+2013-2022 Binaryify). It is a new palette on the same generated geometry and the
+same palette-driven `MTNightshift` plugin — no new artwork construction, no new
+plugin and no light counterpart. All four packages report 1.6.0:
+`color-schemes/MT-One-Dark-Pro.colors`, `themes/mt-one-dark-pro/`
+(Plasma Style), `themes/mt-one-dark-pro-global/` (Look-and-Feel
+`com.mayanktaker.mt-one-dark-pro.desktop`) and
+`themes/aurorae/MTOneDarkPro/` (decoration `__aurorae__svg__MTOneDarkPro`). It is
+selected with `make apply VARIANT=one-dark-pro` and checked with
+`make verify-live VARIANT=one-dark-pro`.
+
+The palette follows the standard `oneDarkPro.ts` tokens (not Flat or Mix):
+editor `#282C34` for Window and the active header, input `#1D1F23` for the View
+Base, sidebar `#21252B` for the complementary and inactive-header surface,
+button `#404754`, link `#61AFEF` for focus and caret `#528BFF` for selection.
+Body text is the activity-bar foreground `#D7DAE0`. The audit rejected seven of
+the first-pass muted tones on the relatively light `#404754` button face and
+each was lifted the minimum that clears the floor while keeping its hue; the
+seven lifts, the final 4.67 text floor and the measured focus/hover/selection
+ratios are recorded in `validation.md` §"One Dark Pro lifts". The frame line is
+an explicit per-variant `#32363E` token (§12.2), and the decoration buttons carry a `#528BFF`
+pressed pill with dark `#1D1F23` glyphs.
+
+The provenance trail is `LICENSES/MIT.txt` (the verbatim upstream `LICENSE.txt`)
+plus one pointer each in `LICENSES/README.md` and `README.md`. The three
+byte-identical palette copies carry the Binaryify SPDX line alongside the KDE
+contributor notices. The KDE/LGPL boundary for the Breeze-derived Plasma assets
+is untouched, and no Binaryify authorship or endorsement of the derived artwork
+is implied.
+
+The fifth variant was applied and verified live on 2026-11-17: the titlebar
+buttons and 1px frame line stay legible on both a bright wallpaper
+(`/tmp/opencode/one-dark-pro-light.png`) and the dark DarkestHour wallpaper
+(`/tmp/opencode/one-dark-pro-dark.png`), and the session was returned to the
+Nightshift baseline afterwards. `plan-archive.md` holds the evidence.
