@@ -156,6 +156,21 @@ VARIANTS = {
             "frame_line": "#D8DCE4",
         },
     },
+    "one-dark-pro": {
+        "title": "MT One Dark Pro",
+        "out": HERE.parent.parent / "themes" / "aurorae" / "MTOneDarkPro" / "decoration.svg",
+        "palette": {
+            "header_active": "#282C34",
+            "header_inactive": "#21252B",
+            "window": "#282C34",
+            "foreground": "#D7DAE0",
+            "foreground_inactive": "#B2B8C4",
+            "negative": "#F4A1A9",
+            "selection": "#528BFF",
+            "selection_text": "#1D1F23",
+            "frame_line": "#32363E",
+        },
+    },
 }
 
 P = PARAMS["padding"]

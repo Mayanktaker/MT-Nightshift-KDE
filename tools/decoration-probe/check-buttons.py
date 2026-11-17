@@ -48,6 +48,7 @@ SCHEMES = {
     "dayshift": "color-schemes/MT-Dayshift.colors",
     "nord-night": "color-schemes/MT-Nord-Night.colors",
     "nord-day": "color-schemes/MT-Nord-Day.colors",
+    "one-dark-pro": "color-schemes/MT-One-Dark-Pro.colors",
 }
 # Generator token to (scheme section, role). foreground_inactive is the active
 # Header group's ForegroundInactive, the glyph tone baked in design.md §12.2;

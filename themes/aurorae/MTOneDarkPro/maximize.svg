@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MT One Dark Pro Aurorae maximize button.
+  © 2026 Mayanktaker Computers & Web Development | https://mayanktaker.com
+  SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development
+  SPDX-License-Identifier: LGPL-2.0-or-later
+
+  GENERATED FILE — edit tools/decoration-probe/buttons.py instead.
+  Original artwork; 24x24 button, 20x20 state disc.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" version="1.1">
+  <title>MT One Dark Pro maximize button</title>
+  <g id="active-center">
+  <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>
+  <rect x="8" y="8" width="8" height="8" rx="1.5" fill="none" stroke="#D7DAE0" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
+  </g>
+  <g id="hover-center">
+  <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>
+  <rect x="2.5" y="2.5" width="19" height="19" rx="6" fill="none" stroke="#F4A1A9" stroke-width="1"/>
+  <rect x="8" y="8" width="8" height="8" rx="1.5" fill="none" stroke="#F4A1A9" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
+  </g>
+  <g id="pressed-center">
+  <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>
+  <rect x="2" y="2" width="20" height="20" rx="6" fill="#528BFF"/>
+  <rect x="8" y="8" width="8" height="8" rx="1.5" fill="none" stroke="#1D1F23" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
+  </g>
+  <g id="deactivated-center">
+  <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>
+  <rect x="8" y="8" width="8" height="8" rx="1.5" fill="none" stroke="#828792" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
+  </g>
+  <g id="inactive-center">
+  <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>
+  <rect x="8" y="8" width="8" height="8" rx="1.5" fill="none" stroke="#B2B8C4" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
+  </g>
+  <g id="hover-inactive-center">
+  <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>
+  <rect x="2.5" y="2.5" width="19" height="19" rx="6" fill="none" stroke="#B2B8C4" stroke-width="1"/>
+  <rect x="8" y="8" width="8" height="8" rx="1.5" fill="none" stroke="#B2B8C4" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
+  </g>
+  <g id="pressed-inactive-center">
+  <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>
+  <rect x="2" y="2" width="20" height="20" rx="6" fill="#528BFF"/>
+  <rect x="8" y="8" width="8" height="8" rx="1.5" fill="none" stroke="#1D1F23" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
+  </g>
+  <g id="deactivated-inactive-center">
+  <rect x="0" y="0" width="24" height="24" fill="none" stroke="none"/>
+  <rect x="8" y="8" width="8" height="8" rx="1.5" fill="none" stroke="#7F858E" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
+  </g>
+</svg>
