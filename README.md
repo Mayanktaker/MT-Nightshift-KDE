@@ -150,9 +150,9 @@ make package
 ```
 
 This creates:
-- **Complete Suite Tarballs**: `dist/MT-<Variant>-v1.6.0.tar.gz` (contains Look-and-Feel, desktop theme, Aurorae decoration, color scheme, matching wallpapers, and a standalone `install.sh` script).
-- **KDE Store Look-and-Feel Packages**: `dist/com.mayanktaker.<style>.desktop-1.6.0.tar.gz`.
-- **KDE Store Aurorae Decoration Packages**: `dist/aurorae-<decoration>-1.6.0.tar.gz`.
+- **Complete Suite Tarballs**: `dist/MT-<Variant>-v1.6.1.tar.gz` (contains Look-and-Feel, desktop theme, Aurorae decoration, color scheme, matching wallpapers, and a standalone `install.sh` script).
+- **KDE Store Look-and-Feel Packages**: `dist/com.mayanktaker.<style>.desktop-1.6.1.tar.gz`.
+- **KDE Store Aurorae Decoration Packages**: `dist/aurorae-<decoration>-1.6.1.tar.gz`.
 
 ---
 

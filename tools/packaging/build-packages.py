@@ -9,7 +9,7 @@ import shutil
 import sys
 import tarfile
 
-VERSION = "1.6.0"
+VERSION = "1.6.1"
 
 VARIANTS = {
     "nightshift": {

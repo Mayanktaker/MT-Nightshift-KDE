@@ -13,7 +13,7 @@
         "Description": "Nord Day light variant of MT Nightshift: canonical Snow Storm surfaces, Polar Night text, Frost accents and deepened Aurora semantics with crisp 1px edges. Derived from Breeze by the KDE Visual Design Group; adaptation by Mayanktaker Computers & Web Development.",
         "Id": "mt-nord-day",
         "Name": "MT Nord Day",
-        "Version": "1.6.0",
+        "Version": "1.6.1",
         "Website": "https://mayanktaker.com/"
     },
     "X-Plasma-API": "5.0"

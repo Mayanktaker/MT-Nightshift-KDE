@@ -13,7 +13,7 @@
         "Description": "Nord Night dark variant of MT Nightshift: canonical Polar Night surfaces, Snow Storm text, Frost accents and Aurora semantics with crisp 1px edges. Derived from Breeze by the KDE Visual Design Group; adaptation by Mayanktaker Computers & Web Development.",
         "Id": "mt-nord-night",
         "Name": "MT Nord Night",
-        "Version": "1.6.0",
+        "Version": "1.6.1",
         "Website": "https://mayanktaker.com/"
     },
     "X-Plasma-API": "5.0"

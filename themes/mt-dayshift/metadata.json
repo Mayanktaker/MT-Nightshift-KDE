@@ -13,7 +13,7 @@
         "Description": "Dayshift light variant of MT Nightshift: cool carbon-white surfaces, crisp 1px edges and the shared restrained Breeze blue for focus, selection and active states. Derived from Breeze by the KDE Visual Design Group; adaptation by Mayanktaker Computers & Web Development.",
         "Id": "mt-dayshift",
         "Name": "MT Dayshift",
-        "Version": "1.6.0",
+        "Version": "1.6.1",
         "Website": "https://mayanktaker.com/"
     },
     "X-Plasma-API": "5.0"
