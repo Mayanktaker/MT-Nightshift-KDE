@@ -48,6 +48,10 @@ public:
                     const QWidget *widget = nullptr) const override;
 
 private:
+    // Paints a QMenu surface with the 15px control radius.
+    bool paintMenuPanel(const QStyleOption *option, QPainter *painter) const;
+    // Suppresses Breeze's square menu frame; the panel already carries the edge.
+    bool paintMenuFrame(const QStyleOption *option, QPainter *painter) const;
     // Paints a rounded push button; returns false when Breeze should handle it.
     bool paintPushButton(const QStyleOption *option, QPainter *painter, const QWidget *widget) const;
     // Paints a borderless rounded text field; returns false when Breeze should handle it.

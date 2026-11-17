@@ -420,11 +420,44 @@ void paintMark(QPainter *painter, const QRectF &rect, const QColor &color, bool 
 // Builds the style on the installed Breeze style, or the native style when absent.
 MTNightshiftStyle::MTNightshiftStyle() : QProxyStyle(QStyleFactory::create(QStringLiteral("Breeze"))) {}
 
+// Owns the QMenu surface; Window fill and hairline follow the control language.
+bool MTNightshiftStyle::paintMenuPanel(const QStyleOption *option, QPainter *painter) const
+{
+    if (!option || !painter || option->rect.isEmpty()) {
+        return false;
+    }
+    const QPalette &palette = option->palette;
+    const QPalette::ColorGroup group = colorGroup(option);
+    const QColor fill = palette.color(group, QPalette::Window);
+    const QColor outline = blend(fill, palette.color(group, QPalette::WindowText), kFrameContrast);
+    const QRectF rect = QRectF(option->rect).adjusted(0.5, 0.5, -0.5, -0.5);
+    paintSurface(painter, rect, kControlRadius, kOutlineWidth, fill, outline);
+    return true;
+}
+
+// The panel's hairline is the menu edge; Breeze's square frame would undo its corners.
+bool MTNightshiftStyle::paintMenuFrame(const QStyleOption *option, QPainter *painter) const
+{
+    Q_UNUSED(option)
+    Q_UNUSED(painter)
+    return true;
+}
+
 // Draws our own line edit and check indicators, delegating all other primitives.
 void MTNightshiftStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter,
                                       const QWidget *widget) const
 {
     switch (element) {
+    case PE_PanelMenu:
+        if (paintMenuPanel(option, painter)) {
+            return;
+        }
+        break;
+    case PE_FrameMenu:
+        if (paintMenuFrame(option, painter)) {
+            return;
+        }
+        break;
     case PE_PanelLineEdit:
         if (paintLineEdit(option, painter, widget)) {
             return;

@@ -124,6 +124,11 @@ def main() -> int:
         check(f"{name} taper", height > 8 and recession >= height / 4,
               f"h={height} taper={recession}px")
 
+    # QMenu outer corners carry the 15px control language, not Breeze's small arc.
+    menu_height, menu_taper = taper(outdir / "menu.png")
+    check("menu outer corner taper", menu_height >= 80 and menu_taper >= 8,
+          f"h={menu_height} taper={menu_taper}px (>= 8px at ~100px menu height)")
+
     # Breeze's tight frame must not be stamped over our pill (needs Breeze).
     if not ci:
         frame_alpha = np.array(Image.open(outdir / "framed-lineedit-framecheck.png").convert("RGBA").split()[3])
