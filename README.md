@@ -4,73 +4,206 @@
 
 [![theme checks](https://github.com/Mayanktaker/MT-Nightshift-KDE/actions/workflows/checks.yml/badge.svg)](https://github.com/Mayanktaker/MT-Nightshift-KDE/actions/workflows/checks.yml)
 
-A personal, darker and more solid evolution of KDE Breeze Dark. The selected direction is **Nightshift OLED**: near-black carbon surfaces, restrained Breeze-blue highlights, and clear, solid layers rather than blur or glass effects.
+A modern, sculptured evolution of KDE Breeze for KDE Plasma 6. Built around **Nightshift OLED** (near-black carbon surfaces, restrained steel-blue highlights, and deliberate, solid geometry instead of distracting blur or glossy 3D effects), this suite provides 5 cohesive palette variants, custom 15px rounded Aurorae window decorations, a dedicated C++ Qt Widgets application style plugin, and a matching 20-wallpaper abstract collection.
 
-## Upstream baseline
+---
 
-`upstream/` preserves the official theme assets installed on this Fedora KDE system; customization belongs in separate project files, not in this baseline.
+## Features
 
-- `upstream/color-schemes/BreezeDark.colors` — global KDE color scheme from `plasma-breeze-common` 6.8.2-1.fc45.
-- `upstream/plasma/desktoptheme/breeze-dark/` — Breeze Dark Plasma Style metadata and palette from `plasma-breeze-common` 6.8.2-1.fc45.
-- `upstream/plasma/desktoptheme/default/` — shared Breeze Plasma Style assets from `libplasma` 6.8.2-1.fc45; Breeze Dark inherits these assets.
+- **5 Hand-Crafted Variants**: Seamlessly switch between Nightshift (OLED carbon), Dayshift (crisp light), Nord Night (Polar Night slate), Nord Day (Snow Storm), and One Dark Pro (vibrant dark).
+- **15px Rounded Window Decorations**: Aurorae theme generated with clean 15px rounded corners, continuous shadow envelopes, and 5 distinct window title bar buttons (close, minimize, maximize, keep-above, help) color-matched to each look.
+- **C++ Qt Widgets Style Plugin (`MTNightshift`)**:
+  - Consistent ~15px corner radii on buttons, input fields, spinboxes, combo boxes, menus, and tool buttons.
+  - Borderless, rounded path bar in Dolphin (`KUrlNavigator`) with focus ring.
+  - Slim 12px scrollbar gutters across all Qt applications with clean sidebar gutter suppression in Dolphin.
+- **Plasma 6 Desktop Theme & Popups**: 14px rounded panel and popup frames (`widgets/background`), solid dialog backgrounds (`dialogs/background`), and high-contrast widget styling.
+- **20 Palette-Matched Abstract Wallpapers**: High-definition, text-free abstract wallpapers for all 5 variants across 16:9 Full HD (`1920x1080`), 32:9 Dual-FHD (`3840x1080`), 32:9 Dual-QHD (`5120x1440`), and 16:9 4K UHD (`3840x2160`).
+- **Rigorous Contrast & Accessibility Standards**: All variants enforce WCAG AA text contrast floors (minimum 4.66:1) and strong UI element contrast (minimum 3.0:1) verified via automated testing.
 
-The upstream projects are [KDE Breeze](https://invent.kde.org/plasma/breeze) and [KDE libplasma](https://invent.kde.org/plasma/libplasma). Plasma Style files are under `src/desktoptheme/`; the global palette is `colors/BreezeDark.colors` in KDE Breeze. Package-provided assets are from the host's official Fedora KDE packages, so the baseline matches Plasma 6.8.2.
+---
 
-The MT One Dark Pro palette is derived from Binaryify's [One Dark Pro](https://github.com/Binaryify/OneDark-Pro) (MIT, Copyright (c) 2013-2022 Binaryify); the verbatim license is in [`LICENSES/MIT.txt`](LICENSES/MIT.txt) and the credit appears in every copy of the scheme. This derivation leaves the KDE contributor notices and the LGPL boundary for the Breeze-derived assets unchanged; it does not relicense them or imply KDE endorsement.
+## The Five Variants
 
-## Attribution and licensing
+| Variant | Style | Dominant | Deep / Lightest | Mid Surface | Accent | Highlight |
+|---|---|---|---|---|---|---|
+| **Nightshift** | Dark (OLED) | `#101216` | `#0A0B0D` | `#1B1F25` | `#1F6E9C` | `#4FB4E6` |
+| **Dayshift** | Light | `#EFF1F5` | `#FAFBFD` | `#F4F6F9` | `#1F6E9C` | `#256D9F` |
+| **Nord Night** | Dark (Slate) | `#2E3440` | `#232932` | `#3B4252` | `#84A5C6` | `#A9CEE0` |
+| **Nord Day** | Light (Cool) | `#ECEFF4` | `#F7F9FC` | `#E5E9F0` | `#4C6B91` | `#1F5F8C` |
+| **One Dark Pro** | Dark | `#282C34` | `#1D1F23` | `#404754` | `#528BFF` | `#7FBEF2` |
 
-The upstream Breeze Dark metadata identifies the KDE Visual Design Group and labels that package LGPL, but the Fedora RPMs include files under multiple licenses. Preserve each source file's notices and check its upstream license before redistributing modified assets; the derived Plasma Style therefore does not claim one blanket license in its metadata. Original code and artwork marked `LGPL-2.0-or-later` are covered by the full license text in [`LICENSES/LGPL-2.0.txt`](LICENSES/LGPL-2.0.txt). The `upstream/` files retain their own terms and notices; see [`LICENSES/README.md`](LICENSES/README.md). This project does not claim KDE authorship or relicense upstream files.
+---
 
-## Theme files
+## Installation & Quick Start
 
-- `themes/mt-nightshift/` — installable Plasma Style (`mt-nightshift`). It overrides only the assets needed for the solid Nightshift surfaces; unmodified assets fall back to system Breeze `default/`.
-- `color-schemes/MT-Nightshift.colors` — global application color scheme. Its palette is byte-identical in `themes/mt-nightshift/colors` and `themes/mt-nightshift-global/contents/colors`; `tools/theme-audit/check-theme.py` enforces that and re-measures the contrast floors for every registered variant on every `make check`.
-- `themes/mt-nightshift-global/` — Plasma 6 Global Theme (Look-and-Feel package). It selects the Plasma Style, color scheme, and Aurorae decoration without resetting the desktop layout, icons, cursor, wallpaper, or splash.
-- `themes/aurorae/MTNightshift/` — user-local Aurorae window decoration with 15px window corners. The Global Theme manifest references this separate package; it does not contain it.
-- Four more variants reuse the same geometry and shape language: Dayshift on cool carbon-whites (`color-schemes/MT-Dayshift.colors`, `themes/mt-dayshift/`, `themes/mt-dayshift-global/`, `themes/aurorae/MTDayshift/`), Nord Night on Polar Night blue-greys (`MT-Nord-Night.colors`, `mt-nord-night/`, `mt-nord-night-global/`, `MTNordNight/`), Nord Day on Snow Storm cool whites (`MT-Nord-Day.colors`, `mt-nord-day/`, `mt-nord-day-global/`, `MTNordDay/`), and One Dark Pro on Binaryify's MIT-licensed palette (`color-schemes/MT-One-Dark-Pro.colors`, `themes/mt-one-dark-pro/`, `themes/mt-one-dark-pro-global/`, `themes/aurorae/MTOneDarkPro/`). The Qt style plugin is palette-driven, so one `MTNightshift` style serves all five. `make apply VARIANT=<nightshift|dayshift|nord-night|nord-day|one-dark-pro>` installs and selects a look (default `nightshift`); `make apply-dayshift`, `make apply-nord-night`, `make apply-nord-day` and `make apply-one-dark-pro` are aliases, and `make apply` switches back. Every package is version 1.6.0; the plugin is unchanged.
-- `application-style/` — C++ Qt Widgets style plugin (`MTNightshift`) that keeps Breeze behavior while drawing Sculpted controls with approximately 15px corner radii.
+### Prerequisites
 
-The Application Style also removes the Dolphin Places sidebar divider and gives framed path/search inputs borderless, rounded fills with a focus-only ring. Dolphin's path bar needed its own rule because KIO's `KUrlNavigator` paints through `PE_FrameLineEdit` rather than a line-edit panel; the style matches that public class name so other KIO navigators get the same field without affecting ordinary frames. A subtle horizontal toolbar hairline remains; removing it would require replacing a larger Breeze window-background paint pass.
+For building the Qt Widgets style plugin and running verification checks, ensure the required toolchain and libraries are installed:
 
-The Qt style is installed at `/usr/lib64/qt6/plugins/styles/mtnightshiftstyle.so` with its KStyle metadata at `/usr/share/kstyle/themes/mtnightshift.themerc`, and is selected as the active Qt Widgets style. The Global Theme also selects `MTNightshift`. Qt Quick/Kirigami apps and Plasma controls use separate style systems.
+- **Fedora**:
+  ```bash
+  sudo dnf install -y cmake extra-cmake-modules gcc-c++ qt6-qtbase-devel libxml2 python3-pillow python3-numpy
+  ```
+- **Arch Linux**:
+  ```bash
+  sudo pacman -S --needed cmake extra-cmake-modules gcc qt6-base libxml2 python-pillow python-numpy
+  ```
+- **Ubuntu / Debian** (24.04+):
+  ```bash
+  sudo apt-get install -y cmake extra-cmake-modules g++ qt6-base-dev libxml2-utils python3-pillow python3-numpy
+  ```
 
-The installed style narrows Qt Widgets scrollbar gutters to 12px and removes the gutter from Dolphin's Places sidebar only; other Dolphin scroll areas and file dialogs keep a slim scrollbar. A fresh Dolphin screenshot confirms the sidebar has no visible scrollbar. Offscreen tests confirm wheel scrolling still works with a long list and the dialog retains a 12px gutter; keyboard and touch scrolling in a live Dolphin window were confirmed on 2026-11-14.
+---
 
-### Build the Qt style
+### Quick Installation (Automated via Make)
 
-For this Fedora/Qt installation, configure with the Qt system plugin paths; otherwise ECM may choose `/usr/local/lib64/plugins`, which Qt does not scan:
+The repository provides automated recipes in the `Makefile` to install all data packages user-locally and apply any variant to your running Plasma session:
 
 ```bash
-cmake -S application-style -B build -DCMAKE_INSTALL_PREFIX=/usr -DKDE_INSTALL_USE_QT_SYS_PATHS=ON
-cmake --build build
+# Clone the repository
+git clone https://github.com/Mayanktaker/MT-Nightshift-KDE.git
+cd MT-Nightshift-KDE
+
+# Install and apply the default MT Nightshift look
+make apply
+
+# Or switch directly to any variant
+make apply-dayshift       # Applies MT Dayshift
+make apply-nord-night     # Applies MT Nord Night
+make apply-nord-day       # Applies MT Nord Day
+make apply-one-dark-pro   # Applies MT One Dark Pro
 ```
 
-The plugin installs to `$(qtpaths6 --query QT_INSTALL_PLUGINS)/styles/` and its `.themerc` to `/usr/share/kstyle/themes/`. Reinstalling or replacing these system files requires explicit approval.
+#### Installing the C++ Qt Widgets Style Plugin (Optional but Recommended)
 
-## User-local testing
-
-Install only into the current user's KDE data directories; do not copy theme files into `/usr/share`:
+Because Qt 6 scans `/usr/lib64/qt6/plugins/styles/` for system style plugins, installing the compiled style plugin requires root permissions:
 
 ```bash
-install -d ~/.local/share/plasma/desktoptheme ~/.local/share/color-schemes
-cp -a themes/mt-nightshift ~/.local/share/plasma/desktoptheme/mt-nightshift
-cp color-schemes/MT-Nightshift.colors ~/.local/share/color-schemes/
-plasma-apply-desktoptheme mt-nightshift
-plasma-apply-colorscheme MT-Nightshift
-install -d ~/.local/share/aurorae/themes
-cp -a themes/aurorae/MTNightshift ~/.local/share/aurorae/themes/MTNightshift
-kpackagetool6 --type Plasma/LookAndFeel --install themes/mt-nightshift-global
-plasma-apply-lookandfeel --apply com.mayanktaker.mt-nightshift.desktop
+# Build and install the Qt Widgets style plugin
+make style-install
 ```
 
-Before applying, record the current Look-and-Feel, Plasma Style, color scheme, icons and window decoration; restore those exact selections after visual testing. The Global Theme deliberately omits layout, icons, cursor, wallpaper and splash defaults. The detailed asset strategy and palette are in [`design.md`](design.md).
+After installing, start any Qt Widgets application (e.g. Dolphin) or select `MTNightshift` under **System Settings → Appearance → Application Style**.
 
-To remove the local packages, restore your previous selections first. Then run `kpackagetool6 --type Plasma/LookAndFeel --remove com.mayanktaker.mt-nightshift.desktop` and `kpackagetool6 --type Plasma/Theme --remove mt-nightshift`. Move `~/.local/share/aurorae/themes/MTNightshift/` and `~/.local/share/color-schemes/MT-Nightshift.colors` to a backup location to unregister them while keeping recoverable copies.
+---
 
-## Current state
+### Manual / User-Local Installation
 
-The official baseline in `upstream/` is copied and has not been modified. The Global Theme, MT Nightshift color scheme, Aurorae decoration and Qt Application Style are active; the `QStyleFactory` smoke test reports `MTNightshift` and the active palette base is `#0A0B0D`. All theme packages are 1.6.0 and the unchanged Qt style plugin is 1.4.0; `make verify-live` (default `nightshift`) confirms the session matches the repository. On 2026-11-16 each of the Nord variants was applied and checked live in turn — `make verify-live VARIANT=nord-night` and `VARIANT=nord-day` both passed, Nord Night and Nord Day were captured with `spectacle`, and the session was restored to its original Nightshift values. On 2026-11-17 the fifth variant was applied with `make apply VARIANT=one-dark-pro`, `make verify-live VARIANT=one-dark-pro` passed, and the desktop was captured on a bright and a dark wallpaper (`/tmp/opencode/one-dark-pro-light.png` and `/tmp/opencode/one-dark-pro-dark.png`); the session was returned to the Nightshift baseline. `make check` verifies the generated decoration and button artwork, the rendered field family under all five schemes, the package metadata and all five palettes (contrast floors and copy identity); `make check-dpr2` covers the 2x corner arc. `validation.md` records what each check measures and what it cannot see. The Aurorae menu glyph and the 15px window corners were confirmed live on 2026-11-15. Plasma popups — notification
-history, tray, Kickoff, widget explorer — now render from a generated `widgets/background` at the theme's 14px corner
-radius (Breeze's 4px asset read as square), and the dialog frame is generated from Breeze's solid slices with the
-tooltip's 6px corners. One live check remains: click Dolphin's path field to confirm the editable focus ring. See [`PLAN.md`](PLAN.md).
+If you prefer installing components manually without the `Makefile`:
+
+1. **Aurorae Window Decorations**:
+   ```bash
+   install -d ~/.local/share/aurorae/themes/
+   cp -r themes/aurorae/* ~/.local/share/aurorae/themes/
+   ```
+
+2. **Global Color Schemes**:
+   ```bash
+   install -d ~/.local/share/color-schemes/
+   cp color-schemes/*.colors ~/.local/share/color-schemes/
+   ```
+
+3. **Plasma Desktop Themes**:
+   ```bash
+   install -d ~/.local/share/plasma/desktoptheme/
+   for style in mt-nightshift mt-dayshift mt-nord-night mt-nord-day mt-one-dark-pro; do
+       cp -r themes/$style ~/.local/share/plasma/desktoptheme/
+   done
+   ```
+
+4. **Global Theme (Look-and-Feel Packages)**:
+   ```bash
+   for pkg in mt-nightshift-global mt-dayshift-global mt-nord-night-global mt-nord-day-global mt-one-dark-pro-global; do
+       kpackagetool6 --type Plasma/LookAndFeel -i themes/$pkg || \
+       kpackagetool6 --type Plasma/LookAndFeel -u themes/$pkg
+   done
+   ```
+
+5. **Activate via Command Line**:
+   ```bash
+   # Select the Global Look-and-Feel package
+   plasma-apply-lookandfeel -a com.mayanktaker.mt-nightshift.desktop
+
+   # Set optimal frame contrast and reconfigure KWin
+   kwriteconfig6 --file kdeglobals --group KDE --key frameContrast 0.05
+   gdbus call --session --dest org.kde.KWin --object-path /KWin --method org.kde.KWin.reconfigure
+   ```
+
+---
+
+## Desktop Wallpapers
+
+The `Wallpapers/` directory contains 20 minimal, text-free abstract wallpapers specifically composed and color-matched for each theme variant:
+
+- **16:9 Full HD (`1920x1080`)**: Perfect for standard displays (`nightshift-abstract-1920x1080.png`, etc.)
+- **32:9 Panoramic Dual-FHD (`3840x1080`)**: Ideal for dual-1080p monitor spans
+- **32:9 Panoramic Dual-QHD (`5120x1440`)**: High-res panoramic edition for dual-1440p monitors
+- **16:9 4K UHD (`3840x2160`)**: Ultra-high definition 4K edition
+
+### Setting a Wallpaper
+
+Global themes in this repository deliberately omit wallpaper defaults to preserve user customization. Apply any wallpaper from the terminal:
+
+```bash
+plasma-apply-wallpaperimage Wallpapers/nightshift-abstract-1920x1080.png
+```
+
+Or for dual-monitor setups:
+```bash
+plasma-apply-wallpaperimage Wallpapers/nightshift-abstract-3840x1080.png
+```
+
+See [`Wallpapers/README.md`](Wallpapers/README.md) for master prompts, palette blocks, and regeneration instructions.
+
+---
+
+## Quality Assurance & Verification
+
+This project features a comprehensive offscreen testing suite:
+
+```bash
+# Run all automated tests
+make check
+```
+
+What `make check` asserts:
+- **Aurorae Invariants**: Verifies continuous shadow ramps, lack of corner cutouts, and 15px border geometry across all variants (`tools/decoration-probe/check-decoration.py`).
+- **Button Palette Audit**: Proves all 5 buttons and 8 interaction states match each variant's color scheme (`tools/decoration-probe/check-buttons.py`).
+- **Package Integrity & Contrast**: Confirms byte-identical palette copies across packages and verifies that all 64 text/surface pairs meet or exceed the 4.66:1 contrast floor (`tools/theme-audit/check-theme.py`).
+- **Wallpapers Verification**: Validates file presence, exact target dimensions, and PNG optimization (`tools/wallpapers/build-wallpapers.py --check`).
+- **Qt Style Probe**: Offscreen Qt probe rendering test widgets through the built plugin and asserting 15px tapers, 1px focus rings, 12px scrollbar gutters, and meter accent fills (`tools/style-probe/check-style.py`).
+
+To verify that your currently running session matches the active theme:
+```bash
+make verify-live VARIANT=nightshift
+```
+
+---
+
+## Project Structure
+
+```
+├── application-style/       # C++ Qt Widgets style plugin (source, kstyle themerc)
+├── color-schemes/           # Master KDE color schemes (.colors)
+├── themes/
+│   ├── aurorae/             # Aurorae window decorations (MTNightshift, MTDayshift, ...)
+│   ├── mt-*-global/         # Plasma Look-and-Feel metadata packages
+│   └── mt-*/                # Plasma desktop theme assets (widgets, dialogs)
+├── tools/
+│   ├── decoration-probe/    # Aurorae SVG generator, probe, and button validator
+│   ├── plasma-theme/        # Plasma panel, dialog, and applet frame generators
+│   ├── style-probe/         # Offscreen Qt Widgets widget tester
+│   ├── theme-audit/         # Contrast and package metadata auditor
+│   └── wallpapers/          # Wallpaper build and verification tooling
+├── upstream/                # Upstream KDE Breeze 6.8.2 reference baseline
+└── Wallpapers/              # 20 palette-matched wallpapers and lossless sources
+```
+
+---
+
+## Attribution & Licensing
+
+- Upstream theme assets and baseline are derived from [KDE Breeze](https://invent.kde.org/plasma/breeze) and [libplasma](https://invent.kde.org/plasma/libplasma) (KDE Visual Design Group). Upstream notices and per-file licenses are strictly preserved under `upstream/` and [`LICENSES/`](LICENSES/).
+- Original code and artwork marked `LGPL-2.0-or-later` are covered by [`LICENSES/LGPL-2.0.txt`](LICENSES/LGPL-2.0.txt).
+- The **One Dark Pro** palette is derived from Binaryify's [One Dark Pro](https://github.com/Binaryify/OneDark-Pro) (MIT, Copyright (c) 2013-2022 Binaryify); see [`LICENSES/MIT.txt`](LICENSES/MIT.txt).
+- This project does not claim KDE authorship or imply KDE endorsement.
