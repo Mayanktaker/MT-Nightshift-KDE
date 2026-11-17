@@ -2,6 +2,8 @@
 
 # Ignore generated CMake build output and compiled artifacts.
 build/
+dist/
+*.tar.gz
 cmake-build-*/
 CMakeFiles/
 CMakeCache.txt

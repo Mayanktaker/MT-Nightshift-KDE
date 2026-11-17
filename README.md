@@ -6,6 +6,16 @@
 
 A modern, sculptured evolution of KDE Breeze for KDE Plasma 6. Built around **Nightshift OLED** (near-black carbon surfaces, restrained steel-blue highlights, and deliberate, solid geometry instead of distracting blur or glossy 3D effects), this suite provides 5 cohesive palette variants, custom 15px rounded Aurorae window decorations, a dedicated C++ Qt Widgets application style plugin, and a matching 20-wallpaper abstract collection.
 
+![MT Dark KDE Wallpaper Palette](docs/screenshots/preview-wallpapers.png)
+
+---
+
+## Visual Previews
+
+| Rounded Context Menus & Path Bar | Dolphin Statusbar & 12px Gutters | One Dark Pro Live Desktop |
+|---|---|---|
+| ![Rounded Menus](docs/screenshots/preview-menu.png) | ![Dolphin Widgets](docs/screenshots/preview-dolphin.png) | ![One Dark Pro](docs/screenshots/preview-desktop-odp.png) |
+
 ---
 
 ## Features
@@ -131,6 +141,21 @@ If you prefer installing components manually without the `Makefile`:
 
 ---
 
+### Distributable Packages (KDE Store & Standalone Releases)
+
+Build distributable `.tar.gz` archives for all five variants in `dist/`:
+
+```bash
+make package
+```
+
+This creates:
+- **Complete Suite Tarballs**: `dist/MT-<Variant>-v1.6.0.tar.gz` (contains Look-and-Feel, desktop theme, Aurorae decoration, color scheme, matching wallpapers, and a standalone `install.sh` script).
+- **KDE Store Look-and-Feel Packages**: `dist/com.mayanktaker.<style>.desktop-1.6.0.tar.gz`.
+- **KDE Store Aurorae Decoration Packages**: `dist/aurorae-<decoration>-1.6.0.tar.gz`.
+
+---
+
 ## Desktop Wallpapers
 
 The `Wallpapers/` directory contains 20 minimal, text-free abstract wallpapers specifically composed and color-matched for each theme variant:
@@ -185,12 +210,14 @@ make verify-live VARIANT=nightshift
 ```
 ├── application-style/       # C++ Qt Widgets style plugin (source, kstyle themerc)
 ├── color-schemes/           # Master KDE color schemes (.colors)
+├── docs/                    # Documentation and screenshot previews
 ├── themes/
 │   ├── aurorae/             # Aurorae window decorations (MTNightshift, MTDayshift, ...)
 │   ├── mt-*-global/         # Plasma Look-and-Feel metadata packages
 │   └── mt-*/                # Plasma desktop theme assets (widgets, dialogs)
 ├── tools/
 │   ├── decoration-probe/    # Aurorae SVG generator, probe, and button validator
+│   ├── packaging/           # KDE Store and release tarball packaging tooling
 │   ├── plasma-theme/        # Plasma panel, dialog, and applet frame generators
 │   ├── style-probe/         # Offscreen Qt Widgets widget tester
 │   ├── theme-audit/         # Contrast and package metadata auditor

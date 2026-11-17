@@ -47,7 +47,7 @@ MOC := $(shell pkg-config --variable=libexecdir Qt6Core)/moc
 QT_CFLAGS := $(shell pkg-config --cflags Qt6Widgets)
 QT_LIBS := $(shell pkg-config --libs Qt6Widgets)
 
-.PHONY: all decoration check check-style check-dpr2 style style-preview wallpapers apply apply-dayshift apply-nord-night apply-nord-day apply-one-dark-pro apply-install style-install verify-live clean
+.PHONY: all decoration check check-style check-dpr2 style style-preview wallpapers package apply apply-dayshift apply-nord-night apply-nord-day apply-one-dark-pro apply-install style-install verify-live clean
 
 all: check
 
@@ -59,6 +59,10 @@ decoration:
 # Generate all wallpapers across the five variants from source masters.
 wallpapers:
 	./tools/wallpapers/build-wallpapers.py
+
+# Build distributable tarballs for KDE Store and user releases in dist/
+package:
+	./tools/packaging/build-packages.py
 
 # Fail if the committed SVG drifted from its generator, the raster invariants
 # broke, or the rendered field family regressed.
@@ -206,6 +210,6 @@ apply-install:
 			kpackagetool6 --type Plasma/LookAndFeel -u themes/$$package; \
 	done
 
-# Drop the cached probe binary so the next check rebuilds from scratch.
+# Drop the cached probe binary and built distribution packages.
 clean:
-	rm -rf $(PROBE_CACHE)
+	rm -rf $(PROBE_CACHE) dist
