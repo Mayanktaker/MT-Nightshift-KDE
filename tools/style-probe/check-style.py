@@ -153,6 +153,11 @@ def main() -> int:
     check("menu hover pill taper", hover_height > 8 and hover_taper >= 8,
           f"h={hover_height} taper={hover_taper}px (>= 8px)")
 
+    for state in ("hover", "pressed", "checked"):
+        h, t = taper(outdir / f"tool-{state}.png")
+        check(f"tool {state} corner taper", h > 8 and t >= 8,
+              f"h={h} taper={t}px (>= 8px)")
+
     # Breeze's tight frame must not be stamped over our pill (needs Breeze).
     if not ci:
         frame_alpha = np.array(Image.open(outdir / "framed-lineedit-framecheck.png").convert("RGBA").split()[3])

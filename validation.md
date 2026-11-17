@@ -198,6 +198,8 @@ installed system-wide (`make style-install`) or the preview launched with
 `QT_PLUGIN_PATH` for the change to appear — the build directory alone does not
 affect running apps.
 
+**Hover states (2026-11-17).** `render-fields.cpp` renders a forced `CE_MenuItem` hover and tool-button hover/pressed/checked surfaces into `menu-hover.png` and `tool-{hover,pressed,checked}.png`. Breeze's unowned surfaces measure 2px corner recession and fail the 8px floor; the owned pills measure 10px (menu row) and 12px (tool buttons) with icons/text intact. Live screenshots of these states were blocked by this host's auto-lock, which kept a dimmed lock layer active after unlock attempts; the forced-state renders are the evidence, and the outer menu corners remain covered by the earlier live captures.
+
 ## Plasma Style assets
 
 `make check` validates every SVG as XML, the metadata as JSON, and the panel

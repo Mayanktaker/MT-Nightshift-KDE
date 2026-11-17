@@ -23,7 +23,6 @@
 #include "status-card-widget.h"
 #include <QLineEdit>
 #include <QMenu>
-#include <QMouseEvent>
 #include <QListView>
 #include <QStringListModel>
 #include <QPalette>
@@ -435,6 +434,27 @@ int main(int argc, char **argv)
         QApplication::style()->drawControl(QStyle::CE_MenuItem, &item, &p, &menu);
     }
     hover.save(QStringLiteral("%1/menu-hover.png").arg(outdir));
+
+    // Tool button states: one transparent render per state, drawn by the style.
+    QWidget toolHost;
+    auto drawToolState = [&](QStyle::State state, const char *name) {
+        QPixmap pm(120, 36);
+        pm.fill(Qt::transparent);
+        QPainter p(&pm);
+        QStyleOptionToolButton tb;
+        tb.initFrom(&toolHost);
+        tb.rect = pm.rect();
+        tb.text = QStringLiteral("Tool");
+        tb.toolButtonStyle = Qt::ToolButtonTextOnly;
+        tb.features = QStyleOptionToolButton::None;
+        tb.state |= QStyle::State_Enabled | state;
+        QApplication::style()->drawPrimitive(QStyle::PE_PanelButtonTool, &tb, &p, &toolHost);
+        pm.save(QStringLiteral("%1/%2.png").arg(outdir, QString::fromLatin1(name)));
+    };
+    drawToolState(QStyle::State_None, "tool-idle");
+    drawToolState(QStyle::State_MouseOver, "tool-hover");
+    drawToolState(QStyle::State_Sunken, "tool-pressed");
+    drawToolState(QStyle::State_On, "tool-checked");
 
     // Disabled field family: the Login Screen settings page greys out whole
     // groups of combos and edits, so their surface must stay legible.

@@ -420,6 +420,33 @@ void paintMark(QPainter *painter, const QRectF &rect, const QColor &color, bool 
 // Builds the style on the installed Breeze style, or the native style when absent.
 MTNightshiftStyle::MTNightshiftStyle() : QProxyStyle(QStyleFactory::create(QStringLiteral("Breeze"))) {}
 
+// Paints a rounded surface for tool-button interaction states; idle delegates.
+bool MTNightshiftStyle::paintToolButton(const QStyleOption *option, QPainter *painter) const
+{
+    if (!option || !painter || option->rect.isEmpty()) {
+        return false;
+    }
+    const bool hovered = option->state.testFlag(QStyle::State_MouseOver);
+    const bool pressed = option->state.testFlag(QStyle::State_Sunken);
+    const bool checked = option->state.testFlag(QStyle::State_On);
+    if (!hovered && !pressed && !checked) {
+        return false;
+    }
+    const QPalette &palette = option->palette;
+    const QPalette::ColorGroup group = colorGroup(option);
+    const QColor windowTone = palette.color(group, QPalette::Window);
+    QColor fill;
+    if (pressed || checked) {
+        fill = palette.color(group, QPalette::Highlight);
+    } else {
+        fill = blend(windowTone, palette.color(group, QPalette::WindowText), kItemHoverContrast);
+    }
+    const QRectF rect = QRectF(option->rect).adjusted(0.5, 0.5, -0.5, -0.5);
+    const qreal radius = qMin(kControlRadius, qMin(rect.width(), rect.height()) / 2.0);
+    fillSurface(painter, rect, radius, fill);
+    return true;
+}
+
 // Paints the hover/selection pill for one menu item, in the item-view tone.
 bool MTNightshiftStyle::paintMenuPill(const QStyleOption *option, QPainter *painter) const
 {
@@ -477,6 +504,11 @@ void MTNightshiftStyle::drawPrimitive(PrimitiveElement element, const QStyleOpti
                                       const QWidget *widget) const
 {
     switch (element) {
+    case PE_PanelButtonTool:
+        if (paintToolButton(option, painter)) {
+            return;
+        }
+        break;
     case PE_PanelMenu:
         if (paintMenuPanel(option, painter)) {
             return;

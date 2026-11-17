@@ -6,7 +6,7 @@
 
 **Goal:** Give QMenu hover rows and QToolButton hover/pressed/checked states the theme's rounded pill language.
 
-**Architecture:** Two new private paint helpers in the QStyle proxy own the background of `CE_MenuItem` and `CE_ToolButton`; Breeze keeps drawing labels, icons and arrows from a state-stripped option. The offscreen probe gains forced-state renders and palette-agnostic taper assertions.
+**Architecture:** Two new private paint helpers in the QStyle proxy own the background of `CE_MenuItem` and `PE_PanelButtonTool`; Breeze keeps drawing labels, icons and arrows from a state-stripped option. The offscreen probe gains forced-state renders and palette-agnostic taper assertions.
 
 **Tech Stack:** C++17 / Qt 6 Widgets QProxyStyle, CMake, Python offscreen probe, Spectacle + AT-SPI.
 
@@ -47,7 +47,7 @@
 **Files:** `application-style/src/mtnightshiftstyle.{h,cpp}`, `tools/style-probe/render-fields.cpp`, `tools/style-probe/check-style.py`, `design.md`, `validation.md`, `PLAN.md`, `plan-archive.md`
 
 - [ ] **Step 1:** add forced-state tool-button renders (hover, pressed, checked, idle) to `render-fields.cpp` and assertions of ≥8px corner recession on the state surfaces; run `make check-style` and confirm RED.
-- [ ] **Step 2:** add `paintToolButton(const QStyleOptionToolButton*, QPainter*) const` and handle `CE_ToolButton` in `drawControl()`: paint the rounded state surface, then delegate `CE_ToolButtonLabel`; idle buttons delegate unchanged.
+- [ ] **Step 2:** add `paintToolButton(const QStyleOptionToolButton*, QPainter*) const` and handle `PE_PanelButtonTool` in `drawControl()`: paint the rounded state surface, then delegate `PE_PanelButtonToolLabel`; idle buttons delegate unchanged.
 - [ ] **Step 3:** run `make check-style` until all state assertions pass and idle remains unchanged.
 - [ ] **Step 4:** live Dolphin check with the freshly built plugin via `QT_PLUGIN_PATH`: open the hamburger menu through AT-SPI, capture the hovered row (`/tmp/opencode/hover-menu.png`) and the toolbar buttons (`/tmp/opencode/hover-toolbar.png`); confirm the popup arrow is still drawn.
 - [ ] **Step 5:** restore any session values touched, update docs with measurements and capture paths, run `make check`, and commit: `feat(style): round tool button states and record hover evidence`.

@@ -139,6 +139,12 @@ were written; the live list is [`PLAN.md`](PLAN.md).
 - [x] Live check with the freshly built plugin (`QT_PLUGIN_PATH` + `QT_STYLE_OVERRIDE=MTNightshift`) on an accessibility-enabled Dolphin: the View menu (`/tmp/opencode/qt-menu-dolphin.png`) and its Sort By submenu (`/tmp/opencode/qt-menu-submenu.png`) both show a clean ~10–12px corner recession and no square halo; the selected parent row is an inset pill that does not reach the menu corner, so no `CE_MenuItem` clip was needed. A Konsole File menu (`/tmp/opencode/qt-menu-konsole.png`) confirms the change is global to Qt Widgets menus, not Dolphin-specific.
 - [x] Session settings were recorded before the live pass (`MT-One-Dark-Pro` / `mt-one-dark-pro` / `__aurorae__svg__MTOneDarkPro`, `frameContrast=0.2`) and were identical afterwards; no theme settings were changed by this pass. `make verify-live VARIANT=one-dark-pro` still reports the known 0.2 drift and an older system plugin — expected, because this change was previewed through `QT_PLUGIN_PATH` and not installed system-wide. `make check` and `make check-dpr2` are green.
 
+## Rounded hover states (2026-11-17)
+
+- [x] QMenu rows: `CE_MenuItem` paints an inset 15px pill for MouseOver/Selected rows and delegates icon/text to Breeze with those state flags cleared; idle rows and separators are unchanged. Offscreen RED 0px (text-only forced render), GREEN 10px with text intact.
+- [x] Tool buttons: Qt 6 has no `CE_ToolButton` control element — the surface is `PE_PanelButtonTool`, which now paints a rounded hover/pressed/checked fill while idle buttons delegate to Breeze. Offscreen RED 2px on all three states, GREEN 12px each.
+- [x] Probe coverage: added `menu-hover.png` and `tool-{idle,hover,pressed,checked}.png` renders with ≥8px corner assertions; full `make check` green. Live hover screenshots were prevented by the session auto-lock; documented in `validation.md`.
+
 ## Verification
 
 
