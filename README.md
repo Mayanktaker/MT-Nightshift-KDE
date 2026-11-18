@@ -15,10 +15,11 @@ A modern, sculptured evolution of KDE Breeze for KDE Plasma 6. Built around **Ni
 - **5 Hand-Crafted Variants**: Seamlessly switch between Nightshift (OLED carbon), Dayshift (crisp light), Nord Night (Polar Night slate), Nord Day (Snow Storm), and One Dark Pro (vibrant dark).
 - **15px Rounded Window Decorations**: Aurorae theme generated with clean 15px rounded corners, continuous shadow envelopes, and 5 distinct window title bar buttons (close, minimize, maximize, keep-above, help) color-matched to each look.
 - **C++ Qt Widgets Style Plugin (`MTNightshift`)**:
-  - Consistent ~15px corner radii on buttons, input fields, spinboxes, combo boxes, menus, and tool buttons.
+  - Consistent ~15px corner radii on buttons, input fields, spinboxes, combo boxes, menus, tool buttons, and item-view hover/selected rows.
+  - Rounded list and sidebar delegate backgrounds in QQC2 Desktop Style applications, including Discover, through `PE_PanelItemViewRow` and `CE_ItemViewItem`.
   - Borderless, rounded path bar in Dolphin (`KUrlNavigator`) with focus ring.
   - Slim 12px scrollbar gutters across all Qt applications with clean sidebar gutter suppression in Dolphin.
-- **Plasma 6 Desktop Theme & Popups**: 14px rounded panel and popup frames (`widgets/background`), solid dialog backgrounds (`dialogs/background`), and high-contrast widget styling.
+- **Plasma 6 Desktop Theme & Popups**: 14px rounded panel and popup frames (`widgets/background`), solid dialog backgrounds (`dialogs/background`), and high-contrast widget styling. Kirigami-owned popup/menu corner radii remain KDE-controlled.
 - **20 Palette-Matched Abstract Wallpapers**: High-definition, text-free abstract wallpapers for all 5 variants across 16:9 Full HD (`1920x1080`), 32:9 Dual-FHD (`3840x1080`), 32:9 Dual-QHD (`5120x1440`), and 16:9 4K UHD (`3840x2160`).
 - **Rigorous Contrast & Accessibility Standards**: All variants enforce WCAG AA text contrast floors (minimum 4.66:1) and strong UI element contrast (minimum 3.0:1) verified via automated testing.
 

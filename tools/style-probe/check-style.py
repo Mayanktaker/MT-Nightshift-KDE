@@ -232,8 +232,8 @@ def main() -> int:
         check(f"{name} dimmed outline", abs(int(outline.sum()) - int(fill.sum())) >= 8,
               f"outline={tuple(outline)}")
 
-    # Item-view pills: selections are inset Highlight pills, hovers are faint
-    # insets, inactive selections are muted grey.
+    # Item-view pills: selections and hovers are inset Highlight pills, inactive
+    # selections are muted grey. Every hover path must carry the same taper.
     def pill_shape(path, blue_required):
         rgb = np.array(Image.open(path).convert("RGB")).astype(int)
         alpha = np.array(Image.open(path).convert("RGBA").split()[3])
@@ -253,12 +253,29 @@ def main() -> int:
             return deepest >= 5 and left_inset >= 3, f"inset={left_inset} taper={deepest}"
         diff = np.abs(rgb - window_rgb).sum(axis=2)
         ink = (diff > 12) & (alpha > 10)
-        return bool(ink.any()), f"ink px {int(ink.sum())}"
+        if not ink.any():
+            return False, "no ink"
+        x0 = int(np.where(ink)[1].min())
+        rec = []
+        for row in range(ink.shape[0]):
+            cols = np.where(ink[row])[0]
+            if len(cols):
+                rec.append(int(cols.min()) - x0)
+        deepest = max(rec) if rec else 0
+        return deepest >= 8 and x0 >= 3, f"inset={x0} taper={deepest}"
 
     for name, blue in [("item-selected", True), ("item-selected-palette-active", True),
-                       ("item-hover", False), ("item-selected-inactive", False)]:
+                       ("item-hover", False), ("itemrow-hover", False),
+                       ("item-ce-hover", False), ("item-selected-inactive", False)]:
         ok, detail = pill_shape(outdir / f"{name}.png", blue)
         check(f"{name} pill", ok, detail)
+
+    idle_path = outdir / "itemrow-idle.png"
+    idle_row = np.array(Image.open(idle_path).convert("RGB")).astype(int)
+    idle_alpha = np.array(Image.open(idle_path).convert("RGBA").split()[3])
+    idle_mask = ((np.abs(idle_row - window_rgb).sum(axis=2) > 12) & (idle_alpha > 10))
+    check("itemrow idle unpainted", not idle_mask.any(),
+          f"ink px={int(idle_mask.sum())}")
 
     # Item-view content: readable text stays on the accent pill (CE path). The
     # probe grabs the list over an opaque base, so the two most common exact

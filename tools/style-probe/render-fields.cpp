@@ -398,6 +398,31 @@ int main(int argc, char **argv)
     pillRender(QStyle::State_Selected, QStringLiteral("item-selected-palette-active"));
     pillRender(QStyle::State_Selected, QStringLiteral("item-selected-inactive"), QPalette::Inactive);
 
+    // QQC2 Desktop Style routes QML rows through PE_PanelItemViewRow.
+    const auto rowRender = [&](QStyle::State state, const QString &name) {
+        saveRendered(QSize(220, 30), name, outdir, name, [&](QPainter *p) {
+            QStyleOptionViewItem option;
+            option.initFrom(&listView);
+            option.rect = QRect(0, 0, 220, 30);
+            option.state |= QStyle::State_Enabled | state;
+            option.palette.setCurrentColorGroup(QPalette::Active);
+            app.style()->drawPrimitive(QStyle::PE_PanelItemViewRow, &option, p, &listView);
+        });
+    };
+    rowRender(QStyle::State_MouseOver, QStringLiteral("itemrow-hover"));
+    rowRender(QStyle::State_None, QStringLiteral("itemrow-idle"));
+
+    // QQC2 Desktop Style routes QML item content through CE_ItemViewItem.
+    saveRendered(QSize(220, 30), QStringLiteral("item-ce-hover"), outdir,
+                 QStringLiteral("item-ce-hover"), [&](QPainter *p) {
+        QStyleOptionViewItem option;
+        option.initFrom(&listView);
+        option.rect = QRect(0, 0, 220, 30);
+        option.state |= QStyle::State_Enabled | QStyle::State_MouseOver;
+        option.palette.setCurrentColorGroup(QPalette::Active);
+        app.style()->drawControl(QStyle::CE_ItemViewItem, &option, p, &listView);
+    });
+
     // Keyboard-focus pill: replaces the squarish focus outline; suppressed
     // while the item is selected.
     const auto focusRender = [&](bool selected, const QString &name) {
