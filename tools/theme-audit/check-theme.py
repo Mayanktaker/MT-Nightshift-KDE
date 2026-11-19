@@ -14,6 +14,7 @@ so `make check` catches them instead of a review.
 Checks
   * every palette copy of a variant is byte-identical to its scheme;
   * style / Look-and-Feel / Aurorae metadata agree on id, name and version;
+  * the Qt style project version agrees with the shipped packages;
   * the Look-and-Feel selects the scheme, Plasma Style, style key and
     decoration the variant actually ships;
   * every Foreground* role clears the contrast floor against *both*
@@ -28,6 +29,7 @@ from __future__ import annotations
 import configparser
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -271,6 +273,14 @@ def audit_metadata(variant: dict) -> str:
     return version
 
 
+def plugin_version() -> str:
+    """Reads the Qt style project version; it must equal the package version."""
+    text = (ROOT / "application-style" / "CMakeLists.txt").read_text(encoding="utf-8")
+    match = re.search(r"project\(\s*mtnightshiftstyle\s+VERSION\s+([0-9][0-9.]*)", text)
+    check("Qt style project version declared", match is not None, "project() VERSION missing")
+    return match.group(1) if match else ""
+
+
 def audit_decoration(variant: dict) -> None:
     """The `.rc` padding and border are what KWin caches; they must match the artwork."""
     spec = importlib.util.spec_from_file_location(
@@ -297,6 +307,10 @@ def main() -> int:
         audit_palette(variant)
         audit_decoration(variant)
     check("one version across every package", len(versions) == 1, ", ".join(sorted(versions)))
+    if len(versions) == 1:
+        package_version = next(iter(versions))
+        check("Qt style version matches packages", plugin_version() == package_version,
+              f"{plugin_version() or 'missing'} vs {package_version}")
 
     if FAILURES:
         print(f"\n{len(FAILURES)} check(s) failed")

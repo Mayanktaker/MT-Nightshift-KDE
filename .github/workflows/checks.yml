@@ -40,3 +40,26 @@ jobs:
         run: |
           make package
           ./tools/packaging/build-packages.py --check
+
+  # The packages target Fedora/Plasma, but the fast job above is Ubuntu-only.
+  # This job runs the same suite on the distribution the theme ships for,
+  # including the kpackagetool6 install check that Ubuntu cannot provide.
+  fedora:
+    runs-on: ubuntu-24.04
+    container:
+      image: registry.fedoraproject.org/fedora:45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt6, kpackage and Python deps
+        run: |
+          dnf install -y --setopt=install_weak_deps=False \
+            make cmake gcc-c++ pkgconf-pkg-config qt6-qtbase-devel qt6-qtsvg \
+            libxml2 python3-numpy python3-pillow kf6-kpackage plasma-workspace-libs \
+            plasma-breeze-qt6
+
+      - name: Check the theme on the target distribution
+        # Breeze is installed here, so run the assertions the Ubuntu job skips.
+        env:
+          GITHUB_ACTIONS: ""
+        run: make check

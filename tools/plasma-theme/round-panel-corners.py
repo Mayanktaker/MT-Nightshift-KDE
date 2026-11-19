@@ -2,7 +2,7 @@
 # © Mayanktaker Computers & Web Development | https://mayanktaker.com
 # SPDX-FileCopyrightText: 2026 Mayanktaker Computers & Web Development <https://mayanktaker.com>
 # SPDX-License-Identifier: LGPL-2.0-or-later
-"""Enlarge the corner radius of a Plasma panel-background SVG.
+"""Enlarge the corner radius of a Plasma frame SVG (used by applet-background.py).
 
 The stock Breeze panel-background (and our derived copy) draws its frame with
 6px corner arcs inside 6px borders — fine for edge-to-edge panels, too tight

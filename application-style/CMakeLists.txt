@@ -6,7 +6,7 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-project(mtnightshiftstyle VERSION 1.4.0 LANGUAGES CXX)
+project(mtnightshiftstyle VERSION 1.6.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -23,6 +23,14 @@ find_package(Qt6 6.4 REQUIRED COMPONENTS Widgets)
 add_library(mtnightshiftstyle MODULE
     src/mtnightshiftstyle.cpp
     src/mtnightshiftstyle.h
+    src/mtnightshiftcontrols.cpp
+    src/mtnightshiftfields.cpp
+    src/mtnightshiftindicators.cpp
+    src/mtnightshiftitems.cpp
+    src/stylepainting.cpp
+    src/stylepainting.h
+    src/stylerecognition.cpp
+    src/stylerecognition.h
     src/mtnightshiftstyleplugin.cpp
     src/mtnightshiftstyleplugin.h
     src/mtnightshiftstyleplugin.json

@@ -10,15 +10,16 @@ Usage: check-style.py <render-dir> [--ci] --scheme <name>
 reference tones from SCHEMES; it is required, because the item-view checks
 measure ink against the palette the probe actually painted.
 
---ci skips Breeze-dependent assertions (the frame-suppression check and the
-12px scroll-bar extent) because CI has no Breeze style; the base style then is
-Qt's fallback and those two checks would fail for the wrong reason.
+--ci skips Breeze-dependent assertions (frame suppression, the 12px scroll-bar
+extent, and the menu size/corner scan) because that image has no Breeze style;
+the base style is then Qt's fallback and those checks would fail for the wrong
+reason. The Fedora CI job installs Breeze and runs the full set.
 """
 
 from __future__ import annotations
 
-import os
-import subprocess
+import gzip
+import re
 import sys
 from pathlib import Path
 
@@ -75,10 +76,6 @@ SCHEMES = {
 }
 
 FAILURES: list[str] = []
-# Same cache as check-decoration.py and $(PROBE_CACHE) in the Makefile, so an
-# XDG_CACHE_HOME build of svg2png is found instead of silently skipping corners.
-PROBE_CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "mt-nightshift-probe"
-svg2png_bin = PROBE_CACHE / "svg2png"
 
 
 def check(name: str, ok: bool, detail: str = "") -> None:
@@ -117,6 +114,28 @@ def corner_recession(path: Path, corner: str) -> tuple[int, int]:
     return alpha_taper(alpha)
 
 
+def shipped_corner_radius(path: Path) -> int:
+    """Corner radius of the first top-left path in a shipped Plasma SVGZ.
+
+    The panel and dialog frames draw a quarter arc, the popup frame a sampled
+    polygon closing at the same two points; in both forms the radius is the
+    reach along the two edges that meet the corner.
+    """
+    with gzip.open(path, "rt", encoding="utf-8") as handle:
+        svg = handle.read()
+    group = svg.find('id="topleft"')
+    if group < 0:
+        return -1
+    match = re.search(r'\bd="([^"]+)"', svg[group:])
+    if not match:
+        return -1
+    numbers = [float(value) for value in re.findall(r"-?\d+(?:\.\d+)?", match.group(1))]
+    points = list(zip(numbers[0::2], numbers[1::2]))
+    horizontal = [x for x, y in points if y <= 0.5]
+    vertical = [y for x, y in points if x <= 0.5]
+    return int(round(min(max(horizontal, default=0), max(vertical, default=0))))
+
+
 def main() -> int:
     if len(sys.argv) < 2:
         print("usage: check-style.py <render-dir> [--ci] --scheme <name>", file=sys.stderr)
@@ -147,15 +166,19 @@ def main() -> int:
         check(f"{name} taper", height > 8 and 5 <= recession <= 8,
               f"h={height} taper={recession}px (5-8px for a 10px radius)")
 
-    # QMenu outer corners keep their 15px popup radius, not the shared 10px control radius.
+    # QMenu outer corners keep their 15px popup radius, not the shared 10px
+    # control radius. The menu's own size comes from the base style's metrics, so
+    # on a CI image without Breeze the size and corner scan are skipped; the
+    # Fedora job installs Breeze and runs them.
     menu_path = outdir / "menu.png"
-    menu_size = Image.open(menu_path).size
-    check("menu dimensions", 60 <= menu_size[0] <= 80 and 90 <= menu_size[1] <= 110,
-          f"size={menu_size} (60-80 x 90-110)")
-    for corner in ("tl", "tr", "bl", "br"):
-        height, recession = corner_recession(menu_path, corner)
-        check(f"menu corner {corner} taper", height >= 80 and 12 <= recession <= 18,
-              f"h={height} taper={recession}px (12-18px popup radius)")
+    if not ci:
+        menu_size = Image.open(menu_path).size
+        check("menu dimensions", 60 <= menu_size[0] <= 80 and 90 <= menu_size[1] <= 110,
+              f"size={menu_size} (60-80 x 90-110)")
+        for corner in ("tl", "tr", "bl", "br"):
+            height, recession = corner_recession(menu_path, corner)
+            check(f"menu corner {corner} taper", height >= 80 and 12 <= recession <= 18,
+                  f"h={height} taper={recession}px (12-18px popup radius)")
 
     sb_height, sb_taper = taper(outdir / "statusbar.png")
     check("statusbar corner taper", sb_height > 8 and sb_taper >= 8,
@@ -372,50 +395,19 @@ def main() -> int:
     check("item frame dimmed", border_ink > 0 and blue_border == 0,
           f"ink px={border_ink}, blue px={blue_border}")
 
-    # Panel background: floating-panel corner radius. The theme svgz is rounded
-    # by round-panel-corners.py, then rasterised through the qsvg probe.
-    import gzip
-    if svg2png_bin.exists():
-        svg_src = Path("themes/mt-nightshift/dialogs/background.svgz")
-        with gzip.open(svg_src, "rb") as fh:
-            raw_svg = fh.read()
-        rounded = Path("/tmp") / "panel-rounded-check.svg"
-        subprocess.run([sys.executable,
-                        str(Path("tools/plasma-theme/round-panel-corners.py")),
-                        str(svg_src), str(rounded), "14"], check=True)
-        raster = Path("/tmp") / "panel-rounded-check.png"
-        proc = subprocess.run([str(svg2png_bin), str(rounded), str(raster)], capture_output=True)
-        panel_ok = proc.returncode == 0
-        recession = -1
-        if panel_ok:
-            panel = np.array(Image.open(raster).convert("RGBA")).astype(int)
-            # panel face tone = sample the centre band; arc recession measured on
-            # the top-left corner only (x < 22, y 10..26) so the top-right face
-            # does not pollute the row-min scan.
-            tone = panel[30, 20][:3]
-            face = (np.abs(panel[:, :, :3] - tone).sum(axis=2) < 30) & (panel[:, :, 3] > 200)
-            rows = []
-            for y in range(10, 26):
-                cols = np.where(face[y, 0:22])[0]
-                if len(cols):
-                    rows.append(int(cols.min()))
-            recession = max(rows) if rows else 0
-            panel_ok = 12 <= recession <= 16
-        # CI baseline: rasterise the STOCK panel svg too. If the stock file also
-        # fails, the CI image's older qsvg cannot handle this asset class at all
-        # and the check is skipped rather than failed.
-        stock_svg = Path("upstream/plasma/desktoptheme/default/widgets/panel-background.svgz")
-        stock_raster = Path("/tmp") / "panel-stock-check.png"
-        stock_proc = subprocess.run([str(svg2png_bin), str(stock_svg), str(stock_raster)],
-                                    capture_output=True)
-        ci_limited = stock_proc.returncode != 0
-        if ci_limited:
-            check("panel corner radius", True,
-                  f"SKIP (stock panel also unrenderable on this qsvg: rc={stock_proc.returncode})")
-        else:
-            check("panel corner radius", panel_ok, f"recession={recession}px")
-    else:
-        print("  panel corner radius                SKIP (svg2png probe not built yet)")
+    # Shipped frame geometry: measure the actual corner paths, never a
+    # regenerated sample. Panel and dialog frames keep Breeze's 6px band; the
+    # popup frame (widgets/background) is the 14px surface.
+    for style in ["mt-nightshift", "mt-dayshift", "mt-nord-night", "mt-nord-day",
+                  "mt-one-dark-pro"]:
+        for relative, expected in [
+            ("widgets/panel-background.svgz", 6),
+            ("dialogs/background.svgz", 6),
+            ("widgets/background.svgz", 14),
+        ]:
+            radius = shipped_corner_radius(Path("themes") / style / relative)
+            check(f"{style} {relative} corner", radius == expected,
+                  f"{radius}px (want {expected}px)")
 
     # Keyboard-focus pill: accent ring, pill-rounded, inset; hidden when selected.
     ring = np.array(Image.open(outdir / "focus-pill.png").convert("RGB")).astype(int)

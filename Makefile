@@ -50,7 +50,7 @@ QT_PLUGIN_DIR := $(shell qtpaths6 --query QT_INSTALL_PLUGINS 2>/dev/null)
 QT_INSTALL_PREFIX := $(shell qtpaths6 --query QT_INSTALL_PREFIX 2>/dev/null)
 KSTYLE_THEME_DIR := $(QT_INSTALL_PREFIX)/share/kstyle/themes
 
-.PHONY: all decoration check check-style check-dpr2 style style-preview wallpapers package apply apply-dayshift apply-nord-night apply-nord-day apply-one-dark-pro apply-install style-install verify-live clean
+.PHONY: all decoration check check-style check-dpr2 check-kpackages check-math style style-preview wallpapers package apply apply-dayshift apply-nord-night apply-nord-day apply-one-dark-pro apply-install uninstall style-install style-uninstall verify-live clean
 
 all: check
 
@@ -83,8 +83,41 @@ check:
 	./tools/plasma-theme/dialog-frame.py --check
 	./tools/plasma-theme/applet-background.py --check
 	./tools/wallpapers/build-wallpapers.py --check
+	$(MAKE) check-kpackages
+	$(MAKE) check-math
 	$(MAKE) check-style
 	@echo "all theme checks passed"
+
+# Install every Look-and-Feel package into a throwaway XDG_DATA_HOME, which is
+# the check kpackagetool6 performs on a real system. The skip is explicit so CI
+# on an image without kpackagetool6 cannot look like a pass.
+check-kpackages:
+	@if ! command -v kpackagetool6 >/dev/null 2>&1; then \
+		echo "kpackagetool6 not installed; Look-and-Feel validation skipped"; \
+		exit 0; \
+	fi; \
+	tmp=$$(mktemp -d); trap 'rm -rf "$$tmp"' EXIT; \
+	for package in mt-nightshift-global mt-dayshift-global mt-nord-night-global \
+			mt-nord-day-global mt-one-dark-pro-global; do \
+		XDG_DATA_HOME="$$tmp" kpackagetool6 --type Plasma/LookAndFeel \
+			-i "themes/$$package" >/dev/null || { \
+			echo "FAIL: kpackagetool6 rejected $$package"; exit 1; }; \
+	done; \
+	for id in com.mayanktaker.mt-nightshift.desktop com.mayanktaker.mt-dayshift.desktop \
+			com.mayanktaker.mt-nord-night.desktop com.mayanktaker.mt-nord-day.desktop \
+			com.mayanktaker.mt-one-dark-pro.desktop; do \
+		test -f "$$tmp/plasma/look-and-feel/$$id/metadata.json" || { \
+			echo "FAIL: $$id not installed"; exit 1; }; \
+	done; \
+	echo "5 Look-and-Feel packages install cleanly"
+
+# Colour-math unit checks over the shared helpers, independent of rendering.
+check-math:
+	@mkdir -p build/style-probe
+	g++ -fPIC -std=c++17 -O2 $(QT_CFLAGS) -Iapplication-style/src \
+		tools/style-probe/check-math.cpp application-style/src/stylepainting.cpp \
+		-o build/style-probe/check-math $(QT_LIBS)
+	QT_QPA_PLATFORM=offscreen ./build/style-probe/check-math
 
 # Render the field family under the built style offscreen once per scheme and
 # assert the pill language, the 1px ring, the free-space meter and the 12px
@@ -218,6 +251,36 @@ apply-install:
 		kpackagetool6 --type Plasma/LookAndFeel -i themes/$$package || \
 			kpackagetool6 --type Plasma/LookAndFeel -u themes/$$package; \
 	done
+
+# Remove every package apply-install placed in the user's home. The active
+# selection is left alone; Plasma falls back to Breeze the next time it starts.
+uninstall:
+	@test -n "$(HOME)" || { echo "FAIL HOME is not set"; exit 1; }
+	@set -e; for style in mt-nightshift mt-dayshift mt-nord-night mt-nord-day \
+			mt-one-dark-pro; do rm -rf -- "$(DESKTHEME_DIR)/$$style"; done
+	rm -f -- $(SCHEME_DIR)/MT-Nightshift.colors $(SCHEME_DIR)/MT-Dayshift.colors \
+		$(SCHEME_DIR)/MT-Nord-Night.colors $(SCHEME_DIR)/MT-Nord-Day.colors \
+		$(SCHEME_DIR)/MT-One-Dark-Pro.colors
+	@set -e; for theme in MTNightshift MTDayshift MTNordNight MTNordDay \
+			MTOneDarkPro; do rm -rf -- "$(AURORAE_DIR)/$$theme"; done
+	@set -e; for laf in com.mayanktaker.mt-nightshift.desktop \
+			com.mayanktaker.mt-dayshift.desktop \
+			com.mayanktaker.mt-nord-night.desktop \
+			com.mayanktaker.mt-nord-day.desktop \
+			com.mayanktaker.mt-one-dark-pro.desktop; do \
+		if command -v kpackagetool6 >/dev/null 2>&1; then \
+			kpackagetool6 --type Plasma/LookAndFeel -r "$$laf" >/dev/null 2>&1 || true; \
+		fi; \
+		rm -rf -- "$(LF_DIR)/$$laf"; \
+	done
+	@echo "removed the MT user-local packages; select Breeze in System Settings to switch back"
+
+# Remove the system-wide Qt style plugin and its metadata (requires sudo).
+style-uninstall:
+	@test -n "$(QT_PLUGIN_DIR)" || { echo "FAIL qtpaths6 did not report QT_INSTALL_PLUGINS"; exit 1; }
+	@test -n "$(QT_INSTALL_PREFIX)" || { echo "FAIL qtpaths6 did not report QT_INSTALL_PREFIX"; exit 1; }
+	sudo rm -f -- "$(QT_PLUGIN_DIR)/styles/mtnightshiftstyle.so" "$(KSTYLE_THEME_DIR)/mtnightshift.themerc"
+	@echo "removed the MTNightshift Qt style plugin; restart Qt apps"
 
 # Drop the cached probe binary and built distribution packages.
 clean:

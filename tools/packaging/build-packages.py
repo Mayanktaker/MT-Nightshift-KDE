@@ -7,8 +7,10 @@ import argparse
 import hashlib
 import os
 import shutil
+import subprocess
 import sys
 import tarfile
+import tempfile
 
 VERSION = "1.6.1"
 
@@ -142,13 +144,17 @@ def build_variant_package(variant_key: str, repo_root: str, dist_dir: str) -> st
         f.write(installer_content)
     os.chmod(installer_path, 0o755)
 
-    # 7. Create tarball
+    # 7. Prove the installer works before it is archived.
+    if not verify_installer(stage_dir, cfg):
+        raise RuntimeError(f"installer verification failed for {cfg['name']}")
+
+    # 8. Create tarball
     archive_path = os.path.join(dist_dir, f"{pkg_name}.tar.gz")
     make_tar_gz(stage_dir, archive_path, arcname=pkg_name)
     shutil.rmtree(stage_dir)
     print(f"  built {os.path.basename(archive_path)}")
 
-    # 8. Also create KDE Store individual packages
+    # 9. Also create KDE Store individual packages
     laf_archive = os.path.join(dist_dir, f"{cfg['laf']}-{VERSION}.tar.gz")
     make_tar_gz(os.path.join(repo_root, "themes", cfg["global_pkg"]), laf_archive, arcname=cfg["laf"])
 
@@ -184,6 +190,62 @@ def write_sha256_manifest(dist_dir: str) -> None:
             digest = hashlib.sha256(open(path, "rb").read()).hexdigest()
             manifest.write(f"{digest}  {name}\n")
     print(f"  wrote {os.path.basename(manifest_path)}")
+
+
+def verify_installer(stage_dir: str, cfg: dict) -> bool:
+    """Run the generated installer in a throwaway home and prove it lands files.
+
+    kpackagetool6 is stubbed: the goal is to test our own paths and copy logic,
+    not to re-test Plasma's package manager, and CI images may not ship it.
+    """
+    script = os.path.join(stage_dir, "install.sh")
+    syntax = subprocess.run(["bash", "-n", script], capture_output=True, text=True)
+    if syntax.returncode != 0:
+        print(f"  FAIL: install.sh syntax: {syntax.stderr.strip()}")
+        return False
+
+    with tempfile.TemporaryDirectory(prefix="mt-installer-") as tmp:
+        home = os.path.join(tmp, "home")
+        stub_bin = os.path.join(tmp, "bin")
+        os.makedirs(home)
+        os.makedirs(stub_bin)
+        calls = os.path.join(tmp, "kpackagetool.args")
+        stub = os.path.join(stub_bin, "kpackagetool6")
+        with open(stub, "w", encoding="utf-8") as handle:
+            handle.write(f'#!/bin/sh\nprintf "%s\\n" "$*" >> "{calls}"\n')
+        os.chmod(stub, 0o755)
+
+        run = subprocess.run(
+            ["bash", script],
+            cwd=stage_dir,
+            env={**os.environ, "HOME": home, "PATH": stub_bin + os.pathsep + os.environ["PATH"]},
+            capture_output=True,
+            text=True,
+        )
+        if run.returncode != 0:
+            print(f"  FAIL: install.sh exited {run.returncode}: {run.stderr.strip()}")
+            return False
+
+        share = os.path.join(home, ".local", "share")
+        expected = [
+            os.path.join(share, "color-schemes", f"{cfg['scheme']}.colors"),
+            os.path.join(share, "plasma", "desktoptheme", cfg["style"], "metadata.json"),
+            os.path.join(share, "aurorae", "themes", cfg["decoration"], "metadata.desktop"),
+        ]
+        missing = [path for path in expected if not os.path.isfile(path)]
+        if missing:
+            print(f"  FAIL: install.sh did not create {', '.join(os.path.relpath(p, home) for p in missing)}")
+            return False
+
+        if not os.path.isfile(calls):
+            print("  FAIL: install.sh never called kpackagetool6")
+            return False
+        with open(calls, encoding="utf-8") as handle:
+            arguments = handle.read()
+        if "Plasma/LookAndFeel" not in arguments or "look-and-feel" not in arguments:
+            print("  FAIL: install.sh did not hand the Look-and-Feel package to kpackagetool6")
+            return False
+    return True
 
 
 def verify_packages(repo_root: str) -> bool:

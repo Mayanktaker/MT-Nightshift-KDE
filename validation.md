@@ -9,20 +9,44 @@ state live in `PLAN.md`.
 ## One entry point
 
 ```bash
-make check        # decoration drift + raster invariants, palette/metadata audit, style probe (five schemes)
-make check-dpr2   # the same artwork rendered at 2x, where the corner arc is 1px
-make verify-live  # the running session: config values, deployed copies, system plugin
+make check          # artwork, palettes, packages, colour maths, style probe (five schemes)
+make check-dpr2     # the same artwork rendered at 2x, where the corner arc is 1px
+make package        # the release archives plus their isolated installer run
+make verify-live    # the running session: config values, deployed copies, system plugin
+make uninstall      # removes the user-local packages; `style-uninstall` the system plugin
 ```
 
 `make check` and `make check-dpr2` run in CI (`.github/workflows/checks.yml`) on
-every push and pull request; `tools/git-hooks/pre-commit` runs the palette audit on
-every commit and the decoration checks whenever Aurorae artwork is staged.
-`make verify-live` needs a session, so it runs after `make apply` instead.
+every push and pull request, in two jobs: Ubuntu for speed and Fedora 45 for the
+target platform, including the `kpackagetool6` package check that Ubuntu cannot
+provide. `tools/git-hooks/pre-commit` runs the palette audit on every commit and
+the decoration checks whenever Aurorae artwork is staged. `make verify-live`
+needs a session, so it runs after `make apply` instead.
 
-The probe's `--ci` flag is passed only when `GITHUB_ACTIONS` is set, because CI
-has no Breeze style. A shell that merely exports `CI=true` still runs the full
-assertions, which is the safe default: the two skipped checks are exactly the
-ones a local machine can prove.
+Three checks are easy to miss because they do not render anything:
+
+- `make check-kpackages` installs all five Look-and-Feel packages into a
+  throwaway `XDG_DATA_HOME` with `kpackagetool6`. It prints an explicit skip when
+  the tool is absent rather than reporting a pass.
+- `make check-math` compiles the shared colour helpers against edge inputs:
+  endpoint blends, out-of-range weights (an unclamped `QColor::fromRgbF` returns
+  an invalid colour that paints nothing), equal-tone contrast, unreachable
+  contrast targets and the disabled/active palette-group precedence.
+- `make package` executes every generated `install.sh` in a temporary `HOME` with
+  a stub `kpackagetool6`, then asserts the colour scheme, desktop theme and
+  decoration landed. The installer is also syntax-checked before that run.
+
+`make uninstall` removes only the five named packages and schemes; a sentinel
+theme and an unrelated `.colors` file survive it. `style-uninstall` refuses to
+run when `qtpaths6` reports no plugin directory, so an empty variable cannot turn
+into an `rm` against `/styles`.
+
+The probe's `--ci` flag is passed only when `GITHUB_ACTIONS` is set, because the
+Ubuntu image has no Breeze style. It skips frame suppression, the 12px scroll-bar
+extent and the menu size/corner scan — all of which read the base style's own
+metrics. A shell that merely exports `CI=true` still runs the full assertions,
+which is the safe default. The Fedora job installs `plasma-breeze-qt6` and clears
+`GITHUB_ACTIONS` for its check, so those assertions still run on every push.
 
 ## Palette and package audit — `tools/theme-audit/check-theme.py`
 
@@ -237,9 +261,10 @@ strip.
 
 ## Plasma Style assets
 
-`make check` validates every SVG as XML, the metadata as JSON, and the panel
-background's corner radius by sampling the regenerated probe SVG (14px
-recession). The three lookup slots of each owned surface must hash-match, which
+`make check` validates every SVG as XML, the metadata as JSON, and reads the
+shipped corner paths directly: panel and dialog frames must be 6px, the popup
+frame 14px, in every variant. A regenerated sample is no longer measured, so a
+file that drifted from its documentation fails instead of passing. The three lookup slots of each owned surface must hash-match, which
 `design.md` §10 records as the one-hash rule.
 
 Two generators own the frame geometry, and both `--check` runs are in

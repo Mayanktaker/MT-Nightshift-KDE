@@ -31,3 +31,24 @@ Nightshift OLED is the selected mockup: dark, calm, and high-contrast without tu
 The current baseline is the host's official Fedora KDE Plasma 6.8.2 assets: the complete shared `default/` Plasma Style asset folder, Breeze Dark's `breeze-dark/` metadata/palette, and the global `BreezeDark.colors` file. The Plasma Style inherits shared assets from `default/`; the copy is unmodified under `upstream/`.
 
 This plan covers the Plasma desktop theme, global color scheme, Look-and-Feel manifest, Aurorae decoration and Qt Widgets style plugin. The style plugin is built against Qt 6.11.2 and wraps the installed Breeze style; it requires system plugin installation to appear in the selector and must be rebuilt after incompatible Qt updates. Cursors and other Breeze components are not replaced.
+
+## Audit follow-up (2026-11-19)
+
+Closed from the improvement table:
+
+- One version: the Qt style project reports `1.6.1` and `check-theme.py` asserts it
+  against the packages, so a plugin/package split cannot recur.
+- The style source is split into `stylepainting`, `stylerecognition`, dispatch,
+  controls, fields, items and indicators; no file carries the whole implementation.
+- `make uninstall` and `make style-uninstall` close the lifecycle gap.
+- Release installers are syntax-checked and executed in a throwaway home before
+  archiving.
+- `make check` validates all five Look-and-Feel packages with `kpackagetool6`, runs
+  colour-math edge cases, and measures the shipped frame corners (panel 6px, dialog
+  6px, popup 14px) instead of a regenerated sample. The panel/dialog documentation
+  was corrected to match the shipped artwork; no outer geometry changed.
+- CI gains a Fedora 45 job; tagging `v*` publishes the archives and `SHA256SUMS`.
+- `CHANGELOG.md` records user-visible changes.
+
+Still open: per-variant UI screenshots (five live apply/restart passes) and the
+three pointer-dependent live checks listed above.

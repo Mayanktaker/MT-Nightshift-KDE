@@ -19,7 +19,7 @@ A modern, sculptured evolution of KDE Breeze for KDE Plasma 6. Built around **Ni
   - Rounded list and sidebar delegate backgrounds in QQC2 Desktop Style applications, including Discover, through `PE_PanelItemViewRow` and `CE_ItemViewItem`.
   - Borderless, rounded path bar in Dolphin (`KUrlNavigator`) with focus ring.
   - Slim 12px scrollbar gutters across all Qt applications with clean sidebar gutter suppression in Dolphin.
-- **Plasma 6 Desktop Theme & Popups**: 14px rounded panel and popup frames (`widgets/background`), solid dialog backgrounds (`dialogs/background`), and high-contrast widget styling. Kirigami-owned popup/menu corner radii remain KDE-controlled.
+- **Plasma 6 Desktop Theme & Popups**: Breeze's 6px panel and dialog frames, a 14px popup frame (`widgets/background`), and high-contrast widget styling. Kirigami-owned popup/menu corner radii remain KDE-controlled.
 - **20 Palette-Matched Abstract Wallpapers**: High-definition, text-free abstract wallpapers for all 5 variants across 16:9 Full HD (`1920x1080`), 32:9 Dual-FHD (`3840x1080`), 32:9 Dual-QHD (`5120x1440`), and 16:9 4K UHD (`3840x2160`).
 - **Rigorous Contrast & Accessibility Standards**: All variants enforce WCAG AA text contrast floors (minimum 4.66:1) and strong UI element contrast (minimum 3.0:1) verified via automated testing.
 
@@ -87,6 +87,13 @@ make style-install
 ```
 
 `make style-install` validates the detected Qt plugin directory and compares the installed `.so` with the canonical repository build. After installing, start any Qt Widgets application (e.g. Dolphin) or select `MTNightshift` under **System Settings → Appearance → Application Style**. Release tarballs contain the theme assets only; do not copy a plugin binary from another Qt build or distribution because Qt plugin ABI compatibility must match the host.
+
+To revert cleanly:
+
+```bash
+make uninstall        # removes the five user-local theme packages
+make style-uninstall  # removes the system-wide Qt plugin and its metadata (sudo)
+```
 
 ---
 
@@ -190,6 +197,10 @@ What `make check` asserts:
 - **Package Integrity & Contrast**: Confirms byte-identical palette copies across packages and verifies that all 64 text/surface pairs meet or exceed the 4.66:1 contrast floor (`tools/theme-audit/check-theme.py`).
 - **Wallpapers Verification**: Validates file presence, exact target dimensions, and PNG optimization (`tools/wallpapers/build-wallpapers.py --check`).
 - **Qt Style Probe**: Offscreen Qt probe rendering test widgets through the built plugin and asserting shared 10px control / 15px popup tapers, hover and 1px focus outlines, short meter fills, and 12px scrollbar gutters (`tools/style-probe/check-style.py`).
+- **Shipped Frame Geometry**: Reads the top-left corner path of the panel, dialog and popup frames in every variant and asserts 6px / 6px / 14px, so the artwork cannot drift from the documentation.
+- **Colour Maths**: Unit checks for blending, contrast and palette-group selection, including the out-of-range inputs the image probe cannot reach (`tools/style-probe/check-math.cpp`).
+- **Look-and-Feel Packages**: Installs each of the five packages into a temporary `XDG_DATA_HOME` with `kpackagetool6`; the check prints an explicit skip when the tool is unavailable.
+- **Release Installer**: Every generated `install.sh` is syntax-checked and executed in a throwaway home with a stub `kpackagetool6` before the archive is written.
 
 To verify that your currently running session matches the active theme:
 ```bash
@@ -215,6 +226,7 @@ Release package archives are accompanied by `dist/SHA256SUMS`; verify both the a
 ├── application-style/       # C++ Qt Widgets style plugin (source, kstyle themerc)
 ├── color-schemes/           # Master KDE color schemes (.colors)
 ├── docs/                    # Documentation and screenshot previews
+├── CHANGELOG.md             # User-visible changes per release
 ├── themes/
 │   ├── aurorae/             # Aurorae window decorations (MTNightshift, MTDayshift, ...)
 │   ├── mt-*-global/         # Plasma Look-and-Feel metadata packages
@@ -222,8 +234,8 @@ Release package archives are accompanied by `dist/SHA256SUMS`; verify both the a
 ├── tools/
 │   ├── decoration-probe/    # Aurorae SVG generator, probe, and button validator
 │   ├── packaging/           # KDE Store and release tarball packaging tooling
-│   ├── plasma-theme/        # Plasma panel, dialog, and applet frame generators
-│   ├── style-probe/         # Offscreen Qt Widgets widget tester
+│   ├── plasma-theme/        # Plasma dialog and applet frame generators
+│   ├── style-probe/         # Offscreen Qt Widgets tester and colour-math checks
 │   ├── theme-audit/         # Contrast and package metadata auditor
 │   └── wallpapers/          # Wallpaper build and verification tooling
 ├── upstream/                # Upstream KDE Breeze 6.8.2 reference baseline
