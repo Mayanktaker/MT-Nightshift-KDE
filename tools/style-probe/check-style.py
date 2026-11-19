@@ -33,31 +33,41 @@ from PIL import Image
 # blue-family assertion below.
 SCHEMES = {
     "MT-Nightshift": {
+        "page_rgb": (16, 18, 22),
         "window_rgb": (10, 11, 13),
+        "button_rgb": (27, 31, 37),
         "pill_text_rgb": (255, 255, 255),
         "accent_rgb": (31, 110, 156),
         "accent_blue": True,
     },
     "MT-Dayshift": {
+        "page_rgb": (239, 241, 245),
         "window_rgb": (250, 251, 253),
+        "button_rgb": (244, 246, 249),
         "pill_text_rgb": (255, 255, 255),
         "accent_rgb": (31, 110, 156),
         "accent_blue": True,
     },
     "MT-Nord-Night": {
+        "page_rgb": (46, 52, 64),
         "window_rgb": (35, 41, 50),
+        "button_rgb": (59, 66, 82),
         "pill_text_rgb": (46, 52, 64),
         "accent_rgb": (132, 165, 198),
         "accent_blue": True,
     },
     "MT-Nord-Day": {
+        "page_rgb": (236, 239, 244),
         "window_rgb": (247, 249, 252),
+        "button_rgb": (229, 233, 240),
         "pill_text_rgb": (255, 255, 255),
         "accent_rgb": (76, 107, 145),
         "accent_blue": True,
     },
     "MT-One-Dark-Pro": {
+        "page_rgb": (40, 44, 52),
         "window_rgb": (29, 31, 35),
+        "button_rgb": (64, 71, 84),
         "pill_text_rgb": (29, 31, 35),
         "accent_rgb": (82, 139, 255),
         "accent_blue": True,
@@ -127,26 +137,25 @@ def main() -> int:
     window_rgb = np.array(scheme["window_rgb"])
     pill_text_rgb = np.array(scheme["pill_text_rgb"])
 
-    # Corner language: every field-family pill must show the deep corner taper.
-    # Threshold is proportional to height (taper/height ≈ 0.3 at pill radius),
-    # because font metrics on other platforms render shorter widgets.
-    for name in ["framed-lineedit", "framed-lineedit-focused", "editable-combo",
-                 "editable-combo-focused", "selector-combo", "selector-combo-focused",
-                 "spinbox", "spinbox-focused"]:
+    # Corner language: every field-family surface must show the shared 10px taper.
+    for name in ["framed-lineedit", "framed-lineedit-focused", "framed-lineedit-hover",
+                 "editable-combo", "editable-combo-focused", "selector-combo",
+                 "selector-combo-focused", "selector-combo-hover", "spinbox",
+                 "spinbox-focused", "spinbox-hover"]:
         path = outdir / f"{name}.png"
         height, recession = taper(path)
-        check(f"{name} taper", height > 8 and recession >= height / 4,
-              f"h={height} taper={recession}px")
+        check(f"{name} taper", height > 8 and 5 <= recession <= 8,
+              f"h={height} taper={recession}px (5-8px for a 10px radius)")
 
-    # QMenu outer corners carry the 15px control language, not Breeze's small arc.
+    # QMenu outer corners keep their 15px popup radius, not the shared 10px control radius.
     menu_path = outdir / "menu.png"
     menu_size = Image.open(menu_path).size
     check("menu dimensions", 60 <= menu_size[0] <= 80 and 90 <= menu_size[1] <= 110,
           f"size={menu_size} (60-80 x 90-110)")
     for corner in ("tl", "tr", "bl", "br"):
         height, recession = corner_recession(menu_path, corner)
-        check(f"menu corner {corner} taper", height >= 80 and recession >= 8,
-              f"h={height} taper={recession}px (>= 8px at ~100px menu height)")
+        check(f"menu corner {corner} taper", height >= 80 and 12 <= recession <= 18,
+              f"h={height} taper={recession}px (12-18px popup radius)")
 
     sb_height, sb_taper = taper(outdir / "statusbar.png")
     check("statusbar corner taper", sb_height > 8 and sb_taper >= 8,
@@ -168,10 +177,10 @@ def main() -> int:
     check("tab inactive tone muted", int(np.abs(dominant - np.array(accent)).sum()) > 60,
           f"dominant={tuple(dominant)} accent={accent}")
 
-    # Hovered menu row: the highlight must be a deep pill, not Breeze's flat band.
+    # Hovered menu row: the highlight is a tighter interaction pill, not Breeze's flat band.
     hover_height, hover_taper = taper(outdir / "menu-hover.png")
-    check("menu hover pill taper", hover_height > 8 and hover_taper >= 8,
-          f"h={hover_height} taper={hover_taper}px (>= 8px)")
+    check("menu hover pill taper", hover_height > 8 and 5 <= hover_taper < 14,
+          f"h={hover_height} taper={hover_taper}px (5-13px)")
     hover_rgb = np.array(Image.open(outdir / "menu-hover.png").convert("RGB")).astype(int)
     on_pill = int((np.abs(hover_rgb - pill_text_rgb).sum(axis=2) < 120).sum())
     check("menu hover text on pill", on_pill > 20,
@@ -179,8 +188,8 @@ def main() -> int:
 
     for state in ("hover", "pressed", "checked"):
         h, t = taper(outdir / f"tool-{state}.png")
-        check(f"tool {state} corner taper", h > 8 and t >= 8,
-              f"h={h} taper={t}px (>= 8px)")
+        check(f"tool {state} corner taper", h > 8 and 5 <= t < 14,
+              f"h={h} taper={t}px (5-13px)")
     idle_height, idle_taper = taper(outdir / "tool-idle.png")
     check("tool idle unchanged", idle_taper < 8,
           f"h={idle_height} taper={idle_taper}px (Breeze idle surface, not our pill)")
@@ -188,6 +197,49 @@ def main() -> int:
     menu_rgb = np.array(Image.open(outdir / "tool-menu.png").convert("RGB")).astype(int)
     arrow_px = int((np.abs(idle_rgb[:, -25:] - menu_rgb[:, -25:]).sum(axis=2) > 20).sum())
     check("tool menu arrow drawn", arrow_px > 20, f"right-edge diff px={arrow_px}")
+
+    # A focused check box must not wrap its label in a pill: the base style owns
+    # that cue, and the chip itself carries the keyboard ring.
+    focus_widget = np.array(Image.open(outdir / "focus-widget.png").convert("RGBA").split()[3])
+    check("focus pill limited to item views", int(focus_widget.max()) == 0,
+          f"max alpha={int(focus_widget.max())}")
+
+    # Check/radio indicators: control-tone chips with a quiet hairline. The
+    # Login Screen KCM mixes them with Breeze-drawn fields, so a bright Base
+    # slab and a loud edge were the two visible inconsistencies.
+    def indicator(name):
+        return np.array(Image.open(outdir / f"{name}.png").convert("RGB")).astype(int)
+
+    unchecked = indicator("indicator-unchecked")
+    mid = unchecked.shape[0] // 2
+    chip_fill = unchecked[mid, 3]
+    button_rgb = np.array(scheme["button_rgb"])
+    check("indicator control tone", int(np.abs(chip_fill - button_rgb).sum()) <= 9,
+          f"rgb={tuple(chip_fill)} ref={tuple(button_rgb)}")
+    chip_edge = unchecked[mid, 0]
+    check("indicator hairline quiet", int(np.abs(chip_edge - chip_fill).sum()) <= 60,
+          f"edge={tuple(chip_edge)} fill={tuple(chip_fill)}")
+    # A 20px chip is too small for the taper metric: measure the corner cut
+    # instead — rounded at all, but not a pill.
+    chip_alpha = np.array(Image.open(outdir / "indicator-unchecked.png").convert("RGBA").split()[3])
+    corner_open = int(chip_alpha[0, 0]) <= 10 and int(chip_alpha[1, 1]) > 0
+    first_full = next((x for x in range(chip_alpha.shape[1]) if chip_alpha[0, x] >= 250), 99)
+    check("indicator corner small", corner_open and 2 <= first_full <= 8,
+          f"first-full={first_full}px (2-8px, not a pill)")
+    focused_chip = indicator("indicator-focused")
+    focused_edge = focused_chip[mid, 0]
+    check("indicator focus ring", focused_edge[2] > focused_edge[0] + 40,
+          f"edge={tuple(focused_edge)}")
+    checked_chip = indicator("indicator-checked")
+    checked_fill = checked_chip[mid, 0]
+    check("indicator checked accent", int(np.abs(checked_fill - accent).sum()) < 30,
+          f"rgb={tuple(checked_fill)} ref={tuple(accent)}")
+    disabled_chip = indicator("indicator-disabled")
+    disabled_fill = disabled_chip[mid, 3]
+    page_rgb = np.array(scheme["page_rgb"])
+    check("indicator disabled muted",
+          int(np.abs(disabled_fill - page_rgb).sum()) < int(np.abs(chip_fill - page_rgb).sum()),
+          f"disabled={tuple(disabled_fill)} enabled={tuple(chip_fill)} page={tuple(page_rgb)}")
 
     # Breeze's tight frame must not be stamped over our pill (needs Breeze).
     if not ci:
@@ -205,6 +257,25 @@ def main() -> int:
           f"rgb={tuple(fill)} ref={tuple(accent)}")
     groove = meter[mid, 140]
     check("meter groove not black", int(groove.sum()) > 30, f"rgb={tuple(groove)}")
+    small_meter = np.array(Image.open(outdir / "capacity-meter-small-fill.png").convert("RGB")).astype(int)
+    small_alpha = np.array(Image.open(outdir / "capacity-meter-small-fill.png").convert("RGBA").split()[3])
+    small_blue = (small_meter[:, :, 2] > small_meter[:, :, 0] + 60) & (small_alpha > 10)
+    top_fill = np.where(small_blue[0])[0]
+    top_edge = int(top_fill.min()) if len(top_fill) else -1
+    check("meter short fill stays rounded", 1 <= top_edge <= 4,
+          f"first accent pixel at top edge={top_edge}px (1-4px, not a dot)")
+
+    for hover_name, idle_name in [
+        ("framed-lineedit-hover", "framed-lineedit"),
+        ("selector-combo-hover", "selector-combo"),
+        ("spinbox-hover", "spinbox"),
+    ]:
+        hover = np.array(Image.open(outdir / f"{hover_name}.png").convert("RGB")).astype(int)
+        idle = np.array(Image.open(outdir / f"{idle_name}.png").convert("RGB")).astype(int)
+        y = hover.shape[0] // 2
+        edge_change = int(np.abs(hover[y, 0] - idle[y, 0]).sum())
+        check(f"{hover_name} has hover outline", edge_change > 60,
+              f"left-edge RGB change={edge_change} (want > 60)")
 
     # Focus ring: present, blue-family, and exactly one pixel wide at mid-height.
     focused = np.array(Image.open(outdir / "framed-lineedit-focused.png").convert("RGB")).astype(int)
@@ -250,7 +321,7 @@ def main() -> int:
                 if len(cols):
                     rec.append(int(cols.min()))
             deepest = max(rec) if rec else 0
-            return deepest >= 5 and left_inset >= 3, f"inset={left_inset} taper={deepest}"
+            return deepest >= 4 and left_inset >= 3, f"inset={left_inset} taper={deepest}"
         diff = np.abs(rgb - window_rgb).sum(axis=2)
         ink = (diff > 12) & (alpha > 10)
         if not ink.any():
@@ -262,7 +333,7 @@ def main() -> int:
             if len(cols):
                 rec.append(int(cols.min()) - x0)
         deepest = max(rec) if rec else 0
-        return deepest >= 8 and x0 >= 3, f"inset={x0} taper={deepest}"
+        return deepest >= 4 and x0 >= 3, f"inset={x0} taper={deepest}"
 
     for name, blue in [("item-selected", True), ("item-selected-palette-active", True),
                        ("item-hover", False), ("itemrow-hover", False),

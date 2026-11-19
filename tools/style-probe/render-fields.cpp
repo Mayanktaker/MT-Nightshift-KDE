@@ -11,6 +11,7 @@
  */
 #include <QApplication>
 #include <QAbstractSpinBox>
+#include <QCheckBox>
 #include <QComboBox>
 #include <QColor>
 #include <QDir>
@@ -36,6 +37,7 @@
 #include <QString>
 #include <QStringList>
 #include <QStyleFactory>
+#include <QStyleOptionButton>
 #include <QStylePlugin>
 #include <cstdio>
 
@@ -218,6 +220,14 @@ int main(int argc, char **argv)
         option.state |= QStyle::State_Enabled | QStyle::State_HasFocus | QStyle::State_Active;
         app.style()->drawPrimitive(QStyle::PE_PanelLineEdit, &option, p, &framed);
     });
+    saveRendered(framed.size(), QStringLiteral("framed-lineedit-hover"), outdir,
+                 QStringLiteral("framed-lineedit-hover"), [&](QPainter *p) {
+        QStyleOptionFrame option;
+        option.initFrom(&framed);
+        option.rect = framed.rect();
+        option.state |= QStyle::State_Enabled | QStyle::State_MouseOver | QStyle::State_Active;
+        app.style()->drawPrimitive(QStyle::PE_PanelLineEdit, &option, p, &framed);
+    });
     saveRendered(framed.size(), QStringLiteral("framed-lineedit-framecheck"), outdir,
                  QStringLiteral("framed-lineedit-framecheck"), [&](QPainter *p) {
         QStyleOptionFrame option;
@@ -263,6 +273,15 @@ int main(int argc, char **argv)
         option.state |= QStyle::State_Enabled | QStyle::State_HasFocus | QStyle::State_Active;
         app.style()->drawComplexControl(QStyle::CC_ComboBox, &option, p, &selector);
     });
+    saveRendered(selector.size(), QStringLiteral("selector-combo-hover"), outdir,
+                 QStringLiteral("selector-combo-hover"), [&](QPainter *p) {
+        QStyleOptionComboBox option;
+        option.initFrom(&selector);
+        option.rect = selector.rect();
+        option.subControls = QStyle::SC_All;
+        option.state |= QStyle::State_Enabled | QStyle::State_MouseOver | QStyle::State_Active;
+        app.style()->drawComplexControl(QStyle::CC_ComboBox, &option, p, &selector);
+    });
 
     // Spin box: another field container in the same family.
     QSpinBox spinner;
@@ -276,6 +295,16 @@ int main(int argc, char **argv)
         option.frame = true;
         option.subControls = QStyle::SC_All;
         option.state |= QStyle::State_Enabled | QStyle::State_HasFocus | QStyle::State_Active;
+        app.style()->drawComplexControl(QStyle::CC_SpinBox, &option, p, &spinner);
+    });
+    saveRendered(spinner.size(), QStringLiteral("spinbox-hover"), outdir,
+                 QStringLiteral("spinbox-hover"), [&](QPainter *p) {
+        QStyleOptionSpinBox option;
+        option.initFrom(&spinner);
+        option.rect = spinner.rect();
+        option.frame = true;
+        option.subControls = QStyle::SC_All;
+        option.state |= QStyle::State_Enabled | QStyle::State_MouseOver | QStyle::State_Active;
         app.style()->drawComplexControl(QStyle::CC_SpinBox, &option, p, &spinner);
     });
 
@@ -348,6 +377,7 @@ int main(int argc, char **argv)
         });
     };
     meterRender(30, false, QStringLiteral("capacity-meter"));
+    meterRender(8, false, QStringLiteral("capacity-meter-small-fill"));
     meterRender(55, true, QStringLiteral("progress-text"));
 
     // Boxed item-view frame (Kate's sessions list): must render as a dimmed
@@ -439,6 +469,18 @@ int main(int argc, char **argv)
     };
     focusRender(false, QStringLiteral("focus-pill"));
     focusRender(true, QStringLiteral("focus-pill-selected"));
+
+    // Non-item-view focus: a check box label keeps the base style's own cue
+    // instead of the item pill, which would wrap the text in a capsule.
+    QCheckBox focusHost(QStringLiteral("Automatically log in:"));
+    saveRendered(QSize(200, 24), QStringLiteral("focus-widget"), outdir,
+                 QStringLiteral("focus-widget"), [&](QPainter *p) {
+        QStyleOptionFocusRect option;
+        option.initFrom(&focusHost);
+        option.rect = QRect(0, 0, 200, 24);
+        option.state |= QStyle::State_Enabled | QStyle::State_Active | QStyle::State_HasFocus;
+        app.style()->drawPrimitive(QStyle::PE_FrameFocusRect, &option, p, &focusHost);
+    });
 
     // Context menu: does the frame language reach QMenu corners?
     QMenu menu;
@@ -571,6 +613,36 @@ int main(int argc, char **argv)
         QApplication::style()->drawComplexControl(QStyle::CC_ToolButton, &tb, &p, &toolHost);
     }
     menuArrow.save(QStringLiteral("%1/tool-menu.png").arg(outdir));
+
+    // Check and radio indicators: 20px control chips as the Login Screen KCM
+    // draws them. They must carry the field family's tone and quiet hairline,
+    // not the bright Base slab that clashed with the fields beside it.
+    const auto drawIndicator = [&](QStyle::State state, bool radio, const char *name) {
+        saveRendered(QSize(20, 20), QString::fromLatin1(name), outdir, QString::fromLatin1(name),
+                     [&](QPainter *p) {
+            QStyleOptionButton option;
+            option.initFrom(&toolHost);
+            option.rect = QRect(0, 0, 20, 20);
+            option.state = QStyle::State_Enabled | QStyle::State_Active | state;
+            app.style()->drawPrimitive(radio ? QStyle::PE_IndicatorRadioButton
+                                             : QStyle::PE_IndicatorCheckBox,
+                                       &option, p, &toolHost);
+        });
+    };
+    drawIndicator(QStyle::State_None, false, "indicator-unchecked");
+    drawIndicator(QStyle::State_HasFocus, false, "indicator-focused");
+    drawIndicator(QStyle::State_MouseOver, false, "indicator-hover");
+    drawIndicator(QStyle::State_On, false, "indicator-checked");
+    drawIndicator(QStyle::State_NoChange, false, "indicator-partial");
+    drawIndicator(QStyle::State_On, true, "indicator-radio-checked");
+    saveRendered(QSize(20, 20), QStringLiteral("indicator-disabled"), outdir,
+                 QStringLiteral("indicator-disabled"), [&](QPainter *p) {
+        QStyleOptionButton option;
+        option.initFrom(&toolHost);
+        option.rect = QRect(0, 0, 20, 20);
+        option.state = QStyle::State_Active;
+        app.style()->drawPrimitive(QStyle::PE_IndicatorCheckBox, &option, p, &toolHost);
+    });
 
     // Disabled field family: the Login Screen settings page greys out whole
     // groups of combos and edits, so their surface must stay legible.

@@ -35,3 +35,8 @@ jobs:
 
       - name: Check the artwork at 2x
         run: make check-dpr2
+
+      - name: Build and verify distribution packages
+        run: |
+          make package
+          ./tools/packaging/build-packages.py --check

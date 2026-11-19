@@ -46,6 +46,9 @@ PROBE_CACHE := $(or $(XDG_CACHE_HOME),$(HOME)/.cache)/mt-nightshift-probe
 MOC := $(shell pkg-config --variable=libexecdir Qt6Core)/moc
 QT_CFLAGS := $(shell pkg-config --cflags Qt6Widgets)
 QT_LIBS := $(shell pkg-config --libs Qt6Widgets)
+QT_PLUGIN_DIR := $(shell qtpaths6 --query QT_INSTALL_PLUGINS 2>/dev/null)
+QT_INSTALL_PREFIX := $(shell qtpaths6 --query QT_INSTALL_PREFIX 2>/dev/null)
+KSTYLE_THEME_DIR := $(QT_INSTALL_PREFIX)/share/kstyle/themes
 
 .PHONY: all decoration check check-style check-dpr2 style style-preview wallpapers package apply apply-dayshift apply-nord-night apply-nord-day apply-one-dark-pro apply-install style-install verify-live clean
 
@@ -63,6 +66,7 @@ wallpapers:
 # Build distributable tarballs for KDE Store and user releases in dist/
 package:
 	./tools/packaging/build-packages.py
+	./tools/packaging/build-packages.py --check
 
 # Fail if the committed SVG drifted from its generator, the raster invariants
 # broke, or the rendered field family regressed.
@@ -138,9 +142,13 @@ style-preview: style
 # name where KStyle reads it. Relaunch apps afterwards; the running ones keep the
 # style they started with.
 style-install: style
-	sudo install -m 755 build/style/mtnightshiftstyle.so /usr/lib64/qt6/plugins/styles/
-	sudo install -m 644 application-style/kstyle/themes/mtnightshift.themerc /usr/share/kstyle/themes/
-	@echo "installed; start a new app to see the change"
+	@test -n "$(QT_PLUGIN_DIR)" || { echo "FAIL qtpaths6 did not report QT_INSTALL_PLUGINS"; exit 1; }
+	@test -n "$(QT_INSTALL_PREFIX)" || { echo "FAIL qtpaths6 did not report QT_INSTALL_PREFIX"; exit 1; }
+	sudo install -d "$(QT_PLUGIN_DIR)/styles" "$(KSTYLE_THEME_DIR)"
+	sudo install -m 755 build/style/mtnightshiftstyle.so "$(QT_PLUGIN_DIR)/styles/mtnightshiftstyle.so"
+	sudo install -m 644 application-style/kstyle/themes/mtnightshift.themerc "$(KSTYLE_THEME_DIR)/mtnightshift.themerc"
+	cmp -s build/style/mtnightshiftstyle.so "$(QT_PLUGIN_DIR)/styles/mtnightshiftstyle.so"
+	@echo "installed; Qt plugin: $(QT_PLUGIN_DIR)/styles; KStyle metadata: $(KSTYLE_THEME_DIR)"
 
 # Install into user-local KDE paths and select VARIANT's theme in the running
 # session. All five variants stay installed; only the selection moves.
@@ -181,7 +189,8 @@ verify-live:
 	cmp -s color-schemes/$(LIVE_SCHEME).colors $(SCHEME_DIR)/$(LIVE_SCHEME).colors || { echo "FAIL installed scheme differs from the repo (make apply-install)"; bad=1; }; \
 	diff -r themes/$(LIVE_STYLE) $(DESKTHEME_DIR)/$(LIVE_STYLE) >/dev/null || { echo "FAIL installed Plasma Style differs from the repo (make apply-install)"; bad=1; }; \
 	if [ -f build/style/mtnightshiftstyle.so ]; then \
-		cmp -s build/style/mtnightshiftstyle.so /usr/lib64/qt6/plugins/styles/mtnightshiftstyle.so || { echo "FAIL system plugin differs from build/style (make style-install)"; bad=1; }; \
+		plugin_dir="$$(qtpaths6 --query QT_INSTALL_PLUGINS 2>/dev/null)/styles"; \
+		cmp -s build/style/mtnightshiftstyle.so "$$plugin_dir/mtnightshiftstyle.so" || { echo "FAIL system plugin differs from build/style (make style-install)"; bad=1; }; \
 	fi; \
 	[ $$bad -eq 0 ] && echo "live session matches the theme"
 

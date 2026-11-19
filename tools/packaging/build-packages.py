@@ -4,6 +4,7 @@
 """Build distribution packages for KDE Store and user releases."""
 
 import argparse
+import hashlib
 import os
 import shutil
 import sys
@@ -123,7 +124,7 @@ def build_variant_package(variant_key: str, repo_root: str, dist_dir: str) -> st
     # 5. Wallpapers
     wp_dir = os.path.join(stage_dir, "wallpapers")
     os.makedirs(wp_dir, exist_ok=True)
-    for res in ("1920x1080", "3840x1080"):
+    for res in ("1920x1080", "3840x1080", "5120x1440", "3840x2160"):
         wp_src = os.path.join(repo_root, "Wallpapers", f"{variant_key}-abstract-{res}.png")
         if os.path.exists(wp_src):
             shutil.copy2(wp_src, wp_dir)
@@ -168,7 +169,21 @@ def build_all_packages(repo_root: str) -> None:
     print(f"building KDE Store and user release archives in {dist_dir}...")
     for variant in VARIANTS:
         build_variant_package(variant, repo_root, dist_dir)
+    write_sha256_manifest(dist_dir)
     print("all packages built successfully.")
+
+
+def write_sha256_manifest(dist_dir: str) -> None:
+    """Publish package digests beside the release archives."""
+    manifest_path = os.path.join(dist_dir, "SHA256SUMS")
+    with open(manifest_path, "w", encoding="utf-8", newline="\n") as manifest:
+        for name in sorted(os.listdir(dist_dir)):
+            path = os.path.join(dist_dir, name)
+            if not name.endswith(".tar.gz") or not os.path.isfile(path):
+                continue
+            digest = hashlib.sha256(open(path, "rb").read()).hexdigest()
+            manifest.write(f"{digest}  {name}\n")
+    print(f"  wrote {os.path.basename(manifest_path)}")
 
 
 def verify_packages(repo_root: str) -> bool:
@@ -179,6 +194,17 @@ def verify_packages(repo_root: str) -> bool:
         return False
 
     all_ok = True
+    manifest_path = os.path.join(dist_dir, "SHA256SUMS")
+    manifest: dict[str, str] = {}
+    if not os.path.isfile(manifest_path):
+        print("  FAIL: missing SHA256SUMS manifest")
+        all_ok = False
+    else:
+        for line in open(manifest_path, "r", encoding="utf-8"):
+            parts = line.rstrip("\n").split("  ", 1)
+            if len(parts) == 2:
+                manifest[parts[1]] = parts[0]
+
     for var, cfg in VARIANTS.items():
         main_tar = os.path.join(dist_dir, f"{cfg['name']}-v{VERSION}.tar.gz")
         laf_tar = os.path.join(dist_dir, f"{cfg['laf']}-{VERSION}.tar.gz")
@@ -196,7 +222,36 @@ def verify_packages(repo_root: str) -> bool:
                             print(f"  FAIL: empty archive {os.path.basename(arc)}")
                             all_ok = False
                         else:
-                            print(f"  OK   {os.path.basename(arc)} ({len(names)} items)")
+                            if arc == main_tar:
+                                for required in (
+                                    f"{cfg['name']}-v{VERSION}/color-scheme/{cfg['scheme']}.colors",
+                                    f"{cfg['name']}-v{VERSION}/look-and-feel/metadata.json",
+                                    f"{cfg['name']}-v{VERSION}/aurorae/metadata.desktop",
+                                    f"{cfg['name']}-v{VERSION}/install.sh",
+                                ):
+                                    if required not in names:
+                                        print(f"  FAIL: {os.path.basename(arc)} missing {required}")
+                                        all_ok = False
+                                wallpaper_names = [
+                                    name for name in names
+                                    if "/wallpapers/" in name and name.endswith(".png")
+                                ]
+                                if len(wallpaper_names) != 4:
+                                    print(
+                                        f"  FAIL: {os.path.basename(arc)} contains "
+                                        f"{len(wallpaper_names)} wallpapers, want 4"
+                                    )
+                                    all_ok = False
+                            with open(arc, "rb") as archive_file:
+                                digest = hashlib.sha256(archive_file.read()).hexdigest()
+                            archive_name = os.path.basename(arc)
+                            if manifest.get(archive_name) not in ("", digest):
+                                print(f"  FAIL: {archive_name} SHA256SUMS mismatch")
+                                all_ok = False
+                            print(
+                                f"  OK   {archive_name} "
+                                f"({len(names)} items, sha256={digest[:12]})"
+                            )
                 except Exception as exc:
                     print(f"  FAIL: corrupted archive {os.path.basename(arc)}: {exc}")
                     all_ok = False

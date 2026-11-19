@@ -87,7 +87,8 @@ private:
     // Paints the item-view keyboard-focus indicator as a pill ring following the
     // selection pill's geometry; true when the primitive must be suppressed
     // (Breeze's squarish outline) or the selection already marks the item.
-    bool paintFocusPill(const QStyleOption *option, QPainter *painter) const;
+    bool paintFocusPill(const QStyleOption *option, QPainter *painter,
+                        const QWidget *widget) const;
 
 protected:
     // Records the element id Breeze assigns to CE_CapacityBar so the meter can

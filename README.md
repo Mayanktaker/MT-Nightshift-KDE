@@ -15,7 +15,7 @@ A modern, sculptured evolution of KDE Breeze for KDE Plasma 6. Built around **Ni
 - **5 Hand-Crafted Variants**: Seamlessly switch between Nightshift (OLED carbon), Dayshift (crisp light), Nord Night (Polar Night slate), Nord Day (Snow Storm), and One Dark Pro (vibrant dark).
 - **15px Rounded Window Decorations**: Aurorae theme generated with clean 15px rounded corners, continuous shadow envelopes, and 5 distinct window title bar buttons (close, minimize, maximize, keep-above, help) color-matched to each look.
 - **C++ Qt Widgets Style Plugin (`MTNightshift`)**:
-  - Consistent ~15px corner radii on buttons, input fields, spinboxes, combo boxes, menus, tool buttons, and item-view hover/selected rows.
+  - Shared 10px maximum radius for Qt control and interaction surfaces, including fields, buttons, tabs, indicators, menu rows and item hovers; QMenu popup corners stay 15px, and all outer window corners retain their existing geometry.
   - Rounded list and sidebar delegate backgrounds in QQC2 Desktop Style applications, including Discover, through `PE_PanelItemViewRow` and `CE_ItemViewItem`.
   - Borderless, rounded path bar in Dolphin (`KUrlNavigator`) with focus ring.
   - Slim 12px scrollbar gutters across all Qt applications with clean sidebar gutter suppression in Dolphin.
@@ -79,14 +79,14 @@ make apply-one-dark-pro   # Applies MT One Dark Pro
 
 #### Installing the C++ Qt Widgets Style Plugin (Optional but Recommended)
 
-Because Qt 6 scans `/usr/lib64/qt6/plugins/styles/` for system style plugins, installing the compiled style plugin requires root permissions:
+The Qt plugin is built locally and installed into the path reported by `qtpaths6 --query QT_INSTALL_PLUGINS`. Installing the plugin and its KStyle metadata requires root permissions:
 
 ```bash
 # Build and install the Qt Widgets style plugin
 make style-install
 ```
 
-After installing, start any Qt Widgets application (e.g. Dolphin) or select `MTNightshift` under **System Settings → Appearance → Application Style**.
+`make style-install` validates the detected Qt plugin directory and compares the installed `.so` with the canonical repository build. After installing, start any Qt Widgets application (e.g. Dolphin) or select `MTNightshift` under **System Settings → Appearance → Application Style**. Release tarballs contain the theme assets only; do not copy a plugin binary from another Qt build or distribution because Qt plugin ABI compatibility must match the host.
 
 ---
 
@@ -143,7 +143,7 @@ make package
 ```
 
 This creates:
-- **Complete Suite Tarballs**: `dist/MT-<Variant>-v1.6.1.tar.gz` (contains Look-and-Feel, desktop theme, Aurorae decoration, color scheme, matching wallpapers, and a standalone `install.sh` script).
+- **Complete Suite Tarballs**: `dist/MT-<Variant>-v1.6.1.tar.gz` (contains Look-and-Feel, desktop theme, Aurorae decoration, color scheme, all four matching wallpapers, and a standalone `install.sh` script). The Qt plugin is intentionally excluded and must be built or installed with `make style-install` on the target Qt 6 environment.
 - **KDE Store Look-and-Feel Packages**: `dist/com.mayanktaker.<style>.desktop-1.6.1.tar.gz`.
 - **KDE Store Aurorae Decoration Packages**: `dist/aurorae-<decoration>-1.6.1.tar.gz`.
 
@@ -189,12 +189,23 @@ What `make check` asserts:
 - **Button Palette Audit**: Proves all 5 buttons and 8 interaction states match each variant's color scheme (`tools/decoration-probe/check-buttons.py`).
 - **Package Integrity & Contrast**: Confirms byte-identical palette copies across packages and verifies that all 64 text/surface pairs meet or exceed the 4.66:1 contrast floor (`tools/theme-audit/check-theme.py`).
 - **Wallpapers Verification**: Validates file presence, exact target dimensions, and PNG optimization (`tools/wallpapers/build-wallpapers.py --check`).
-- **Qt Style Probe**: Offscreen Qt probe rendering test widgets through the built plugin and asserting 15px tapers, 1px focus rings, 12px scrollbar gutters, and meter accent fills (`tools/style-probe/check-style.py`).
+- **Qt Style Probe**: Offscreen Qt probe rendering test widgets through the built plugin and asserting shared 10px control / 15px popup tapers, hover and 1px focus outlines, short meter fills, and 12px scrollbar gutters (`tools/style-probe/check-style.py`).
 
 To verify that your currently running session matches the active theme:
 ```bash
 make verify-live VARIANT=nightshift
 ```
+
+### Live desktop confirmation
+
+Automated checks cover artwork, contrast, package metadata, and Qt offscreen rendering. A final manual pass should also verify:
+
+- Right-click panel menus and tooltips on a dark wallpaper and a genuinely light wallpaper.
+- Dolphin's editable path bar focus ring after opening the editable location field.
+- Nord Night alternate selected rows without a custom `[General] AccentColor`.
+- Restore the active `[KDE] frameContrast`, scheme, Plasma Style, decoration, wallpaper, and panel settings after testing.
+
+Release package archives are accompanied by `dist/SHA256SUMS`; verify both the archive and the digest before installation.
 
 ---
 

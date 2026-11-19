@@ -7,6 +7,7 @@
  */
 #include "mtnightshiftstyle.h"
 
+#include <QAbstractItemView>
 #include <QAbstractScrollArea>
 #include <QApplication>
 #include <QAbstractSpinBox>
@@ -35,8 +36,10 @@
 
 namespace
 {
-// Sculpted control radius in logical pixels, clamped per control.
-constexpr qreal kControlRadius = 15.0;
+// Shared maximum radius for Qt control surfaces and their interaction states.
+constexpr qreal kControlRadius = 10.0;
+// Popup containers keep their existing outside corner radius.
+constexpr qreal kPopupRadius = 15.0;
 // Tooltips follow the Plasma tooltip radius from design.md section 6, not the
 // control radius, so app tooltips match the shell's tooltips.
 constexpr qreal kTipRadius = 6.0;
@@ -56,6 +59,8 @@ constexpr qreal kDisabledLift = 0.075;
 // Hairline contrast for disabled fields: dimmer than the resting outline so a
 // greyed-out group stays quiet, but present enough to keep the shapes legible.
 constexpr qreal kDisabledOutlineContrast = 0.25;
+// Indicator corners scale with their size; the quiet hairline matches a field edge.
+constexpr qreal kIndicatorOutlineContrast = 0.07;
 // State outline thickness in logical pixels; the focus ring stays 1px and reads
 // crisp, with its visibility carried by the contrast token instead of weight.
 constexpr qreal kOutlineWidth = 1.0;
@@ -317,15 +322,19 @@ bool fieldContainerFocused(const QStyleOption *option, const QWidget *widget)
         && qobject_cast<const QLineEdit *>(focused);
 }
 
-// Fills one field surface under the shared rule: borderless tone-step fill at
-// rest, readable accent ring only while focused.
+// Fills a field at rest, with a quiet hover outline or a stronger focus ring.
 void paintFieldSurface(QPainter *painter, const QRectF &rect, const QColor &fill, bool focused,
-                       const QPalette &palette, QPalette::ColorGroup group)
+                       bool hovered, const QPalette &palette, QPalette::ColorGroup group)
 {
     const qreal radius = qMin(kControlRadius, qMin(rect.width(), rect.height()) / 2.0);
     if (focused) {
         const QColor ring = readableAccent(palette.color(group, QPalette::Highlight), fill, kFocusContrast);
         paintSurface(painter, rect, radius, kFocusOutlineWidth, fill, ring);
+        return;
+    }
+    if (hovered) {
+        const QColor outline = readableAccent(palette.color(group, QPalette::Highlight), fill, kOutlineContrast);
+        paintSurface(painter, rect, radius, kOutlineWidth, fill, outline);
         return;
     }
     if (group == QPalette::Disabled) {
@@ -519,7 +528,7 @@ bool MTNightshiftStyle::paintMenuPanel(const QStyleOption *option, QPainter *pai
     const QColor fill = palette.color(group, QPalette::Window);
     const QColor outline = blend(fill, palette.color(group, QPalette::WindowText), kFrameContrast);
     const QRectF rect = QRectF(option->rect).adjusted(0.5, 0.5, -0.5, -0.5);
-    paintSurface(painter, rect, kControlRadius, kOutlineWidth, fill, outline);
+    paintSurface(painter, rect, kPopupRadius, kOutlineWidth, fill, outline);
     return true;
 }
 
@@ -601,7 +610,7 @@ void MTNightshiftStyle::drawPrimitive(PrimitiveElement element, const QStyleOpti
     case PE_FrameFocusRect:
         // Item-view keyboard focus becomes a pill ring that follows the
         // selection pill's geometry; Breeze's squarish outline never draws.
-        if (paintFocusPill(option, painter)) {
+        if (paintFocusPill(option, painter, widget)) {
             return;
         }
         break;
@@ -660,8 +669,9 @@ bool MTNightshiftStyle::paintProgressBar(const QStyleOptionProgressBar *option, 
     const qreal done = qBound<qreal>((option->progress - option->minimum) / span, 0.0, 1.0);
     if (done > 0.0) {
         const QRectF fillRect = rect.adjusted(0, 0, -rect.width() * (1.0 - done), 0);
-        fillSurface(painter, fillRect, qMin(radius, fillRect.width() / 2.0),
-                    palette.color(group, QPalette::Highlight));
+        const qreal fillRadius = qMin(qMin(kControlRadius, fillRect.height() / 4.0),
+                                      fillRect.width() / 2.0);
+        fillSurface(painter, fillRect, fillRadius, palette.color(group, QPalette::Highlight));
     }
     if (option->textVisible && !option->text.isEmpty()) {
         painter->save();
@@ -828,10 +838,19 @@ bool MTNightshiftStyle::paintItemPill(const QStyleOption *option, QPainter *pain
 // Paints the item-view keyboard-focus indicator as a pill ring that follows the
 // selection pill's geometry; suppressed while the item is selected, which
 // already announces it. Returns true so Breeze's squarish outline never draws.
-bool MTNightshiftStyle::paintFocusPill(const QStyleOption *option, QPainter *painter) const
+bool MTNightshiftStyle::paintFocusPill(const QStyleOption *option, QPainter *painter,
+                                       const QWidget *widget) const
 {
     const auto *focus = qstyleoption_cast<const QStyleOptionFocusRect *>(option);
     if (!focus || !painter) {
+        return false;
+    }
+    // The pill follows an item's selection geometry. Every other focused widget
+    // (a check box label, a push button) keeps its own focus indication, or the
+    // ring would wrap text in a rounded capsule that matches nothing.
+    const bool itemView = qobject_cast<const QAbstractItemView *>(widget)
+        || (widget && qobject_cast<const QAbstractItemView *>(widget->parentWidget()));
+    if (!itemView) {
         return false;
     }
     if (option->state.testFlag(QStyle::State_Selected)) {
@@ -964,8 +983,9 @@ bool MTNightshiftStyle::paintLineEdit(const QStyleOption *option, QPainter *pain
     }
     const QPalette &palette = panel->palette;
     const QPalette::ColorGroup group = colorGroup(panel);
-    const bool focused = panel->state.testFlag(State_HasFocus)
-        && panel->state.testFlag(State_Enabled);
+    const bool enabled = panel->state.testFlag(State_Enabled);
+    const bool focused = panel->state.testFlag(State_HasFocus) && enabled;
+    const bool hovered = panel->state.testFlag(State_MouseOver) && enabled;
     const QRectF rect = QRectF(panel->rect);
     // The field reads as a tone step, not a frame: the theme's Base colour. KIO tints
     // a navigator's own Base to the toolbar shade, so both states of the path bar take
@@ -973,7 +993,7 @@ bool MTNightshiftStyle::paintLineEdit(const QStyleOption *option, QPainter *pain
     const QColor fill = (navigatorField || !widget) && qApp
         ? qApp->palette().color(group, QPalette::Base)
         : widget->palette().color(group, QPalette::Base);
-    paintFieldSurface(painter, rect, fill, focused, palette, group);
+    paintFieldSurface(painter, rect, fill, focused, hovered, palette, group);
     return true;
 }
 
@@ -988,22 +1008,17 @@ bool MTNightshiftStyle::paintUrlNavigatorField(const QStyleOption *option, QPain
     }
     const QPalette &palette = option->palette;
     const QPalette::ColorGroup group = colorGroup(option);
-    const bool focused = option->state.testFlag(State_HasFocus)
-        && option->state.testFlag(State_Enabled);
+    const bool enabled = option->state.testFlag(State_Enabled);
+    const bool focused = option->state.testFlag(State_HasFocus) && enabled;
+    const bool hovered = option->state.testFlag(State_MouseOver) && enabled;
     const QRectF rect = QRectF(option->rect);
-    const qreal radius = qMin(kControlRadius, qMin(rect.width(), rect.height()) / 2.0);
     // The theme's input tone, taken from the application palette. KIO tints the
     // navigator's own Base to the toolbar shade, which left the field with no
     // contrast at all: the rounded fill was invisible and only the corner
     // antialiasing showed, so the path bar read as "no proper roundness".
     const QColor fill = qApp ? qApp->palette().color(group, QPalette::Base)
                              : palette.color(group, QPalette::Base);
-    if (focused) {
-        const QColor ring = readableAccent(palette.color(group, QPalette::Highlight), fill, kFocusContrast);
-        paintSurface(painter, rect, radius, kFocusOutlineWidth, fill, ring);
-    } else {
-        fillSurface(painter, rect, radius, fill);
-    }
+    paintFieldSurface(painter, rect, fill, focused, hovered, palette, group);
     return true;
 }
 
@@ -1019,12 +1034,14 @@ bool MTNightshiftStyle::paintComboBox(const QStyleOptionComboBox *option, QPaint
     const QPalette::ColorGroup group = colorGroup(option);
     const bool focused = option->state.testFlag(State_Enabled)
         && fieldContainerFocused(option, widget);
+    const bool hovered = option->state.testFlag(State_MouseOver)
+        && option->state.testFlag(State_Enabled);
     const QRectF rect = QRectF(option->rect);
     // Combos that take typed text use the input tone (Base); menu-style combos
     // keep the button tone, which keeps the file dialog's two rows distinct.
     const QColor fill = option->editable ? palette.color(group, QPalette::Base)
                                          : palette.color(group, QPalette::Button);
-    paintFieldSurface(painter, rect, fill, focused, palette, group);
+    paintFieldSurface(painter, rect, fill, focused, hovered, palette, group);
     QStyleOption arrowOption(*option);
     arrowOption.rect = subControlRect(CC_ComboBox, option, SC_ComboBoxArrow, widget);
     baseStyle()->drawPrimitive(PE_IndicatorArrowDown, &arrowOption, painter, widget);
@@ -1044,12 +1061,14 @@ bool MTNightshiftStyle::paintSpinBox(const QStyleOptionSpinBox *option, QPainter
     const QPalette::ColorGroup group = colorGroup(option);
     const bool focused = option->state.testFlag(State_Enabled)
         && fieldContainerFocused(option, widget);
+    const bool hovered = option->state.testFlag(State_MouseOver)
+        && option->state.testFlag(State_Enabled);
     const QRectF rect = QRectF(option->rect);
     // A spin box edits typed text, so it takes the input tone like line edits;
     // a frameless editor delegate opts out, mirroring the line edit rule.
     const QColor fill = palette.color(group, QPalette::Base);
     if (option->frame) {
-        paintFieldSurface(painter, rect, fill, focused, palette, group);
+        paintFieldSurface(painter, rect, fill, focused, hovered, palette, group);
     }
     if (option->buttonSymbols == QAbstractSpinBox::NoButtons) {
         return true;
@@ -1088,17 +1107,33 @@ void MTNightshiftStyle::paintIndicator(const QStyleOption *option, QPainter *pai
     const bool enabled = option->state.testFlag(State_Enabled);
     const bool marked = option->state.testFlag(State_On) || option->state.testFlag(State_NoChange);
     const bool hovered = enabled && option->state.testFlag(State_MouseOver);
+    const bool focused = enabled && option->state.testFlag(State_HasFocus);
     const QRectF rect = QRectF(option->rect);
     const qreal shortest = qMin(rect.width(), rect.height());
     const qreal radius = radio ? shortest / 2.0 : qMin(kControlRadius, shortest / 4.0);
-    QColor fill = palette.color(group, QPalette::Base);
-    QColor outline = blend(fill, palette.color(group, QPalette::WindowText), kFrameContrast);
+    // An indicator is a control surface, not a text well: the Button tone keeps
+    // it on the same layer as the fields it sits beside.
+    QColor fill = palette.color(group, QPalette::Button);
+    QColor outline = blend(fill, palette.color(QPalette::Active, QPalette::WindowText),
+                           kIndicatorOutlineContrast);
+    if (!enabled) {
+        // A disabled chip steps halfway back to the page rather than lifting
+        // like a field: the muted fill is the cue, the dim hairline keeps the
+        // shape, and both polarities stay distinct from the enabled chip.
+        fill = blend(palette.color(QPalette::Active, QPalette::Window),
+                     palette.color(QPalette::Active, QPalette::Button), 0.5);
+        outline = blend(fill, palette.color(QPalette::Disabled, QPalette::WindowText),
+                        kDisabledOutlineContrast);
+    }
     if (marked) {
         fill = palette.color(group, QPalette::Highlight);
         outline = fill;
         if (!enabled) {
             fill = outline = blend(fill, palette.color(group, QPalette::Base), kDisabledMute);
         }
+    } else if (focused) {
+        // Keyboard focus lives on the chip, not in a capsule around the label.
+        outline = readableAccent(palette.color(group, QPalette::Highlight), fill, kFocusContrast);
     } else if (hovered) {
         outline = readableAccent(palette.color(group, QPalette::Highlight), fill, kOutlineContrast);
     }
