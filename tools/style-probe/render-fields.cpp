@@ -631,6 +631,11 @@ int main(int argc, char **argv)
     };
     drawToolState(QStyle::State_None, "tool-idle");
     drawToolState(QStyle::State_MouseOver, "tool-hover");
+    // Keyboard focus is its own state: a focused tool button used to take the
+    // hover branch and lose every focus cue, because Breeze never drew the panel.
+    drawToolState(QStyle::State_HasFocus, "tool-focused");
+    drawToolState(QStyle::State_HasFocus | QStyle::State_MouseOver, "tool-focused-hover");
+    drawToolState(QStyle::State_HasFocus | QStyle::State_On, "tool-checked-focused");
     drawToolState(QStyle::State_Sunken, "tool-pressed");
     drawToolState(QStyle::State_On, "tool-checked");
     saveRendered(QSize(120, 36), QStringLiteral("tool-checked-disabled"), outdir,

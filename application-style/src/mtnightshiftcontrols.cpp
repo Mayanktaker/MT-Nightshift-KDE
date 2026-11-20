@@ -53,10 +53,13 @@ bool MTNightshiftStyle::paintToolButton(const QStyleOption *option, QPainter *pa
     const bool hovered = enabled && option->state.testFlag(QStyle::State_MouseOver);
     const bool pressed = option->state.testFlag(QStyle::State_Sunken);
     const bool checked = option->state.testFlag(QStyle::State_On);
+    // Keyboard focus is a state in its own right, not a modifier of hover: a
+    // focused button under the pointer used to take this branch and lose its
+    // focus cue entirely, because Breeze never gets to draw the panel.
+    const bool focused = enabled && option->state.testFlag(QStyle::State_HasFocus);
     // Idle buttons stay with Breeze, and a disabled button draws no hover
-    // surface at all; only a real state (hover when enabled, pressed, checked)
-    // gets our pill.
-    if (!pressed && !checked && !(enabled && hovered)) {
+    // surface at all; only a real state gets our pill.
+    if (!pressed && !checked && !focused && !(enabled && hovered)) {
         return false;
     }
     const QPalette &palette = option->palette;
@@ -77,7 +80,15 @@ bool MTNightshiftStyle::paintToolButton(const QStyleOption *option, QPainter *pa
     }
     const QRectF rect = QRectF(option->rect).adjusted(0.5, 0.5, -0.5, -0.5);
     const qreal radius = qMin(kControlRadius, qMin(rect.width(), rect.height()) / 2.0);
-    fillSurface(painter, rect, radius, fill);
+    if (focused) {
+        // The same 1px accent ring every other control gets, so keyboard focus is
+        // visible regardless of pointer position or input device.
+        const QColor ring = readableAccent(palette.color(group, QPalette::Highlight),
+                                           fill, kFocusContrast);
+        paintSurface(painter, rect, radius, kFocusOutlineWidth, fill, ring);
+    } else {
+        fillSurface(painter, rect, radius, fill);
+    }
     return true;
 }
 
@@ -208,8 +219,13 @@ bool MTNightshiftStyle::paintPushButton(const QStyleOption *option, QPainter *pa
         outline = focused ? palette.color(group, QPalette::HighlightedText) : fill;
     } else if (focused) {
         outline = readableAccent(palette.color(group, QPalette::Highlight), fill, kFocusContrast);
-    } else if (hovered || button->features.testFlag(QStyleOptionButton::DefaultButton)) {
+    } else if (hovered) {
         outline = quietAccent(palette.color(group, QPalette::Highlight), fill);
+    } else if (enabled && button->features.testFlag(QStyleOptionButton::DefaultButton)) {
+        // A default button is not a hovered one. It shares the accent family but
+        // stays a whisper, and the `enabled` guard keeps a disabled default from
+        // taking a ring at all.
+        outline = blend(fill, palette.color(group, QPalette::Highlight), kDefaultButtonTint);
     }
     if (!flat || active || hovered || focused) {
         paintSurface(painter, rect, radius, focused ? kFocusOutlineWidth : kOutlineWidth, fill, outline);

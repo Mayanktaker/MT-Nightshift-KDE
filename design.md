@@ -28,7 +28,7 @@ Values are sRGB hex, taken from `color-schemes/MT-Nightshift.colors`. Contrast f
 | `View` alternate | `#0A0B0D` | 3.0 | unified with the row background: no zebra stripe, so list rows never step brighter than the well they sit in |
 | `Window` background | `#101216` | 5.4 | panels, dialogs, menus, popups, OSD — the base "carbon" surface |
 | `Window` alternate | `#171A1F` | 9.2 | secondary window areas, grouped sections |
-| `Header` background | `#15181C` | 8.1 | title areas, toolbars, tab bars, header rows |
+| `Header` background | `#15181C` | 8.1 | title areas, toolbars, header rows (a tab strip is *not* here — `QTabBar` sits in the client area, so tabs derive from `Window`) |
 | `Header` alternate | `#101216` | 5.4 | strip behind a toolbar, inactive header |
 | `Button` background | `#1B1F25` | 11.6 | buttons, comboboxes, spinboxes, pressed controls |
 | `Button` alternate | `#12303F` | 18.4 | accent-tinted button/alternate fill (Breeze parity slot) |
@@ -89,7 +89,7 @@ The selection fill is a deeper Breeze blue (`#1F6E9C`, hue 202°) instead of Bre
 | Rest | `Button` / `View` background | flat carbon, 1px frame line |
 | Hover | `DecorationHover` `#2A7FA8` | 1px outline on the control, no fill change |
 | Focus | `DecorationFocus` `#3496C9` | 1px ring, brighter than hover; always visible regardless of input device |
-| Pressed | `Selection` `#1F6E9C` at full strength, or `Selection` at ~33% for toolbar buttons | fill only; geometry never moves |
+| Pressed | `Selection` `#1F6E9C` at full strength, or `Selection` blended 55% toward the window tone for toolbar buttons (`kToolStateTint`) | fill only; geometry never moves |
 | Selected | `Selection` `#1F6E9C` + `#FFFFFF` text | fill only; Breeze's own selected-row artwork uses the focus blue, which is why that token stays dark enough for white text (see §2) |
 | Disabled | `ColorEffects:Disabled` (Breeze values) | desaturated, contrast reduced; no custom colour |
 | Active window / inactive window | `Header`, `Header[Inactive]` | active header is `#15181C`; inactive header drops to `#101216` with dimmed title text |

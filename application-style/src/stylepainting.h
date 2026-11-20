@@ -32,6 +32,9 @@ constexpr qreal kFocusContrast = 5.0;
 // clears both, readableAccent() returns it unchanged and the two rings become the
 // same colour, which is exactly what happened on four of the five schemes.
 constexpr qreal kHoverMute = 0.45;
+// A default button is marked with a hint of the accent, not the hover ring. They
+// used to share one branch, so the default state was pixel-identical to hover.
+constexpr qreal kDefaultButtonTint = 0.25;
 // Share of the surface tone mixed in when a disabled control must look muted.
 constexpr qreal kDisabledMute = 0.65;
 // Frame-line strength: the [KDE] frameContrast the suite actually ships (design.md
@@ -58,12 +61,18 @@ constexpr qreal kFocusOutlineWidth = 1.0;
 // rather than full-width bands, and hover stays fainter than selection.
 constexpr qreal kItemInsetX = 4.0;
 constexpr qreal kItemInsetY = 1.0;
-constexpr qreal kItemHoverContrast = 0.07;
+// On item rows and tool buttons a fill is the *only* hover cue, so it has to be
+// measurable on its own: at 7% the step was 1.13:1 on Nord Day, which is not a
+// state change a user can see. 18% puts the worst case at 1.38:1 across every
+// surface and palette, independently of the tab tone it used to share.
+constexpr qreal kItemHoverContrast = 0.18;
 constexpr qreal kItemInactiveContrast = 0.12;
 // Tab strips need three distinguishable steps: an idle surface Breeze's own tab
 // shape never provides, a hover step, and the selected accent fill. Idle keeps
 // the 7% the flat single tone used, so tabs stay readable as tabs; hover rises
 // to 13%, which is a visible step without competing with the selected accent.
+// Deliberately its own constant rather than kItemHoverContrast: a tab's idle
+// surface and an item's hover fill are different roles and must retune apart.
 constexpr qreal kTabIdleContrast = 0.07;
 constexpr qreal kTabHoverContrast = 0.13;
 // Tool buttons carry monochrome symbolic icons whose colour follows the theme

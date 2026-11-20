@@ -332,6 +332,36 @@ def main() -> int:
         check("checked tool button icon contrast", icon_score >= 3.0,
               f"{icon_score:.2f}:1 fill={tuple(icon_fill)} icon={tuple(icon_tone)} (>= 3)")
 
+    # Keyboard focus on a tool button is its own state. It used to be absent: the
+    # focus branch never existed, so a focused tool button that was also hovered
+    # or checked took that branch and lost every focus cue, because Breeze then
+    # never drew the panel it would have drawn the cue into.
+    tool_page = np.array(scheme["page_rgb"])
+    focused_fill, _ = pill_ink(outdir / "tool-focused.png")
+    hover_fill, _ = pill_ink(outdir / "tool-hover.png")
+    focus_edge = int(np.abs(focused_fill - tool_page).max())
+    hover_edge = int(np.abs(hover_fill - tool_page).max())
+    check("focused tool button paints a surface", focus_edge >= 12,
+          f"edge={focus_edge}/255 above page (>= 12)")
+    # Focus and hover share a fill; only the ring separates them, so compare the
+    # images rather than the dominant tone.
+    focused_img = np.array(Image.open(outdir / "tool-focused.png").convert("RGB")).astype(int)
+    hover_img = np.array(Image.open(outdir / "tool-hover.png").convert("RGB")).astype(int)
+    ring_delta = int(np.abs(focused_img - hover_img).max())
+    check("focused tool button differs from hover", ring_delta >= 12,
+          f"max pixel delta={ring_delta}/255 (>= 12)")
+    checked_focused, _ = pill_ink(outdir / "tool-checked-focused.png")
+    checked_plain, _ = pill_ink(outdir / "tool-checked.png")
+    checked_delta = int(np.abs(np.array(checked_focused) - np.array(checked_plain)).max())
+    check("checked tool button keeps its state under focus", checked_delta <= 24,
+          f"fill delta={checked_delta}/255 (<= 24)")
+
+    # On item rows and tool buttons the hover fill is the only cue, so it has to
+    # be a step a user can see. At 7% it measured 1.13:1 on Nord Day.
+    hover_step = contrast(hover_fill, tool_page)
+    check("hover fill is a visible step", hover_step >= 1.3,
+          f"{hover_step:.2f}:1 fill={hover_fill} page={tuple(tool_page)} (>= 1.3)")
+
     # The muted fill of an inactive window must keep WindowText: HighlightedText
     # there is white on light grey, which would be the worse bug.
     muted_fill, muted_ink = pill_ink(outdir / "tab-selected-muted.png")
