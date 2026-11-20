@@ -14,7 +14,7 @@ the current state rather than the history.
 
 ## Five named variants (2026-11-17)
 
-Five named looks are installed and selectable: `nightshift` (default), `dayshift`, `nord-night`, `nord-day` and `one-dark-pro`. `make apply VARIANT=<name>` selects one and `make verify-live VARIANT=<name>` checks it; `apply-dayshift`, `apply-nord-night`, `apply-nord-day` and `apply-one-dark-pro` are aliases. All theme packages are 1.6.1, the Qt style plugin is unchanged at 1.4.0, and the decoration's frame line and five buttons are generated from each variant's palette. Qt Widgets menus (including submenus), their hovered rows, hovered/pressed/checked tool buttons, and QQC2 Desktop Style list/sidebar delegate rows now use the same 15px surface language as the field family; Plasma QML popup/menu surfaces and the notification history remain KDE-controlled. The closed Nord, One Dark Pro and rounded-menu work, with its measurements and live capture paths, is in [`plan-archive.md`](plan-archive.md).
+Five named looks are installed and selectable: `nightshift` (default), `dayshift`, `nord-night`, `nord-day` and `one-dark-pro`. `make apply VARIANT=<name>` selects one and `make verify-live VARIANT=<name>` checks it; `apply-dayshift`, `apply-nord-night`, `apply-nord-day` and `apply-one-dark-pro` are aliases. All theme packages are 1.6.1, the Qt style plugin is unchanged at 1.4.0, and the decoration's frame line and five buttons are generated from each variant's palette. Qt Widgets menus (including submenus), their hovered rows, hovered/pressed/checked tool buttons, and QQC2 Desktop Style list/sidebar delegate rows now use the same surface language as the field family (QMenu 15px, controls and windows 10px); Plasma QML popup/menu surfaces and the notification history remain KDE-controlled. The closed Nord, One Dark Pro and rounded-menu work, with its measurements and live capture paths, is in [`plan-archive.md`](plan-archive.md).
 
 ## Desktop Wallpapers (2026-11-17)
 
@@ -65,6 +65,8 @@ the 10px controls they hold. Raising them needs new 12px corner bodies, not a
 slice resize, and both earlier attempts shipped visible defects (a chord across
 the corner; a corner smaller than its border that KSvg stretched). The decision
 recorded in `design.md` §6 is to keep 6px until that geometry can be regenerated
-and reviewed live. Lowering the 15px window instead is rejected: a large surface
-with a tight corner reads square, and the mismatch is in the container tier, not
-the window.
+and reviewed live. The window was lowered from 15px to **10px** at the same time
+and is no longer part of this gap: that turned out to be a *window* decision, not a
+container one — the outer silhouette now matches every control, and the live capture
+on a white and a dark background showed no square-corner or shadow artefact. What
+remains open here is only the dialog/panel tier.

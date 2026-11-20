@@ -49,7 +49,7 @@ PARAMS = {
     # band and the frame line disappears at the bottom corners — Aurorae does
     # not clip the client to the rounded shape, it only clips it to the window
     # silhouette. Guarded below.
-    "radius": 15,
+    "radius": 10,      # matches kControlRadius: a window is never rounder than its contents
     "border": 6,           # must equal BorderLeft/Right/Bottom in MTNightshiftrc
     "header": 39,          # title bar height at 1x
     "centre": 64,          # FrameSvg centre slice
@@ -79,12 +79,15 @@ PARAMS = {
     # same on a dark and a light titlebar. Disabled controls are exempt from the
     # text-contrast floor; the intent is "present but clearly out of action".
     "deactivated_mix": 0.65,
-    # Thickness of the 1px frame line were it rasterised crisply on the corner
-    # arcs. A 1px annulus spreads over two pixels at ~50% coverage where the
-    # curve runs at 45 degrees, so the corners read as a broken border against
-    # the crisp straight edges. The arcs are drawn 0.5px heavier to compensate;
-    # the straight edges stay exactly 1px.
+    # Thickness of the 1px frame line on the corner arcs. A 1px annulus spreads
+    # over two pixels at ~50% coverage where the curve runs at 45 degrees, so the
+    # corners read as a broken border against the crisp straight edges. The arcs
+    # are drawn heavier to compensate; the straight edges stay exactly 1px.
+    # Calibrated at "arc_calibration_radius"; a tighter arc crosses more pixels at
+    # partial coverage over the same quarter turn, so the thickness is scaled by
+    # calibration_radius / radius to hold the silhouette equally solid.
     "frame_line_arc": 2.0,
+    "arc_calibration_radius": 15,
 }
 
 # Palette variants: geometry is shared, only the baked surface tones differ.
@@ -175,6 +178,12 @@ VARIANTS = {
 
 P = R = H = C = 0
 W_FRAME = H_FRAME = 0
+ARC_THICKNESS = 0.0
+
+# Starved by refresh_geometry(), never a literal: a dict built at import keeps the
+# default footprint, so --radius/--padding would move the shadow square while the
+# slice rects stayed put and left a dead band at the outer edge.
+LAYOUT: dict[str, tuple[int, int, int, int]] = {}
 
 
 def refresh_geometry() -> None:
@@ -183,13 +192,29 @@ def refresh_geometry() -> None:
     These used to be captured at import, which made every documented override
     (--padding, --radius, --peak, --arc) silently produce identical output.
     """
-    global P, R, H, C, W_FRAME, H_FRAME
+    global P, R, H, C, W_FRAME, H_FRAME, ARC_THICKNESS, LAYOUT
     P = PARAMS["padding"]
     R = PARAMS["radius"]
     H = PARAMS["header"]
     C = PARAMS["centre"]
     W_FRAME = 2 * (P + R) + C
     H_FRAME = (P + H) + C + (P + R)
+    if PARAMS.get("arc_is_absolute"):
+        ARC_THICKNESS = PARAMS["frame_line_arc"]
+    else:
+        ARC_THICKNESS = PARAMS["frame_line_arc"] * PARAMS["arc_calibration_radius"] / R
+    LAYOUT.clear()
+    LAYOUT.update({
+        "topleft": (0, 0, P + R, P + H),
+        "top": (P + R, 0, C, P + H),
+        "topright": (W_FRAME - (P + R), 0, P + R, P + H),
+        "left": (0, P + H, P + R, C),
+        "center": (P + R, P + H, C, C),
+        "right": (W_FRAME - (P + R), P + H, P + R, C),
+        "bottomleft": (0, H_FRAME - (P + R), P + R, P + R),
+        "bottom": (P + R, H_FRAME - (P + R), C, P + R),
+        "bottomright": (W_FRAME - (P + R), H_FRAME - (P + R), P + R, P + R),
+    })
     validate_geometry()
 
 
@@ -294,43 +319,38 @@ def gradients() -> str:
 
 
 # Window silhouette per corner, as (fill path, 1px frame-line path) in element space.
-SHAPES = {
-    "topleft": (
-        f"M {P},{P + R} A {R},{R} 0 0 1 {P + R},{P} L {P + R},{P + H} L {P},{P + H} Z",
-        f"M {P},{P + R} A {R},{R} 0 0 1 {P + R},{P} L {P + R},{P + 1} "
-        f"A {R - 1},{R - 1} 0 0 0 {P + 1},{P + R} L {P + 1},{P + H} L {P},{P + H} Z",
-    ),
-    "topright": (
-        f"M 0,{P} L 0,{P + H} L {R},{P + H} L {R},{P + R} A {R},{R} 0 0 0 0,{P} Z",
-        f"M 0,{P} A {R},{R} 0 0 1 {R},{P + R} L {R},{P + H} L {R - 1},{P + H} "
-        f"L {R - 1},{P + R} A {R - 1},{R - 1} 0 0 0 0,{P + 1} L 0,{P} Z",
-    ),
-    "bottomleft": (
-        f"M {P},0 L {P + R},0 L {P + R},{R} A {R},{R} 0 0 1 {P},0 Z",
-        f"M {P},0 A {R},{R} 0 0 0 {P + R},{R} L {P + R},{R - 1} "
-        f"A {R - 1},{R - 1} 0 0 1 {P + 1},0 L {P},0 Z",
-    ),
-    "bottomright": (
-        f"M 0,0 L {R},0 A {R},{R} 0 0 1 0,{R} L 0,0 Z",
-        f"M {R},0 A {R},{R} 0 0 1 0,{R} L 0,{R - 1} "
-        f"A {R - 1},{R - 1} 0 0 0 {R - 1},0 L {R},0 Z",
-    ),
-}
+def shapes() -> dict[str, tuple[str, str]]:
+    """Corner fill and frame-line paths.
+
+    Built on demand for the same reason as LAYOUT: an f-string dict evaluated
+    at import keeps the default radius, so --radius moved the slices but not
+    the arcs drawn inside them.
+    """
+    return {
+        "topleft": (
+            f"M {P},{P + R} A {R},{R} 0 0 1 {P + R},{P} L {P + R},{P + H} L {P},{P + H} Z",
+            f"M {P},{P + R} A {R},{R} 0 0 1 {P + R},{P} L {P + R},{P + 1} "
+            f"A {R - 1},{R - 1} 0 0 0 {P + 1},{P + R} L {P + 1},{P + H} L {P},{P + H} Z",
+        ),
+        "topright": (
+            f"M 0,{P} L 0,{P + H} L {R},{P + H} L {R},{P + R} A {R},{R} 0 0 0 0,{P} Z",
+            f"M 0,{P} A {R},{R} 0 0 1 {R},{P + R} L {R},{P + H} L {R - 1},{P + H} "
+            f"L {R - 1},{P + R} A {R - 1},{R - 1} 0 0 0 0,{P + 1} L 0,{P} Z",
+        ),
+        "bottomleft": (
+            f"M {P},0 L {P + R},0 L {P + R},{R} A {R},{R} 0 0 1 {P},0 Z",
+            f"M {P},0 A {R},{R} 0 0 0 {P + R},{R} L {P + R},{R - 1} "
+            f"A {R - 1},{R - 1} 0 0 1 {P + 1},0 L {P},0 Z",
+        ),
+        "bottomright": (
+            f"M 0,0 L {R},0 A {R},{R} 0 0 1 0,{R} L 0,0 Z",
+            f"M {R},0 A {R},{R} 0 0 1 0,{R} L 0,{R - 1} "
+            f"A {R - 1},{R - 1} 0 0 0 {R - 1},0 L {R},0 Z",
+        ),
+    }
 
 # Slice geometry: (x, y, width, height) plus the shadow rects inside it.
 # The top corners span the header, so they are taller than the bottom corners.
-LAYOUT = {
-    "topleft": (0, 0, P + R, P + H),
-    "top": (P + R, 0, C, P + H),
-    "topright": (W_FRAME - (P + R), 0, P + R, P + H),
-    "left": (0, P + H, P + R, C),
-    "center": (P + R, P + H, C, C),
-    "right": (W_FRAME - (P + R), P + H, P + R, C),
-    "bottomleft": (0, H_FRAME - (P + R), P + R, P + R),
-    "bottom": (P + R, H_FRAME - (P + R), C, P + R),
-    "bottomright": (W_FRAME - (P + R), H_FRAME - (P + R), P + R, P + R),
-}
-
 
 def shadow_rects(name: str) -> list[str]:
     """Shadow elements of one slice: a radial corner square, or an edge ramp.
@@ -368,7 +388,7 @@ def arc_stroke(name: str, frame: str) -> str:
     each tangent so the stroke's butt cap cannot poke into the shadow ring, where
     an opaque pixel would read as a double-shadow artefact.
     """
-    extra = PARAMS["frame_line_arc"] - 1.0
+    extra = ARC_THICKNESS - 1.0
     if extra <= 0:
         return ""
     r = R - extra / 2.0
@@ -393,8 +413,8 @@ def arc_stroke(name: str, frame: str) -> str:
 def surface(name: str, fill: str, frame: str) -> list[str]:
     """Window fill and 1px frame line of one slice."""
     width, height = LAYOUT[name][2], LAYOUT[name][3]
-    if name in SHAPES:
-        body, line = SHAPES[name]
+    if name in shapes():
+        body, line = shapes()[name]
         rows = [f'    <path d="{body}" fill="{fill}"/>', f'    <path d="{line}" fill="{frame}"/>']
         extra = arc_stroke(name, frame)
         return rows + ([extra] if extra else [])
@@ -431,7 +451,7 @@ def masks() -> str:
         x, y, width, height = LAYOUT[name]
         rows.append(f'  <g id="mask-{name}" transform="translate({x},{y})">')
         rows.append(f'    <rect x="0" y="0" width="{width}" height="{height}" fill="none" stroke="none"/>')
-        rows.append(f'    <path d="{SHAPES[name][0]}" fill="#FFFFFF"/>')
+        rows.append(f'    <path d="{shapes()[name][0]}" fill="#FFFFFF"/>')
         rows.append("  </g>")
     for name in ("top", "left", "right", "bottom", "center"):
         x, y, width, height = LAYOUT[name]
@@ -546,6 +566,10 @@ def main() -> int:
             key = overrides[token]
             value = argv[index + 1]
             PARAMS[key] = float(value) if key in ("peak", "frame_line_arc") else int(value)
+            if key == "frame_line_arc":
+                # An explicit --arc is an absolute width; the curvature scaling below
+                # is what fills the value in when nobody overrode it.
+                PARAMS["arc_is_absolute"] = True
             index += 2
             continue
         if token == "--variant":

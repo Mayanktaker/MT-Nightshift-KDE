@@ -166,6 +166,19 @@ cannot emit a frame the committed artwork would be rejected for. A trial radius
 is what proved the ceiling: at the default 6px border, `--radius` above 15 puts
 the client's square corner over the frame-line band and is rejected.
 
+Two more captures of the same bug survived that first fix and were only exposed
+when the window radius moved from 15px to 10px: the slice table (`LAYOUT`) and the
+corner path table (`SHAPES`) were still module-level literals built at import, so
+`--radius 10` produced 10px arcs inside 15px slices — a 5px dead band at the outer
+edge that the checker did *not* catch, because it derived the shadow ring from the
+slice width it had just read. `LAYOUT` is now filled by `refresh_geometry()`,
+`SHAPES` is a function, and the checker asserts the real invariants instead of a
+tautology: the slice ring must equal the `PaddingTop` in the sibling `MT*rc`
+(the value KWin actually reserves), the frame must be `2*(ring+corner)+centre` by
+`ring+header+centre+ring+corner`, and the left/top slices must match the corner
+footprint. The command that renders an override is also the check — running it at
+a second radius is what found both.
+
 `build-decoration.py --check` regenerates every variant in memory and fails when
 `decoration.svg` differs, so the SVG cannot be hand-edited out of sync with
 `PARAMS`. `check-decoration.py` rasterises each of the nine slices through Qt's
@@ -174,7 +187,11 @@ broken twice: monotonic shadow ramp along every edge, shadow present in all four
 corner cutouts, no double-composited ring, the border running continuously round
 each corner (mean ≥ 0.75, min ≥ 0.45 coverage), expected fills, no title divider
 row. `make check-dpr2` renders the `--arc 1.0` configuration that 2x displays
-want, so the 1x compensation is covered in both directions.
+want, so the 1x compensation is covered in both directions. `--arc` is an absolute
+stroke width; the shipped value is derived, `frame_line_arc * arc_calibration_radius
+/ radius`, because a tighter arc crosses more partially-covered pixels over the
+same quarter turn (3.0px at 10px radius, 2.0px at 15px). Passing `--arc` explicitly
+therefore renders the *unreinforced* corner the HiDPI case must also survive.
 
 The five button SVGs (`close`, `minimize`, `maximize`, `restore`, `menu`) are
 generated from the same per-variant palette as the decoration, so `frame_line`

@@ -10,8 +10,12 @@ needs to know.
 
 - One 10px radius for Qt control surfaces and their hover, pressed and focus
   states — fields, buttons, tabs, chips, menu rows and item rows. QMenu windows
-  keep their 15px outer radius, and window, panel and dialog frames are
-  unchanged.
+  keep their 15px outer radius; panel and dialog frames are unchanged.
+- **Outer window corners are now 10px**, matching every control, hover pill and
+  tooltip instead of sitting 5px rounder than all of them. The corner arc is
+  reinforced proportionally to the tighter radius so the frame line stays
+  continuous at any value. `Padding` is unchanged, so no compositor restart is
+  needed on update.
 - Fields, combo boxes and spin boxes show a quiet accent outline on hover and
   the stronger 1px ring on keyboard focus.
 - Check and radio chips use the Button tone with a quiet hairline; disabled

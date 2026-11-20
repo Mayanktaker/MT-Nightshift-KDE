@@ -54,9 +54,23 @@ def geometry(text: str) -> tuple[int, int, dict[str, tuple[int, int, int, int]]]
     for name in SIDES:
         block = re.search(r'^  <g id="decoration-%s".*?^  </g>' % name, text, re.S | re.M).group(0)
         x, y = (int(v) for v in re.search(r'transform="translate\((-?\d+),(-?\d+)\)"', block).groups())
-        w, h = (int(v) for v in re.search(r'<rect x="0" y="0" width="(\d+)" height="(\d+)"', block).groups())
+        # The marker rect is the slice extent; the shadow and surface elements that
+        # follow it are narrower (by the radius), so matching "the first rect" would
+        # silently read the wrong footprint if the emission order ever changed.
+        marker = re.search(r'<rect x="0" y="0" width="(\d+)" height="(\d+)" '
+                           r'fill="none" stroke="none"/>', block).groups()
+        w, h = (int(v) for v in marker)
         layout[name] = (x, y, w, h)
     return width, height, layout
+
+
+def declared_padding(svg_path: Path) -> int | None:
+    """Read PaddingTop out of the sibling MT*rc, the value KWin actually reserves."""
+    rc = next(iter(svg_path.parent.glob("MT*rc")), None)
+    if rc is None:
+        return None
+    found = re.search(r'^PaddingTop=(\d+)$', rc.read_text(), re.M)
+    return int(found.group(1)) if found else None
 
 
 def peak_alpha(text: str) -> float:
@@ -241,7 +255,21 @@ def main() -> int:
     print("checking %s  (frame %dx%d at %dx, peak %.3f)" % (svg_path, width, height, scale, peak))
     check(ring_units > 0, "top-left slice is wider than the %dpx corner (shadow ring %dpx)"
           % (radius_units, ring_units))
-    check(layout["left"][2] == ring_units + radius_units, "left slice width matches ring + corner")
+    # The ring is the slice footprint minus the corner, so it must match the padding
+    # KWin reserves. A footprint captured at import kept the default ring while the
+    # shadow square followed the radius, leaving a dead band no other check saw.
+    padding = declared_padding(svg_path)
+    if padding is not None:
+        check(ring_units == padding,
+              "slice ring (%dpx) equals the declared Padding (%dpx)" % (ring_units, padding))
+    centre = layout["top"][2]
+    header = layout["top"][3] - ring_units
+    check(width == 2 * (ring_units + radius_units) + centre,
+          "frame width is 2*(ring+corner)+centre (%d)" % (2 * (ring_units + radius_units) + centre))
+    check(height == (ring_units + header) + centre + (ring_units + radius_units),
+          "frame height is ring+header+centre+ring+corner")
+    check(layout["left"][2] == layout["topleft"][2], "left slice matches the corner footprint")
+    check(layout["top"][3] == layout["topleft"][3], "top slice height matches the corner footprint")
     check("cut-" not in text, "no corner cutout masks (they erase the corner shadow)")
     check('fill="#0A0B0D"' not in text, "no #0A0B0D title divider (the client paints its own hairline)")
 

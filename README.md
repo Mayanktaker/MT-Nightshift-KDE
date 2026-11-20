@@ -4,7 +4,7 @@
 
 [![theme checks](https://github.com/Mayanktaker/MT-Nightshift-KDE/actions/workflows/checks.yml/badge.svg)](https://github.com/Mayanktaker/MT-Nightshift-KDE/actions/workflows/checks.yml)
 
-A modern, sculptured evolution of KDE Breeze for KDE Plasma 6. Built around **Nightshift OLED** (near-black carbon surfaces, restrained steel-blue highlights, and deliberate, solid geometry instead of distracting blur or glossy 3D effects), this suite provides 5 cohesive palette variants, custom 15px rounded Aurorae window decorations, a dedicated C++ Qt Widgets application style plugin, and a matching 20-wallpaper abstract collection.
+A modern, sculptured evolution of KDE Breeze for KDE Plasma 6. Built around **Nightshift OLED** (near-black carbon surfaces, restrained steel-blue highlights, and deliberate, solid geometry instead of distracting blur or glossy 3D effects), this suite provides 5 cohesive palette variants, custom 10px rounded Aurorae window decorations, a dedicated C++ Qt Widgets application style plugin, and a matching 20-wallpaper abstract collection.
 
 ![MT Dark KDE Wallpaper Palette](docs/screenshots/preview-wallpapers.png)
 
@@ -13,9 +13,9 @@ A modern, sculptured evolution of KDE Breeze for KDE Plasma 6. Built around **Ni
 ## Features
 
 - **5 Hand-Crafted Variants**: Seamlessly switch between Nightshift (OLED carbon), Dayshift (crisp light), Nord Night (Polar Night slate), Nord Day (Snow Storm), and One Dark Pro (vibrant dark).
-- **15px Rounded Window Decorations**: Aurorae theme generated with clean 15px rounded corners, continuous shadow envelopes, and 5 distinct window title bar buttons (close, minimize, maximize, keep-above, help) color-matched to each look.
+- **10px Rounded Window Decorations**: Aurorae theme generated with clean 10px rounded corners that match the control radius, continuous shadow envelopes, and 5 distinct window title bar buttons (close, minimize, maximize, keep-above, help) color-matched to each look.
 - **C++ Qt Widgets Style Plugin (`MTNightshift`)**:
-  - Shared 10px maximum radius for Qt control and interaction surfaces, including fields, buttons, tabs, indicators, menu rows and item hovers; QMenu popup corners stay 15px, and all outer window corners retain their existing geometry.
+  - Shared 10px maximum radius for Qt control and interaction surfaces, including fields, buttons, tabs, indicators, menu rows, item hovers **and the outer window corners**; QMenu popup corners stay 15px as the popup tier.
   - Rounded list and sidebar delegate backgrounds in QQC2 Desktop Style applications, including Discover, through `PE_PanelItemViewRow` and `CE_ItemViewItem`.
   - Borderless, rounded path bar in Dolphin (`KUrlNavigator`) with focus ring.
   - Slim 12px scrollbar gutters across all Qt applications with clean sidebar gutter suppression in Dolphin.
@@ -192,7 +192,7 @@ make check
 ```
 
 What `make check` asserts:
-- **Aurorae Invariants**: Verifies continuous shadow ramps, lack of corner cutouts, and 15px border geometry across all variants (`tools/decoration-probe/check-decoration.py`).
+- **Aurorae Invariants**: Verifies continuous shadow ramps, lack of corner cutouts, and 10px border geometry across all variants (`tools/decoration-probe/check-decoration.py`).
 - **Button Palette Audit**: Proves all 5 buttons and 8 interaction states match each variant's color scheme (`tools/decoration-probe/check-buttons.py`).
 - **Package Integrity & Contrast**: Confirms byte-identical palette copies across packages and verifies that all 64 text/surface pairs meet or exceed the 4.66:1 contrast floor (`tools/theme-audit/check-theme.py`).
 - **Wallpapers Verification**: Validates file presence, exact target dimensions, and PNG optimization (`tools/wallpapers/build-wallpapers.py --check`).
