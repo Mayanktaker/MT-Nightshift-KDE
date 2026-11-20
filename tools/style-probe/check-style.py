@@ -31,10 +31,15 @@ from PIL import Image
 # tone CE_ItemViewItem draws the selected row's text in, so it flips polarity on
 # Nord Night and One Dark Pro; `accent_rgb` is the Selection background and
 # `accent_blue` declares its blue-dominance, the premise behind every
-# blue-family assertion below.
+# blue-family assertion below. `highlighted_text_rgb` and `window_text_rgb` are
+# the two inks the style chooses between, so a render's painted ink can be
+# compared with the role it should have used instead of only sampled for
+# contrast.
 SCHEMES = {
     "MT-Nightshift": {
         "page_rgb": (16, 18, 22),
+        "window_text_rgb": (232, 235, 240),
+        "highlighted_text_rgb": (255, 255, 255),
         "window_rgb": (10, 11, 13),
         "button_rgb": (27, 31, 37),
         "pill_text_rgb": (255, 255, 255),
@@ -43,6 +48,8 @@ SCHEMES = {
     },
     "MT-Dayshift": {
         "page_rgb": (239, 241, 245),
+        "window_text_rgb": (27, 30, 34),
+        "highlighted_text_rgb": (255, 255, 255),
         "window_rgb": (250, 251, 253),
         "button_rgb": (244, 246, 249),
         "pill_text_rgb": (255, 255, 255),
@@ -51,6 +58,8 @@ SCHEMES = {
     },
     "MT-Nord-Night": {
         "page_rgb": (46, 52, 64),
+        "window_text_rgb": (236, 239, 244),
+        "highlighted_text_rgb": (46, 52, 64),
         "window_rgb": (35, 41, 50),
         "button_rgb": (59, 66, 82),
         "pill_text_rgb": (46, 52, 64),
@@ -59,6 +68,8 @@ SCHEMES = {
     },
     "MT-Nord-Day": {
         "page_rgb": (236, 239, 244),
+        "window_text_rgb": (46, 52, 64),
+        "highlighted_text_rgb": (255, 255, 255),
         "window_rgb": (247, 249, 252),
         "button_rgb": (229, 233, 240),
         "pill_text_rgb": (255, 255, 255),
@@ -67,6 +78,8 @@ SCHEMES = {
     },
     "MT-One-Dark-Pro": {
         "page_rgb": (40, 44, 52),
+        "window_text_rgb": (215, 218, 224),
+        "highlighted_text_rgb": (29, 31, 35),
         "window_rgb": (29, 31, 35),
         "button_rgb": (64, 71, 84),
         "pill_text_rgb": (29, 31, 35),
@@ -136,6 +149,82 @@ def shipped_corner_radius(path: Path) -> int:
     return int(round(min(max(horizontal, default=0), max(vertical, default=0))))
 
 
+def contrast(first, second) -> float:
+    """WCAG 2.1 contrast ratio between two RGB triples."""
+    def luminance(color):
+        def linear(channel):
+            value = channel / 255.0
+            return value / 12.92 if value <= 0.03928 else ((value + 0.055) / 1.055) ** 2.4
+        return 0.2126 * linear(color[0]) + 0.7152 * linear(color[1]) + 0.0722 * linear(color[2])
+    a, b = luminance(first), luminance(second)
+    high, low = max(a, b), min(a, b)
+    return (high + 0.05) / (low + 0.05)
+
+
+def dominant_tone(path: Path):
+    """The most common exact RGB triple, i.e. the painted surface."""
+    rgb = np.array(Image.open(path).convert("RGB")).astype(int)
+    tones, counts = np.unique(rgb.reshape(-1, 3), axis=0, return_counts=True)
+    return tones[np.argmax(counts)], rgb
+
+
+def pill_ink(path: Path) -> tuple[tuple, tuple]:
+    """Painted pill surface and painted label ink.
+
+    Antialiased glyph edges are blends, so the pure ink is the pixel furthest
+    from the surface; taking it as the label colour is what lets the caller
+    compare against the palette role the style should have used. A single pixel
+    is a weak proof on its own, which is why every caller also asserts the tone
+    matches its expected role.
+    """
+    fill, rgb = dominant_tone(path)
+    height = rgb.shape[0]
+    band = rgb[height // 4:3 * height // 4].reshape(-1, 3)
+    ink = band[np.abs(band - fill).sum(axis=1) > 100]
+    if len(ink) == 0:
+        return tuple(fill), tuple(fill)
+    scores = [contrast(fill, pixel) for pixel in ink]
+    return tuple(fill), tuple(ink[int(np.argmax(scores))])
+
+
+def tone_distance(first, second) -> int:
+    """Manhattan distance between two RGB triples."""
+    return int(np.abs(np.array(first) - np.array(second)).sum())
+
+
+def meter_fill_edge(path: Path) -> int:
+    """Right edge of the accent fill, read from the render itself."""
+    rgb = np.array(Image.open(path).convert("RGB")).astype(int)
+    mid = rgb[rgb.shape[0] // 2]
+    accent = np.array([mid[4]])
+    filled = np.where(np.abs(mid - accent).sum(axis=1) <= 20)[0]
+    return int(filled.max()) + 1 if len(filled) else 0
+
+
+def meter_text_split(path: Path):
+    """Both halves of a split-ink meter label must clear the floor."""
+    rgb = np.array(Image.open(path).convert("RGB")).astype(int)
+    boundary = meter_fill_edge(path)
+    if boundary <= 0:
+        return False, "no accent fill found; split-ink path not exercised"
+    on_fill = rgb[:, :boundary].reshape(-1, 3)
+    on_groove = rgb[:, boundary:].reshape(-1, 3)
+    fill_tone = rgb[rgb.shape[0] // 2, 2]
+    groove_tone = rgb[rgb.shape[0] // 2, rgb.shape[1] - 5]
+    fill_best = max(contrast(fill_tone, pixel) for pixel in on_fill)
+    groove_best = max(contrast(groove_tone, pixel) for pixel in on_groove)
+    return fill_best >= 3.0 and groove_best >= 3.0, \
+        f"fill={fill_best:.2f}:1 groove={groove_best:.2f}:1 at x={boundary} (both >= 3)"
+
+
+def meter_text_whole(path: Path):
+    """A single-surface meter label must clear the floor on that surface."""
+    rgb = np.array(Image.open(path).convert("RGB")).astype(int)
+    groove_tone = rgb[rgb.shape[0] // 2, rgb.shape[1] - 5]
+    best = max(contrast(groove_tone, pixel) for pixel in rgb.reshape(-1, 3))
+    return best, f"{best:.2f}:1 on groove={tuple(groove_tone)} (>= 3)"
+
+
 def main() -> int:
     if len(sys.argv) < 2:
         print("usage: check-style.py <render-dir> [--ci] --scheme <name>", file=sys.stderr)
@@ -200,6 +289,88 @@ def main() -> int:
     check("tab inactive tone muted", int(np.abs(dominant - np.array(accent)).sum()) > 60,
           f"dominant={tuple(dominant)} accent={accent}")
 
+    # A selected tab sits on the accent fill, so its label must take
+    # HighlightedText. WindowText there measured 1.5-2.7:1 on four of the five
+    # variants. The render is checked twice: the painted ink must be the role the
+    # style should have chosen, and it must clear the floor. Contrast alone would
+    # accept any bright pixel.
+    on_pill = np.array(scheme["highlighted_text_rgb"])
+    fill, ink = pill_ink(outdir / "tab-active.png")
+    drift = tone_distance(ink, on_pill)
+    check("tab-active paints HighlightedText", drift <= 30,
+          f"ink={ink} role={tuple(on_pill)} distance={drift} (<= 30)")
+    check("tab-active on-pill ink", contrast(fill, ink) >= 4.66,
+          f"{contrast(fill, ink):.2f}:1 fill={fill} ink={ink} (>= 4.66)")
+
+    # A checked tool button keeps the theme ink instead: its icon cannot be
+    # recoloured, so the pill is a tint and both text and icon stay legible.
+    tool_fill, tool_ink = pill_ink(outdir / "tool-label-checked.png")
+    tool_drift = tone_distance(tool_ink, scheme["window_text_rgb"])
+    check("tool-label-checked keeps WindowText", tool_drift <= 30,
+          f"ink={tool_ink} role={tuple(scheme['window_text_rgb'])} distance={tool_drift} (<= 30)")
+    check("tool-label-checked ink", contrast(tool_fill, tool_ink) >= 4.66,
+          f"{contrast(tool_fill, tool_ink):.2f}:1 fill={tool_fill} ink={tool_ink} (>= 4.66)")
+
+    # The icon is drawn from a pixmap the style cannot recolour, so its contrast
+    # has to come from the pill alone. 3:1 is the non-text floor; the saturated
+    # accent fill measured 2.23-2.31:1 on three variants.
+    icon_alpha = np.array(Image.open(outdir / "tool-icon-checked.png").convert("RGBA"))[:, :, 3]
+    icon_rgb = np.array(Image.open(outdir / "tool-icon-checked.png").convert("RGB")).astype(int)
+    icon_fill, _ = pill_ink(outdir / "tool-icon-checked.png")
+    icon_mask = (icon_alpha > 200) & (np.abs(icon_rgb - np.array(icon_fill)).sum(axis=2) > 40)
+    if not icon_mask.any():
+        check("checked tool button icon drawn", False, "no opaque icon pixels")
+    else:
+        icon_tones, icon_counts = np.unique(icon_rgb[icon_mask], axis=0, return_counts=True)
+        icon_tone = icon_tones[np.argmax(icon_counts)]
+        icon_score = contrast(icon_fill, icon_tone)
+        check("checked tool button icon contrast", icon_score >= 3.0,
+              f"{icon_score:.2f}:1 fill={tuple(icon_fill)} icon={tuple(icon_tone)} (>= 3)")
+
+    # The muted fill of an inactive window must keep WindowText: HighlightedText
+    # there is white on light grey, which would be the worse bug.
+    muted_fill, muted_ink = pill_ink(outdir / "tab-selected-muted.png")
+    muted_score = contrast(muted_fill, muted_ink)
+    muted_drift = tone_distance(muted_ink, scheme["window_text_rgb"])
+    check("tab-selected-muted paints WindowText", muted_drift <= 30,
+          f"ink={muted_ink} role={tuple(scheme['window_text_rgb'])} distance={muted_drift} (<= 30)")
+    check("tab-selected-muted ink", muted_score >= 4.66,
+          f"{muted_score:.2f}:1 fill={muted_fill} ink={muted_ink} (>= 4.66)")
+
+    # Tabs need three distinguishable steps; the old flat 7% tone made idle and
+    # hovered pixel-identical.
+    page_rgb = np.array(scheme["page_rgb"])
+    idle_tone, _ = dominant_tone(outdir / "tab-idle.png")
+    hover_tone, _ = dominant_tone(outdir / "tab-hover.png")
+    step = int(np.abs(idle_tone - hover_tone).max())
+    check("tab hover differs from idle", step >= 6, f"step={step}/255 (>= 6)")
+    check("tab idle stays quiet", int(idle_tone.sum()) > 0 and step <= 40,
+          f"idle={tuple(idle_tone)} hover={tuple(hover_tone)}")
+    # An idle tab still has to read as a tab: a 3% fill sat 5-7/255 above the
+    # page and left tabs looking like floating labels. The floor is the tone the
+    # flat single-tone implementation used.
+    affordance = int(np.abs(idle_tone - page_rgb).max())
+    check("tab idle distinguishable from page", affordance >= 12,
+          f"{affordance}/255 above page={tuple(page_rgb)} (>= 12)")
+
+    # A disabled checked tool button still shows its state, but never in the
+    # accent tone that would read as active beside greyed-out neighbours.
+    disabled_tool, _ = dominant_tone(outdir / "tool-checked-disabled.png")
+    check("disabled tool button muted",
+          int(np.abs(disabled_tool - np.array(scheme["accent_rgb"])).sum()) > 60,
+          f"rgb={tuple(disabled_tool)} accent={tuple(scheme['accent_rgb'])}")
+
+    # Separator: one hairline, inset 8px each side so it cannot cut the 15px
+    # menu corner. A full-width rule was shipping.
+    sep_alpha = np.array(Image.open(outdir / "menu-separator.png").convert("RGBA").split()[3])
+    sep_rows = sorted(set(np.where(sep_alpha > 20)[0].tolist()))
+    sep_cols = np.where((sep_alpha > 20).any(axis=0))[0]
+    sep_ok = (len(sep_rows) == 1 and len(sep_cols) > 0 and 6 <= sep_cols.min() <= 9
+              and sep_alpha.shape[1] - 10 <= sep_cols.max() <= sep_alpha.shape[1] - 7)
+    span = f"{sep_cols.min()}..{sep_cols.max()}" if len(sep_cols) else "none"
+    check("menu separator inset", sep_ok,
+          f"rows={sep_rows} x={span} of {sep_alpha.shape[1]}")
+
     # Hovered menu row: the highlight is a tighter interaction pill, not Breeze's flat band.
     hover_height, hover_taper = taper(outdir / "menu-hover.png")
     check("menu hover pill taper", hover_height > 8 and 5 <= hover_taper < 14,
@@ -249,6 +420,23 @@ def main() -> int:
     first_full = next((x for x in range(chip_alpha.shape[1]) if chip_alpha[0, x] >= 250), 99)
     check("indicator corner small", corner_open and 2 <= first_full <= 8,
           f"first-full={first_full}px (2-8px, not a pill)")
+    # The mark must keep clear of the chip edge; the earlier span reached 19%.
+    checked_alpha = np.array(Image.open(outdir / "indicator-checked.png").convert("RGBA"))
+    # The mark is everything that is not the chip's own surface; the surface is
+    # the dominant tone, not a corner sample that only happens to be the fill
+    # while marked chips keep outline == fill.
+    chip_tone = dominant_tone(outdir / "indicator-checked.png")[0]
+    mark = (np.abs(checked_alpha[:, :, :3].astype(int) - chip_tone.astype(int)).sum(axis=2) > 60) \
+        & (checked_alpha[:, :, 3] > 128)
+    mark_ys, mark_xs = np.where(mark)
+    chip_h, chip_w = mark.shape
+    inside = (len(mark_xs) > 0
+              and mark_xs.min() >= chip_w * 0.2 and mark_xs.max() <= chip_w * 0.8
+              and mark_ys.min() >= chip_h * 0.2 and mark_ys.max() <= chip_h * 0.8)
+    check("indicator mark inside chip", inside,
+          f"x={mark_xs.min() if len(mark_xs) else -1}..{mark_xs.max() if len(mark_xs) else -1} "
+          f"y={mark_ys.min() if len(mark_ys) else -1}..{mark_ys.max() if len(mark_ys) else -1} of {chip_w}x{chip_h}")
+
     focused_chip = indicator("indicator-focused")
     focused_edge = focused_chip[mid, 0]
     check("indicator focus ring", focused_edge[2] > focused_edge[0] + 40,
@@ -287,6 +475,19 @@ def main() -> int:
     top_edge = int(top_fill.min()) if len(top_fill) else -1
     check("meter short fill stays rounded", 1 <= top_edge <= 4,
           f"first accent pixel at top edge={top_edge}px (1-4px, not a dot)")
+
+    # Inline meter text straddles the fill boundary, so each side is drawn with
+    # the ink that belongs to it. The boundary is read from the render rather than
+    # assumed, so changing the probe's progress value cannot silently measure the
+    # wrong side.
+    check("meter text split ink", *meter_text_split(outdir / "progress-text.png"))
+    # A meter with no fill at all must still paint legible text and no accent.
+    zero_score, zero_detail = meter_text_whole(outdir / "progress-text-zero.png")
+    zero_has_accent = bool((np.abs(
+        np.array(Image.open(outdir / "progress-text-zero.png").convert("RGB")).astype(int)
+        - np.array(scheme["accent_rgb"])).sum(axis=2) < 20).any())
+    check("zero meter text readable", zero_score >= 3.0, zero_detail)
+    check("zero meter paints no fill", not zero_has_accent, f"accent pixels={zero_has_accent}")
 
     for hover_name, idle_name in [
         ("framed-lineedit-hover", "framed-lineedit"),

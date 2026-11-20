@@ -18,9 +18,24 @@ needs to know.
   chips step toward the page tone, and keyboard focus is drawn on the chip.
 - Short progress and capacity fills stay rounded bars instead of collapsing into
   a circle.
+- Check and radio marks keep a clear margin from the chip edge.
 
 ### Fixed
 
+- Selected tab labels and checked tool button labels now use on-pill ink. They
+  measured 1.5–2.7:1 against the accent fill on One Dark Pro, Nord Day, Nord
+  Night and Dayshift; every variant now clears 4.86:1.
+- Tabs have a hover state again: hover is a 13% step over the 7% idle surface,
+  and the selected tab keeps the accent fill. The previous single tone made idle
+  and hovered identical.
+- Pressed and checked tool buttons now take a tonal fill instead of the full
+  accent. Their symbolic icons are pre-rendered by the icon theme and cannot be
+  recoloured, so the saturated fill left them at 2.2–2.3:1 on three variants;
+  text and icon now measure 4.7–9.9:1.
+- Menu separators are inset, so they no longer cut across the menu's rounded
+  corner.
+- Progress labels stay readable on both the fill and the groove side.
+- A disabled checked tool button no longer paints a full accent pill.
 - Item-view focus rings no longer wrap non-list widget labels in a capsule.
 - The colour-blend helper clamps its weight, so an out-of-range value can no
   longer produce an invalid colour that paints nothing.

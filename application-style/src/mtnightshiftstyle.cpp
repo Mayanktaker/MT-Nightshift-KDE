@@ -34,6 +34,8 @@
 #include <QStyleOptionComboBox>
 #include <QStyleOptionFrame>
 #include <QStyleOptionSpinBox>
+#include <QStyleOptionTab>
+#include <QStyleOptionToolButton>
 
 #include <cmath>
 
@@ -183,10 +185,35 @@ void MTNightshiftStyle::drawControl(ControlElement element, const QStyleOption *
     if (element == CE_TabBarTabShape && paintTabShape(option, painter)) {
         return;
     }
+    // A selected tab sits on the accent fill, so its label must move to on-pill
+    // ink; WindowText there measured 1.5-2.7:1 on four of the five variants.
+    // An inactive window's selected tab uses the muted grey fill instead, where
+    // HighlightedText would fail on the light variants, so it keeps its own ink.
+    if (element == CE_TabBarTabLabel) {
+        const auto *tab = qstyleoption_cast<const QStyleOptionTab *>(option);
+        if (tab && painter && tab->state.testFlag(State_Selected)
+            && usesAccentFill(tab)
+            && tab->state.testFlag(State_Enabled)) {
+            const auto group = colorGroup(tab);
+            const QColor onPill = tab->palette.color(group, QPalette::HighlightedText);
+            QStyleOptionTab ink(*tab);
+            for (const auto state : {QPalette::Active, QPalette::Inactive}) {
+                ink.palette.setColor(state, QPalette::WindowText, onPill);
+                ink.palette.setColor(state, QPalette::Text, onPill);
+                ink.palette.setColor(state, QPalette::ButtonText, onPill);
+            }
+            baseStyle()->drawControl(element, &ink, painter, widget);
+            return;
+        }
+    }
     // Hovered/selected menu rows get the pill; Breeze draws icon and text from
     // a state-stripped option so its old flat highlight cannot be painted.
     if (element == CE_MenuItem) {
         const auto *item = qstyleoption_cast<const QStyleOptionMenuItem *>(option);
+        if (item && painter && item->menuItemType == QStyleOptionMenuItem::Separator
+            && paintMenuSeparator(item, painter)) {
+            return;
+        }
         if (item && painter
             && (item->state.testFlag(State_MouseOver) || item->state.testFlag(State_Selected))
             && paintMenuPill(option, painter)) {

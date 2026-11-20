@@ -49,10 +49,14 @@ bool MTNightshiftStyle::paintToolButton(const QStyleOption *option, QPainter *pa
     if (!option || !painter || option->rect.isEmpty()) {
         return false;
     }
-    const bool hovered = option->state.testFlag(QStyle::State_MouseOver);
+    const bool enabled = option->state.testFlag(QStyle::State_Enabled);
+    const bool hovered = enabled && option->state.testFlag(QStyle::State_MouseOver);
     const bool pressed = option->state.testFlag(QStyle::State_Sunken);
     const bool checked = option->state.testFlag(QStyle::State_On);
-    if (!hovered && !pressed && !checked) {
+    // Idle buttons stay with Breeze, and a disabled button draws no hover
+    // surface at all; only a real state (hover when enabled, pressed, checked)
+    // gets our pill.
+    if (!pressed && !checked && !(enabled && hovered)) {
         return false;
     }
     const QPalette &palette = option->palette;
@@ -60,7 +64,14 @@ bool MTNightshiftStyle::paintToolButton(const QStyleOption *option, QPainter *pa
     const QColor windowTone = palette.color(group, QPalette::Window);
     QColor fill;
     if (pressed || checked) {
-        fill = palette.color(group, QPalette::Highlight);
+        // Tonal, not saturated: the button's symbolic icon is drawn from a pixmap
+        // this style cannot recolour, so the surface has to keep the theme ink
+        // legible. Disabled buttons step further towards the page on top of that.
+        const QColor tonal = blend(palette.color(group, QPalette::Highlight),
+                                   palette.color(group, QPalette::Window), kToolStateTint);
+        fill = enabled ? tonal
+                       : blend(tonal, palette.color(QPalette::Active, QPalette::Window),
+                               kDisabledMute);
     } else {
         fill = blend(windowTone, palette.color(group, QPalette::WindowText), kItemHoverContrast);
     }
@@ -80,10 +91,18 @@ bool MTNightshiftStyle::paintTabShape(const QStyleOption *option, QPainter *pain
         return false;
     }
     const QPalette &palette = option->palette;
-    const QColor fill = option->state.testFlag(QStyle::State_Selected)
-        ? stateFill(option)
-        : blend(palette.color(QPalette::Window),
-                palette.color(QPalette::WindowText), kItemHoverContrast);
+    const bool enabled = option->state.testFlag(QStyle::State_Enabled);
+    const bool hovered = enabled && option->state.testFlag(QStyle::State_MouseOver);
+    // Idle tabs still get a fill of their own: delegating would bring Breeze's
+    // tighter corner back. The three steps must stay visually distinct, or hover
+    // is invisible — which is exactly what the flat 7% tone used to do.
+    QColor fill;
+    if (option->state.testFlag(QStyle::State_Selected)) {
+        fill = stateFill(option);
+    } else {
+        fill = blend(palette.color(QPalette::Window), palette.color(QPalette::WindowText),
+                     hovered ? kTabHoverContrast : kTabIdleContrast);
+    }
     const QRectF rect = QRectF(tab->rect).adjusted(0.5, 0.5, -0.5, -0.5);
     const qreal radius = qMin(kControlRadius, rect.height() / 2.0);
     fillSurface(painter, rect, radius, fill);
@@ -115,7 +134,27 @@ bool MTNightshiftStyle::paintMenuPill(const QStyleOption *option, QPainter *pain
     return true;
 }
 
-// Owns the QMenu surface; Window fill and hairline follow the control language.
+// Paints a menu separator inset from both edges: a full-width rule cuts the
+// 15px menu corner and reads as a stray border rather than a group break.
+bool MTNightshiftStyle::paintMenuSeparator(const QStyleOptionMenuItem *item, QPainter *painter) const
+{
+    if (!item || !painter || item->rect.isEmpty()) {
+        return false;
+    }
+    const QPalette &palette = item->palette;
+    const QPalette::ColorGroup group = colorGroup(item);
+    const QColor line = blend(palette.color(group, QPalette::Window),
+                              palette.color(group, QPalette::WindowText), kMenuSeparatorContrast);
+    const int inset = qMin(qRound(kMenuSeparatorInset), item->rect.width() / 3);
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, false);
+    painter->setPen(QPen(line, 1.0));
+    const qreal y = std::floor(item->rect.center().y()) + 0.5;
+    painter->drawLine(QPointF(item->rect.left() + inset, y),
+                      QPointF(item->rect.right() - inset, y));
+    painter->restore();
+    return true;
+}
 
 // Owns the QMenu surface; Window fill and hairline follow the control language.
 bool MTNightshiftStyle::paintMenuPanel(const QStyleOption *option, QPainter *painter) const
@@ -209,15 +248,30 @@ bool MTNightshiftStyle::paintProgressBar(const QStyleOptionProgressBar *option, 
     fillSurface(painter, rect, radius, groove);
     const qreal span = option->maximum - option->minimum;
     const qreal done = qBound<qreal>((option->progress - option->minimum) / span, 0.0, 1.0);
+    QRectF fillRect;
     if (done > 0.0) {
-        const QRectF fillRect = rect.adjusted(0, 0, -rect.width() * (1.0 - done), 0);
+        fillRect = rect.adjusted(0, 0, -rect.width() * (1.0 - done), 0);
         const qreal fillRadius = qMin(qMin(kControlRadius, fillRect.height() / 4.0),
                                       fillRect.width() / 2.0);
         fillSurface(painter, fillRect, fillRadius, palette.color(group, QPalette::Highlight));
     }
     if (option->textVisible && !option->text.isEmpty()) {
+        // The label can straddle the fill boundary; one ink cannot clear the
+        // contrast floor on both the accent fill and the groove, so each side
+        // gets the ink that belongs to it.
+        const QColor onFill = palette.color(group, QPalette::HighlightedText);
+        painter->save();
+        painter->setPen(onFill);
+        painter->setClipRect(fillRect, Qt::IntersectClip);
+        painter->drawText(rect, Qt::AlignCenter, option->text);
+        painter->restore();
         painter->save();
         painter->setPen(palette.color(group, QPalette::Text));
+        if (!fillRect.isEmpty()) {
+            // A null fillRect's aligned rect is not guaranteed empty, so the
+            // hole is only punched when there is a fill to exclude.
+            painter->setClipRegion(QRegion(rect.toAlignedRect()) - QRegion(fillRect.toAlignedRect()));
+        }
         painter->drawText(rect, Qt::AlignCenter, option->text);
         painter->restore();
     }

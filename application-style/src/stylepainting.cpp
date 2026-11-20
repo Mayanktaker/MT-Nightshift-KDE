@@ -205,21 +205,23 @@ void paintMark(QPainter *painter, const QRectF &rect, const QColor &color, bool 
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing, true);
     if (radio) {
-        const qreal dot = qMin(rect.width(), rect.height()) * 0.24;
+        const qreal dot = qMin(rect.width(), rect.height()) * 0.22;
         painter->setPen(Qt::NoPen);
         painter->setBrush(color);
         painter->drawEllipse(rect.center(), dot, dot);
     } else if (partial) {
-        painter->setPen(QPen(color, qMax(1.5, rect.height() / 7.0), Qt::SolidLine, Qt::RoundCap));
-        painter->drawLine(QPointF(rect.left() + rect.width() * 0.28, rect.center().y()),
-                          QPointF(rect.right() - rect.width() * 0.28, rect.center().y()));
+        painter->setPen(QPen(color, qMax(1.5, rect.height() / 8.0), Qt::SolidLine, Qt::RoundCap));
+        painter->drawLine(QPointF(rect.left() + rect.width() * 0.34, rect.center().y()),
+                          QPointF(rect.right() - rect.width() * 0.34, rect.center().y()));
     } else {
-        painter->setPen(QPen(color, qMax(1.5, rect.height() / 7.0), Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        // The mark keeps clear of the chip edge: at 20px the earlier 0.26-0.76
+        // span put the stroke against the corner cut and read as cramped.
+        painter->setPen(QPen(color, qMax(1.5, rect.height() / 8.0), Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
         painter->setBrush(Qt::NoBrush);
         QPainterPath check;
-        check.moveTo(rect.left() + rect.width() * 0.26, rect.top() + rect.height() * 0.52);
-        check.lineTo(rect.left() + rect.width() * 0.44, rect.top() + rect.height() * 0.72);
-        check.lineTo(rect.left() + rect.width() * 0.76, rect.top() + rect.height() * 0.30);
+        check.moveTo(rect.left() + rect.width() * 0.32, rect.top() + rect.height() * 0.55);
+        check.lineTo(rect.left() + rect.width() * 0.44, rect.top() + rect.height() * 0.70);
+        check.lineTo(rect.left() + rect.width() * 0.68, rect.top() + rect.height() * 0.34);
         painter->drawPath(check);
     }
     painter->restore();
@@ -233,11 +235,18 @@ QColor stateFill(const QStyleOption *option)
     if (!option->state.testFlag(QStyle::State_Selected)) {
         return blend(windowTone, palette.color(QPalette::WindowText), kItemHoverContrast);
     }
-    const bool active = option->state.testFlag(QStyle::State_Active)
-        || palette.currentColorGroup() == QPalette::Active;
-    if (active) {
+    if (usesAccentFill(option)) {
         return palette.color(QPalette::Active, QPalette::Highlight);
     }
     return blend(windowTone, palette.color(QPalette::WindowText), kItemInactiveContrast);
+}
+
+// True when a selected surface takes the accent fill rather than the muted grey
+// one. Callers that recolour ink for a pill must ask this, not State_Selected, or
+// the label can end up on a fill it was never chosen for.
+bool usesAccentFill(const QStyleOption *option)
+{
+    return option->state.testFlag(QStyle::State_Active)
+        || option->palette.currentColorGroup() == QPalette::Active;
 }
 } // namespace mtstyle

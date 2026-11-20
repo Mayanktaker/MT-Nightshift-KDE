@@ -17,6 +17,7 @@
 #include <QDir>
 #include <QFile>
 #include <QHash>
+#include <QIcon>
 #include <QImage>
 #include <QPainter>
 #include <QPainterPath>
@@ -29,6 +30,7 @@
 #include <QListView>
 #include <QStringListModel>
 #include <QPalette>
+#include <QPixmap>
 #include <QPluginLoader>
 #include <QProxyStyle>
 #include <QScrollArea>
@@ -379,6 +381,7 @@ int main(int argc, char **argv)
     meterRender(30, false, QStringLiteral("capacity-meter"));
     meterRender(8, false, QStringLiteral("capacity-meter-small-fill"));
     meterRender(55, true, QStringLiteral("progress-text"));
+    meterRender(0, true, QStringLiteral("progress-text-zero"));
 
     // Boxed item-view frame (Kate's sessions list): must render as a dimmed
     // rounded hairline, not Breeze's blue square outline.
@@ -507,18 +510,34 @@ int main(int argc, char **argv)
     }
     hover.save(QStringLiteral("%1/menu-hover.png").arg(outdir));
 
+    // Separator: forced onto a known canvas so the inset can be measured exactly
+    // (the real QMenu render is only used for the outer corner language).
+    saveRendered(QSize(120, 14), QStringLiteral("menu-separator"), outdir,
+                 QStringLiteral("menu-separator"), [&](QPainter *p) {
+        QStyleOptionMenuItem sep;
+        sep.initFrom(&menu);
+        sep.rect = QRect(0, 0, 120, 14);
+        sep.menuItemType = QStyleOptionMenuItem::Separator;
+        sep.state |= QStyle::State_Enabled | QStyle::State_Active;
+        app.style()->drawControl(QStyle::CE_MenuItem, &sep, p, &menu);
+    });
+
     // Tab bar shapes: active and inactive tabs drawn by the style.
     QTabBar tabBar;
     tabBar.addTab(QStringLiteral("Welcome"));
     tabBar.addTab(QStringLiteral("Sessions"));
     tabBar.resize(220, 30);
-    auto tabRender = [&](QStyle::State state, const char *name) {
+    auto tabRender = [&](QStyle::State state, const char *name,
+                         QPalette::ColorGroup paletteGroup = QPalette::Active) {
         for (int withLabel = 0; withLabel < 2; ++withLabel) {
             QPixmap pm(120, 30);
             pm.fill(Qt::transparent);
             QPainter p(&pm);
             QStyleOptionTab tab;
             tab.initFrom(&tabBar);
+            // An inactive window reports Inactive through the palette, not only
+            // through State_Active, which is what the muted fill keys off.
+            tab.palette.setCurrentColorGroup(paletteGroup);
             tab.rect = pm.rect();
             tab.text = QStringLiteral("Welcome");
             tab.position = QStyleOptionTab::OnlyOneTab;
@@ -532,7 +551,12 @@ int main(int argc, char **argv)
         }
     };
     tabRender(QStyle::State_Selected | QStyle::State_Active, "tab-active");
-    tabRender(QStyle::State_None, "tab-inactive");
+    tabRender(QStyle::State_None, "tab-idle");
+    tabRender(QStyle::State_MouseOver, "tab-hover");
+    tabRender(QStyle::State_None, "tab-inactive", QPalette::Inactive);
+    // An inactive window's selected tab uses the muted grey fill, so its label
+    // must keep the normal ink rather than the on-pill colour.
+    tabRender(QStyle::State_Selected, "tab-selected-muted", QPalette::Inactive);
 
     // Multi-tab seam: three positions as a connected bar of separate shapes.
     QTabBar multiBar;
@@ -597,6 +621,54 @@ int main(int argc, char **argv)
     drawToolState(QStyle::State_MouseOver, "tool-hover");
     drawToolState(QStyle::State_Sunken, "tool-pressed");
     drawToolState(QStyle::State_On, "tool-checked");
+    saveRendered(QSize(120, 36), QStringLiteral("tool-checked-disabled"), outdir,
+                 QStringLiteral("tool-checked-disabled"), [&](QPainter *p) {
+        QStyleOptionToolButton tb;
+        tb.initFrom(&toolHost);
+        tb.rect = QRect(0, 0, 120, 36);
+        tb.features = QStyleOptionToolButton::None;
+        tb.state = QStyle::State_On | QStyle::State_Active;
+        app.style()->drawPrimitive(QStyle::PE_PanelButtonTool, &tb, p, &toolHost);
+    });
+
+    // Checked tool button with a label: the ink must move to on-pill, the same
+    // rule the selected tab and the menu row follow.
+    const auto toolLabel = [&](QStyle::State state, const QString &name) {
+        saveRendered(QSize(120, 36), name, outdir, name, [&](QPainter *p) {
+            QStyleOptionToolButton tb;
+            tb.initFrom(&toolHost);
+            tb.rect = QRect(0, 0, 120, 36);
+            tb.text = QStringLiteral("Bold");
+            tb.toolButtonStyle = Qt::ToolButtonTextOnly;
+            tb.features = QStyleOptionToolButton::None;
+            tb.state |= QStyle::State_Enabled | QStyle::State_Active | state;
+            app.style()->drawPrimitive(QStyle::PE_PanelButtonTool, &tb, p, &toolHost);
+            app.style()->drawControl(QStyle::CE_ToolButtonLabel, &tb, p, &toolHost);
+        });
+    };
+    toolLabel(QStyle::State_None, QStringLiteral("tool-label-idle"));
+    toolLabel(QStyle::State_On, QStringLiteral("tool-label-checked"));
+
+    // The icon counterpart. A dark icon on the accent fill is the failure mode
+    // this render exists to measure; the style cannot recolour a QIcon pixmap.
+    QPixmap themeIcon(16, 16);
+    themeIcon.fill(app.palette().color(QPalette::WindowText));
+    const auto toolIcon = [&](QStyle::State state, const QString &name) {
+        saveRendered(QSize(120, 36), name, outdir, name, [&](QPainter *p) {
+            QStyleOptionToolButton tb;
+            tb.initFrom(&toolHost);
+            tb.rect = QRect(0, 0, 120, 36);
+            tb.icon = QIcon(themeIcon);
+            tb.iconSize = QSize(16, 16);
+            tb.toolButtonStyle = Qt::ToolButtonIconOnly;
+            tb.features = QStyleOptionToolButton::None;
+            tb.state |= QStyle::State_Enabled | QStyle::State_Active | state;
+            app.style()->drawPrimitive(QStyle::PE_PanelButtonTool, &tb, p, &toolHost);
+            app.style()->drawControl(QStyle::CE_ToolButtonLabel, &tb, p, &toolHost);
+        });
+    };
+    toolIcon(QStyle::State_None, QStringLiteral("tool-icon-idle"));
+    toolIcon(QStyle::State_On, QStringLiteral("tool-icon-checked"));
 
     // Tool button with a popup indicator: CC_ToolButton draws the arrow.
     QPixmap menuArrow(120, 36);

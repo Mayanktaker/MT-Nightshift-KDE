@@ -52,6 +52,23 @@ constexpr qreal kItemInsetX = 4.0;
 constexpr qreal kItemInsetY = 1.0;
 constexpr qreal kItemHoverContrast = 0.07;
 constexpr qreal kItemInactiveContrast = 0.12;
+// Tab strips need three distinguishable steps: an idle surface Breeze's own tab
+// shape never provides, a hover step, and the selected accent fill. Idle keeps
+// the 7% the flat single tone used, so tabs stay readable as tabs; hover rises
+// to 13%, which is a visible step without competing with the selected accent.
+constexpr qreal kTabIdleContrast = 0.07;
+constexpr qreal kTabHoverContrast = 0.13;
+// Tool buttons carry monochrome symbolic icons whose colour follows the theme
+// ink, and a QIcon pixmap cannot be recoloured from a style option. Their active
+// state is therefore a tint of the accent towards the window tone, deep enough
+// to read as "on" and light enough that the theme's own ink — text and icon
+// alike — keeps its contrast. A saturated accent fill puts those icons at
+// 2.23-2.31:1 on Nord Night, Nord Day and One Dark Pro.
+constexpr qreal kToolStateTint = 0.55;
+// Menu separators are inset so they do not cut the 15px menu corner; the line
+// is quieter than the panel hairline because it sits inside the surface.
+constexpr qreal kMenuSeparatorContrast = 0.14;
+constexpr qreal kMenuSeparatorInset = 8.0;
 // Scroll bar gutter in logical pixels. Breeze spends 21px on a gutter its 8px
 // handle never fills, so a 12px gutter keeps the same handle, hover states and
 // drag length while reading considerably slimmer.
@@ -76,4 +93,5 @@ void paintChevron(QPainter *painter, const QRectF &rect, const QColor &color, bo
 void paintPlusGlyph(QPainter *painter, const QRectF &rect, const QColor &color, bool plus);
 void paintMark(QPainter *painter, const QRectF &rect, const QColor &color, bool radio, bool partial);
 QColor stateFill(const QStyleOption *option);
+bool usesAccentFill(const QStyleOption *option);
 } // namespace mtstyle

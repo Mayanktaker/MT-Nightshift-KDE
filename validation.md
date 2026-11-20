@@ -259,6 +259,39 @@ plugin through `QT_PLUGIN_PATH`: `/tmp/opencode/tab-kate.png` shows the rounded
 active Welcome tab, and `/tmp/opencode/tab-dolphin.png` shows the rounded status
 strip.
 
+## On-pill ink and interaction steps — `tools/style-probe/check-style.py`
+
+Four defects here were invisible in a review and measurable in the renders:
+
+- **On-pill ink.** A selected tab sits on the accent fill, so its label must take
+  `HighlightedText`. The check takes the pill's surface tone and the
+  strongest-contrast pixel as the painted ink, then asserts **both** that the ink
+  matches `HighlightedText` from the scheme and that it clears 4.66:1 — contrast
+  alone would accept any bright pixel, and ink alone would accept an unreadable
+  one. The muted tab of an inactive window is asserted the other way round: it
+  must still be `WindowText`, because `HighlightedText` there is white on light
+  grey. Proven by removing the `CE_TabBarTabLabel` interception: the render drops
+  to 3.00:1 with `WindowText` ink and fails.
+- **Checked tool buttons and their icons.** A toolkit icon cannot be recoloured
+  from a style option, so the pill — not the ink — has to carry the contrast. The
+  probe renders a checked button with an icon filled in the theme's own ink and
+  requires 3:1 for the icon and 4.66:1 for the label. With the old saturated
+  accent fill both measure 2.23:1 on Nord Night and fail; the tonal fill measures
+  5.04–9.85:1 across the five variants.
+- **Tab steps.** Idle keeps the 7% tone and hover is 13%, so the two must
+  differ by at least 6/255 — the flat single tone that shipped made idle and
+  hovered identical. Idle is separately held to a 12/255 floor above the page
+  tone, because a first attempt at 3% left tabs reading as floating labels.
+- **Separator inset.** The forced `CE_MenuItem` separator render must be exactly
+  one row, spanning 8px inside each edge of a 120px canvas. With the inset set to
+  zero it spans 0–119 and fails.
+- **Disabled tool button.** A disabled checked button must never paint the accent
+  fill; the check compares its dominant tone against the scheme accent.
+
+Two further measurements ride on the same renders: the meter label must clear
+3:1 on both the fill and the groove side, and the check mark's bounding box must
+stay inside the inner 60% of the chip.
+
 ## Plasma Style assets
 
 `make check` validates every SVG as XML, the metadata as JSON, and reads the

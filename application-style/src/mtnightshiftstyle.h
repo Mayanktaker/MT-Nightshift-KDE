@@ -14,6 +14,7 @@ class QPainter;
 class QStyleOption;
 class QStyleOptionComboBox;
 class QStyleOptionComplex;
+class QStyleOptionMenuItem;
 class QStyleOptionProgressBar;
 class QStyleOptionViewItem;
 class QStyleOptionSpinBox;
@@ -54,6 +55,8 @@ private:
     bool paintMenuPill(const QStyleOption *option, QPainter *painter) const;
     // Paints a rounded hover/pressed/checked surface for a tool button.
     bool paintToolButton(const QStyleOption *option, QPainter *painter) const;
+    // Paints a menu separator as an inset hairline; Breeze draws it edge to edge.
+    bool paintMenuSeparator(const QStyleOptionMenuItem *item, QPainter *painter) const;
     // Paints a QMenu surface with the 15px control radius.
     bool paintMenuPanel(const QStyleOption *option, QPainter *painter) const;
     // Suppresses Breeze's square menu frame; the panel already carries the edge.

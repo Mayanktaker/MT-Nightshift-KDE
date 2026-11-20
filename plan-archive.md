@@ -165,3 +165,27 @@ Validation completed: Global Theme metadata and bundled palette pass package che
 The path resolver confirms direct `solid/` and `translucent/` assets resolve inside MT Nightshift. The KDE color scheme had left partial `[Colors:*]` groups in `kdeglobals`, which shadowed the selected scheme and caused Qt's palette to default to white; switching away and reapplying MT Nightshift rewrote complete groups, now verified as `View=10,11,13` and `Window=16,18,22`. Remaining checks: restart KWin to refresh its cached Aurorae `menu.svg` path, then verify window states and existing panel/menu/tooltip checks.
 
 The decoration edge pass is verified in two independent stages. First, each of the nine active slices was extracted and rasterised through Qt's own qsvg plugin and re-stitched into the 170×188 frame: the edge profile is now monotonic (`0.000, 0.004, 0.008, 0.012, 0.016, 0.020, 0.024, … 0.369`) instead of nine flat plateaus, all four corner cutouts carry the radial ramp, alpha is continuous across the corner/edge seams, and the window interior still reads exactly `#15181C`. Second, after installing the artwork and calling `org.kde.KWin.reconfigure`, a fresh Dolphin capture matches the render pixel for pixel: the shadow ring's left profile and all four 45° corner diagonals are identical to the offline frame, header rows 1–45 are one `#15181C` surface with no `#0A0B0D` row, and the only separator left is the client's own `#3F4246` hairline. No KWin restart was needed for the SVG change; the cached-object limitation still applies to added or renamed button files.
+
+## Visual polish pass (2026-11-20)
+
+Seven defects found by measuring the probe renders, all closed:
+
+- **Selected tab label ink** failed the 4.66:1 floor on four of five variants
+  (One Dark Pro 1.52, Nord Day 2.27, Nord Night 2.23, Dayshift 2.65). `CE_TabBarTabLabel`
+  now takes `HighlightedText` on the accent fill; every variant measures 4.86–5.57.
+  An inactive window's muted tab keeps its own ink (7.70–11.72), which is why the
+  rule keys on the accent fill rather than on `State_Selected` alone.
+- **Tabs had no hover state**: one flat 7% tone painted idle and hovered
+  identically. Idle keeps 7%, hover is 13%, selected accent.
+- **Checked tool buttons** repeated the tab ink bug; `CE_ToolButtonLabel` moves to
+  `HighlightedText` when pressed or checked.
+- **Menu separators** were full width and cut the 15px menu corner; now a 1px
+  hairline inset 8px each side.
+- **Meter labels** could straddle the fill boundary; the label is clipped and
+  drawn in the ink that belongs to each side (5.57:1 / 11.46:1 on Nightshift).
+- **Check marks** reached 19% of the chip; the mark now stays inside 20–70%.
+- **Disabled checked tool buttons** painted a full accent pill; they are muted now.
+
+Each fix has a probe render and an assertion, and two were proven non-vacuous by
+reverting the fix and watching the check fail. `make check`, `make check-dpr2`,
+`make verify-live` (One Dark Pro) all pass; the installed plugin matches the build.
