@@ -158,6 +158,14 @@ regress to a sub-floor fill unnoticed.
 
 ## Decoration artwork — `tools/decoration-probe/`
 
+The generator's trial overrides (`--padding`, `--radius`, `--peak`, `--arc`) were
+documented but silently produced identical output, because the geometry globals
+were captured from `PARAMS` at import. `refresh_geometry()` re-derives them after
+parsing, and the padding/radius guard now runs on every refresh, so an override
+cannot emit a frame the committed artwork would be rejected for. A trial radius
+is what proved the ceiling: at the default 6px border, `--radius` above 15 puts
+the client's square corner over the frame-line band and is rejected.
+
 `build-decoration.py --check` regenerates every variant in memory and fails when
 `decoration.svg` differs, so the SVG cannot be hand-edited out of sync with
 `PARAMS`. `check-decoration.py` rasterises each of the nine slices through Qt's

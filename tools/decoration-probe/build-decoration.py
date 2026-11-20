@@ -173,31 +173,52 @@ VARIANTS = {
     },
 }
 
-P = PARAMS["padding"]
-R = PARAMS["radius"]
-H = PARAMS["header"]
-C = PARAMS["centre"]
-W_FRAME = 2 * (P + R) + C
-H_FRAME = (P + H) + C + (P + R)
+P = R = H = C = 0
+W_FRAME = H_FRAME = 0
 
-if PARAMS["visible"] > P:
-    raise SystemExit("visible falloff (%d) cannot exceed the padding ring (%d)"
-                     % (PARAMS["visible"], P))
 
-# The corner band only shows if the client's square corner stays inside the arc.
-# Its distance along the diagonal is (R - border) * sqrt2; the band's inner edge is
-# R - frame_line_arc. Requiring the corner to fall inside that keeps 1px of clear air.
-client_corner = (R - PARAMS["border"]) * math.sqrt(2.0)
-band_inner = R - PARAMS["frame_line_arc"]
-slack = band_inner - client_corner
-if slack < 0.2:
-    limit = int((PARAMS["border"] * math.sqrt(2.0) - PARAMS["frame_line_arc"] - 0.2)
-                / (math.sqrt(2.0) - 1.0))
-    raise SystemExit(
-        "radius %d is too large for border %d: the client's square corner reaches r=%.1f "
-        "and the frame-line band starts at r=%.1f (slack %.2f), so the client covers the "
-        "corner border. Keep radius <= %d." % (R, PARAMS["border"], client_corner,
-                                               band_inner, slack, limit))
+def refresh_geometry() -> None:
+    """Re-derives the module globals from PARAMS after an override.
+
+    These used to be captured at import, which made every documented override
+    (--padding, --radius, --peak, --arc) silently produce identical output.
+    """
+    global P, R, H, C, W_FRAME, H_FRAME
+    P = PARAMS["padding"]
+    R = PARAMS["radius"]
+    H = PARAMS["header"]
+    C = PARAMS["centre"]
+    W_FRAME = 2 * (P + R) + C
+    H_FRAME = (P + H) + C + (P + R)
+    validate_geometry()
+
+
+def validate_geometry() -> None:
+    """Rejects a padding/radius pair that would bury the corner band.
+
+    Runs on every refresh, not just at import: an override must not be able to
+    produce artwork the committed files would never be allowed to hold.
+    """
+    if PARAMS["visible"] > P:
+        raise SystemExit("visible falloff (%d) cannot exceed the padding ring (%d)"
+                         % (PARAMS["visible"], P))
+    # The corner band only shows if the client's square corner stays inside the arc.
+    # Its distance along the diagonal is (R - border) * sqrt2; the band's inner edge
+    # is R - frame_line_arc. Keeping 1px of air stops the client covering the band.
+    client_corner = (R - PARAMS["border"]) * math.sqrt(2.0)
+    band_inner = R - PARAMS["frame_line_arc"]
+    slack = band_inner - client_corner
+    if slack < 0.2:
+        limit = int((PARAMS["border"] * math.sqrt(2.0) - PARAMS["frame_line_arc"] - 0.2)
+                    / (math.sqrt(2.0) - 1.0))
+        raise SystemExit(
+            "radius %d is too large for border %d: the client's square corner reaches r=%.1f "
+            "and the frame-line band starts at r=%.1f (slack %.2f), so the client covers the "
+            "corner border. Keep radius <= %d." % (R, PARAMS["border"], client_corner,
+                                                   band_inner, slack, limit))
+
+
+refresh_geometry()
 
 
 def blend(base: str, over: str, amount: float) -> str:
@@ -508,12 +529,12 @@ def main() -> int:
     """Write the artwork, or compare it with the files on disk.
 
     Geometry and weight can be overridden for a one-off trial without editing
-    PARAMS, e.g. `--padding 24 --visible 24` or `--peak 0.22`. Nothing is written
+    PARAMS, e.g. `--padding 24 --radius 10 --peak 0.22`. Nothing is written
     unless the result is what you asked for, so a trial goes to a scratch path.
     """
     argv = sys.argv[1:]
     overrides = {"--padding": "padding", "--visible": "visible", "--peak": "peak",
-                 "--arc": "frame_line_arc"}
+                 "--radius": "radius", "--arc": "frame_line_arc"}
     variant = "nightshift"
     check = False
     write_all = False
@@ -543,6 +564,8 @@ def main() -> int:
             continue
         rest.append(token)
         index += 1
+
+    refresh_geometry()
 
     if rest:
         # A one-off trial path holds the decoration only; buttons stay untouched.

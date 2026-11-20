@@ -27,6 +27,10 @@ needs to know.
 - The dialog and popup frame generators now cover all five variants and their
   lookup slots (15 files each), so the three previously unguarded variants can no
   longer drift. Generated output is unchanged.
+- The decoration generator's documented trial overrides (`--padding`, `--radius`,
+  `--peak`, `--arc`) work; they previously produced identical output because the
+  geometry was captured at import. The padding/radius guard now applies to
+  overrides too.
 
 ### Fixed
 
