@@ -104,11 +104,16 @@ VARIANTS = [
 ]
 
 FAILURES: list[str] = []
+QUIET = False
+CHECKS = 0
 
 
 def check(label: str, ok: bool, detail: str = "") -> bool:
-    """Record one assertion and print its result."""
-    print(f"  {label:44s} {'OK' if ok else 'FAIL'} {detail}")
+    """Record one assertion; print it unless --quiet, but always print failures."""
+    global CHECKS
+    CHECKS += 1
+    if not ok or not QUIET:
+        print(f"  {label:44s} {'OK' if ok else 'FAIL'} {detail}")
     if not ok:
         FAILURES.append(label)
     return ok
@@ -183,8 +188,9 @@ def audit_palette(variant: dict) -> None:
         f"{lowest[0]:.2f} ({lowest[1]}/{lowest[2].removeprefix('Foreground')}), "
         f"{len(floor_pairs)} pairs",
     )
-    for ratio, label, role in floor_pairs[:3]:
-        print(f"      lowest: {ratio:5.2f}  {label:<17} {role}")
+    if not QUIET:
+        for ratio, label, role in floor_pairs[:3]:
+            print(f"      lowest: {ratio:5.2f}  {label:<17} {role}")
 
     for section in SELECTOR_GROUPS:
         label = dict(GROUPS)[section]
@@ -299,9 +305,12 @@ def audit_decoration(variant: dict) -> None:
 
 def main() -> int:
     """Runs every audit and reports the summary."""
+    global QUIET
+    QUIET = "--quiet" in sys.argv[1:]
     versions = set()
     for variant in VARIANTS:
-        print(f"{variant['name']}:")
+        if not QUIET:
+            print(f"{variant['name']}:")
         audit_copies(variant)
         versions.add(audit_metadata(variant))
         audit_palette(variant)
@@ -315,7 +324,10 @@ def main() -> int:
     if FAILURES:
         print(f"\n{len(FAILURES)} check(s) failed")
         return 1
-    print("\ntheme audit passed")
+    if QUIET:
+        print(f"theme audit ok  {CHECKS} checks, one version {', '.join(sorted(versions))}")
+    else:
+        print("\ntheme audit passed")
     return 0
 
 

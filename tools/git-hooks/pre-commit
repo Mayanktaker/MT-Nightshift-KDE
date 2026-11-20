@@ -17,11 +17,12 @@ set -euo pipefail
 root="$(git rev-parse --show-toplevel)"
 cd "$root"
 
-if ! audit_output=$(./tools/theme-audit/check-theme.py 2>&1); then
+if ! audit_output=$(./tools/theme-audit/check-theme.py --quiet 2>&1); then
     printf '%s\n' "$audit_output"
     echo "pre-commit: palette/metadata audit failed; see validation.md" >&2
     exit 1
 fi
+echo "  ${audit_output#theme audit ok  }"
 
 staged=$(git diff --cached --name-only --diff-filter=ACM -- \
     'themes/aurorae/**' 'tools/decoration-probe/**' || true)
