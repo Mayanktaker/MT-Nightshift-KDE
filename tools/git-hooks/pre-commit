@@ -38,12 +38,12 @@ if ! drift=$(python3 tools/decoration-probe/build-decoration.py --check 2>&1); t
 fi
 echo "  generator drift: $drift"
 
-if ! buttons=$(python3 tools/decoration-probe/check-buttons.py 2>&1); then
+if ! buttons=$(python3 tools/decoration-probe/check-buttons.py --quiet 2>&1); then
     printf '%s\n' "$buttons"
     echo "  button tones or geometry do not match the variant palettes" >&2
     exit 1
 fi
-echo "  buttons: 5 variants x 8 states match their palettes"
+echo "  ${buttons#buttons ok  }"
 
 # --quiet prints one measured line per variant and every failure, so the hook
 # summary names the geometry it verified instead of dumping the transcript.

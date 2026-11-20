@@ -19,8 +19,9 @@ Palettes come from build-decoration.py itself, but they are also cross-checked
 against the shipped .colors roles, so a scheme retune cannot silently leave the
 artwork on the old tones.
 
-Usage: check-buttons.py
-Exit status is 1 when a check fails.
+Usage: check-buttons.py [--quiet]
+Exit status is 1 when a check fails. --quiet prints one summary line
+and the failures only, for use in the pre-commit hook.
 """
 
 from __future__ import annotations
@@ -65,6 +66,7 @@ SCHEME_ROLES = {
 }
 
 failures: list[str] = []
+quiet = False
 
 
 def check(condition: bool, message: str) -> bool:
@@ -303,6 +305,8 @@ def check_decoration(path: Path, palette: dict[str, str], title: str,
 
 def main() -> int:
     """Run the palette and geometry checks for every registered variant."""
+    global quiet
+    quiet = "--quiet" in sys.argv[1:]
     generator = load_generator()
     baseline: dict[str, list] = {}
     names = list(generator.VARIANTS)
@@ -327,14 +331,19 @@ def main() -> int:
                       "%s shares %s's geometry (only colours may vary)"
                       % (directory / (button + ".svg"), button))
         check_decoration(spec["out"], palette, title, others)
-        print("  checked %s: 5 buttons, 8 states, decoration title, scheme palette" % title)
+        if not quiet:
+            print("  checked %s: 5 buttons, 8 states, decoration title, scheme palette" % title)
 
     if failures:
         print("\n".join("  FAIL " + message for message in failures))
         print("\n%d check(s) failed" % len(failures))
         return 1
-    print("all %d variants' button tones, geometry and titles match their palettes"
-          % len(names))
+    if quiet:
+        print("buttons ok  %d variants x %d buttons x 8 states, titles and share-geometry"
+              % (len(names), len(BUTTONS)))
+    else:
+        print("all %d variants' button tones, geometry and titles match their palettes"
+              % len(names))
     return 0
 
 

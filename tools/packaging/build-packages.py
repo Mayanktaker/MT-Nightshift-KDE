@@ -350,7 +350,13 @@ def verify_packages(repo_root: str) -> bool:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="Verify built packages")
+    parser.add_argument("--version", action="store_true",
+                        help="Print the suite version from the shipped metadata and exit")
     args = parser.parse_args()
+
+    if args.version:
+        print(VERSION)
+        return
 
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 

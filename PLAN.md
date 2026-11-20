@@ -8,8 +8,18 @@ the current state rather than the history.
 
 ## Steps
 
-- [ ] In a hands-on desktop pass, open the panel context menu and a tooltip (the panel Opaque state and the launcher/widget-explorer popups were checked on 2026-11-16). `ydotool` now injects pointer events into this session, so clicks land, but two limits remain: the pointer is relative-only with several pixels of accumulated error (fine for "somewhere in this window", not for a specific applet), and injected key events reach KWin's global shortcuts but not focused clients (`Escape`, `Ctrl+L` and typed text are dropped), so keyboard-driven checks still need a hand.
-- [ ] Click the editable path field once by hand to confirm the 10px accent ring around a Base fill (`Ctrl+L` cannot be injected; see the pointer/key limits above). Live Qt Widgets button geometry *is* now confirmed: the "Open with Kate" dialog on 2026-11-20 showed 10px corners, a 1px accent focus ring and clear icon/text inset. The editable field itself was verified live on 2026-11-16 (15px taper, `#0A0B0D` fill, no frame pixels) after Dolphin's "Editable Location" action; AT-SPI's `SetFocus`/`Press` actions did not focus `KUrlNavigator` on Wayland, so the ring remains unconfirmed live and is still asserted offscreen by `check-style.py`.
+- [ ] **Two live checks need a human** (panel context menu + tooltip; the Dolphin path-bar
+  focus ring). Everything they would confirm is already asserted offscreen, so these are a
+  spot-check on the composited result, not the only evidence. The procedure is written out in
+  `validation.md` §"Live spot-checks" so each takes seconds instead of guesswork.
+  **Why they are still open:** injected pointer events land but carry several pixels of
+  accumulated error (fine for "somewhere in this window", not for a specific applet or a 24px
+  menu button), and injected key events reach KWin's global shortcuts but not focused clients,
+  so `Ctrl+L` and `Escape` are dropped. An automated screenshot-measurement tool was prototyped
+  and **discarded**: corner radius cannot be read reliably from an antialiased capture with a
+  shadow ring (the measured value carried a systematic bias larger than the difference between
+  the 10px and 15px art it was meant to tell apart), and an instrument that is wrong in that
+  direction is worse than a documented eyeball check.
 - [ ] In a session without a custom `[General] AccentColor`, confirm the lighter Nord Night selected alternate row live. This session's accent override (`33,98,138`) governs Qt's selection fill, so the `Selection.BackgroundAlternate` step (`#93B3D1` over `#84A5C6`) is proven by the palette audit and offscreen probe, not by a live pill; see `validation.md`.
 
 ## Five named variants (2026-11-17)

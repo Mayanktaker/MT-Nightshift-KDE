@@ -50,7 +50,7 @@ QT_PLUGIN_DIR := $(shell qtpaths6 --query QT_INSTALL_PLUGINS 2>/dev/null)
 QT_INSTALL_PREFIX := $(shell qtpaths6 --query QT_INSTALL_PREFIX 2>/dev/null)
 KSTYLE_THEME_DIR := $(QT_INSTALL_PREFIX)/share/kstyle/themes
 
-.PHONY: all decoration check check-style check-dpr2 check-kpackages check-math style style-preview wallpapers package apply apply-dayshift apply-nord-night apply-nord-day apply-one-dark-pro apply-install uninstall style-install style-uninstall verify-live clean
+.PHONY: all decoration check check-style check-dpr2 check-kpackages check-math style style-preview wallpapers package release-check apply apply-dayshift apply-nord-night apply-nord-day apply-one-dark-pro apply-install uninstall style-install style-uninstall verify-live clean
 
 all: check
 
@@ -67,6 +67,17 @@ wallpapers:
 package:
 	./tools/packaging/build-packages.py
 	./tools/packaging/build-packages.py --check
+
+# Pre-tag gate: everything `package` proves, plus the checks a release must not
+# skip. Run this before `git tag`, so version drift is caught locally instead of
+# in the release workflow, which only learns about it after the tag is public.
+release-check: check
+	@./tools/theme-audit/check-theme.py >/dev/null
+	@$(MAKE) --no-print-directory package
+	@echo
+	@echo "release-check passed. Version: $$(./tools/packaging/build-packages.py --version)"
+	@echo "Next: git tag -a v$$(./tools/packaging/build-packages.py --version) -m '...'"
+	@echo "      git push && git push origin v$$(./tools/packaging/build-packages.py --version)"
 
 # Fail if the committed SVG drifted from its generator, the raster invariants
 # broke, or the rendered field family regressed.

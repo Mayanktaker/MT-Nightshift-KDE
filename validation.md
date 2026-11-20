@@ -112,7 +112,7 @@ eight group backgrounds are the design's first pass unchanged. The binding
 floor is now 4.67 (Button/Neutral); the spec's 5.92 / 4.33 focus-over-hover
 claim becomes 5.92 / 4.57 after the ring lift. The seven lifts are the only
 tones that differ from the spec's computed first pass; every other role matches
-the §15 role descriptions in `design.md`.
+the One Dark Pro role descriptions in `variants.md` §2.
 
 **One Dark Pro provenance.** The palette is derived from Binaryify's One Dark
 Pro (`oneDarkPro.ts`, the standard variant — not Flat or Mix), MIT licensed,
@@ -413,6 +413,36 @@ rather than the scheme's own `Selection.BackgroundNormal`; reapplying
 `plasma-apply-colorscheme` while the scheme is already active does not rewrite
 the group. The lighter Nord Night alternate therefore has to be checked from the
 palette and the offscreen probe, not from a live selection in that session.
+
+## Live spot-checks — the two that need a hand
+
+Everything these confirm is also asserted offscreen, so they are a spot-check on the
+composited result rather than the only evidence. Each takes seconds; what follows is
+the procedure, so it is not rediscovered per session.
+
+**1. Panel context menu and a tooltip.** Right-click empty space on the panel, then
+hover a task-manager entry to raise its tooltip. Expected, from `design.md` §6 and
+`application-style.md`:
+
+| Surface | Radius | Check |
+|---|---|---|
+| QMenu (the context menu) | 15px | The four outer corners are visibly rounder than a menu row's own pill, and the 1px hairline follows the arc |
+| Menu row hover | 10px | The hover pill clears the corner rather than filling it |
+| Menu separator | inset 8px | The hairline does not reach either menu edge |
+| Tooltip | 10px | Not the sharpest rectangle on screen |
+
+**2. Dolphin path-bar focus ring.** Click into Dolphin's path bar so it becomes editable
+(`Control` → *Editable Location*, or `Ctrl+L` **by hand** — injected keys do not reach
+focused clients). Expected: a 1px accent ring around the `Base`-toned pill, with the
+text and the icon clear of the corners. `check-style.py` asserts the same ring offscreen
+at 1px on all five schemes, so this only confirms that the composited result matches.
+
+**Why they are not automated.** Pointer injection lands but drifts by several pixels,
+which is enough to miss a 24px menu button; and injected keystrokes reach KWin's global
+shortcuts but are dropped by focused clients, so `Ctrl+L` cannot be synthesised. A
+screenshot-based radius measurement was prototyped and discarded: on an antialiased
+capture with a shadow ring the estimate carried a systematic bias larger than the
+difference between the 10px and 15px artwork it was meant to distinguish.
 
 ## What this cannot see
 
