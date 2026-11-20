@@ -21,9 +21,9 @@ namespace mtstyle
 constexpr qreal kControlRadius = 10.0;
 // Popup containers keep their existing outside corner radius.
 constexpr qreal kPopupRadius = 15.0;
-// Tooltips follow the Plasma tooltip radius from design.md section 6, not the
-// control radius, so app tooltips match the shell's tooltips.
-constexpr qreal kTipRadius = 6.0;
+// Tooltips sit in the control tier, not the small-chip tier: 6px left them the
+// sharpest rectangle on screen once the controls moved to 10px.
+constexpr qreal kTipRadius = 10.0;
 // WCAG non-text contrast for state outlines; focus must read brighter than hover.
 constexpr qreal kOutlineContrast = 3.0;
 constexpr qreal kFocusContrast = 5.0;

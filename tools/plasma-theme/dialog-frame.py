@@ -39,7 +39,7 @@ BASELINE = ROOT / "upstream" / "plasma" / "desktoptheme" / "default" / "solid" /
 TOOLTIP = ROOT / "themes" / "mt-nightshift" / "widgets" / "tooltip.svgz"
 CORNERS = ("topleft", "topright", "bottomleft", "bottomright")
 SLOTS = [(variant, slot)
-         for variant in ("mt-nightshift", "mt-dayshift")
+         for variant in ("mt-nightshift", "mt-dayshift", "mt-nord-night", "mt-nord-day", "mt-one-dark-pro")
          for slot in ("", "solid", "translucent")]
 DEFAULT = [ROOT / "themes" / v / s / "dialogs" / "background.svgz" for v, s in SLOTS]
 

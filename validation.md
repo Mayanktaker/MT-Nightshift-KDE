@@ -282,6 +282,10 @@ Four defects here were invisible in a review and measurable in the renders:
   differ by at least 6/255 — the flat single tone that shipped made idle and
   hovered identical. Idle is separately held to a 12/255 floor above the page
   tone, because a first attempt at 3% left tabs reading as floating labels.
+- **Tooltip tier.** `PE_PanelTipLabel` had no probe coverage at all. The render is
+  now asserted twice: its corner taper must sit in the 10px band (5–9px, measured
+  8px; at the old 6px it measures 4px and fails) and its fill must equal the
+  scheme's `Colors:Tooltip/BackgroundNormal`.
 - **Separator inset.** The forced `CE_MenuItem` separator render must be exactly
   one row, spanning 8px inside each edge of a 120px canvas. With the inset set to
   zero it spans 0–119 and fails.
@@ -302,6 +306,13 @@ file that drifted from its documentation fails instead of passing. The three loo
 
 Two generators own the frame geometry, and both `--check` runs are in
 `make check`:
+
+Both generators now cover **all five variants × three slots** (15 files each). They
+previously emitted only Nightshift and Dayshift, so the other three variants were
+unguarded copies that could drift silently; because the assets are palette-driven
+class geometry, the generated output is byte-identical for every variant.
+`check-style.py` additionally measures the shipped corner path of all three frame
+assets in every variant, so the files and this documentation cannot disagree.
 
 - `tools/plasma-theme/dialog-frame.py` builds `dialogs/background` from Breeze's
   solid slice set verbatim, adds the 1px band on the four strips and takes the

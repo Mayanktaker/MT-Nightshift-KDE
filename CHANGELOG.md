@@ -19,6 +19,14 @@ needs to know.
 - Short progress and capacity fills stay rounded bars instead of collapsing into
   a circle.
 - Check and radio marks keep a clear margin from the chip edge.
+- App tooltips use the 10px control radius instead of 6px, so they are no longer
+  the sharpest rectangle on screen.
+
+### Tooling
+
+- The dialog and popup frame generators now cover all five variants and their
+  lookup slots (15 files each), so the three previously unguarded variants can no
+  longer drift. Generated output is unchanged.
 
 ### Fixed
 

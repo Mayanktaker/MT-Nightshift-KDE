@@ -33,7 +33,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 BASELINE = ROOT / "upstream" / "plasma" / "desktoptheme" / "default" / "widgets" / "background.svgz"
 CORNER_TOOL = HERE / "round-panel-corners.py"
-SLOTS = [(v, s) for v in ("mt-nightshift", "mt-dayshift") for s in ("", "solid", "translucent")]
+SLOTS = [(v, s) for v in ("mt-nightshift", "mt-dayshift", "mt-nord-night", "mt-nord-day", "mt-one-dark-pro") for s in ("", "solid", "translucent")]
 DEFAULT = [ROOT / "themes" / v / s / "widgets" / "background.svgz" for v, s in SLOTS]
 
 R = 14          # corner radius and border thickness

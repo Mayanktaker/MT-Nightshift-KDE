@@ -485,6 +485,18 @@ int main(int argc, char **argv)
         app.style()->drawPrimitive(QStyle::PE_FrameFocusRect, &option, p, &focusHost);
     });
 
+    // App tooltip: painted by PE_PanelTipLabel, previously square-cornered with
+    // no probe coverage at all.
+    QWidget tipHost;
+    saveRendered(QSize(180, 40), QStringLiteral("tooltip"), outdir,
+                 QStringLiteral("tooltip"), [&](QPainter *p) {
+        QStyleOption option;
+        option.initFrom(&tipHost);
+        option.rect = QRect(0, 0, 180, 40);
+        option.state |= QStyle::State_Enabled | QStyle::State_Active;
+        app.style()->drawPrimitive(QStyle::PE_PanelTipLabel, &option, p, &tipHost);
+    });
+
     // Context menu: does the frame language reach QMenu corners?
     QMenu menu;
     menu.addAction(QStringLiteral("Open"));

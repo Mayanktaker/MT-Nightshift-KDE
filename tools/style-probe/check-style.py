@@ -38,6 +38,7 @@ from PIL import Image
 SCHEMES = {
     "MT-Nightshift": {
         "page_rgb": (16, 18, 22),
+        "tooltip_rgb": (33, 37, 44),
         "window_text_rgb": (232, 235, 240),
         "highlighted_text_rgb": (255, 255, 255),
         "window_rgb": (10, 11, 13),
@@ -48,6 +49,7 @@ SCHEMES = {
     },
     "MT-Dayshift": {
         "page_rgb": (239, 241, 245),
+        "tooltip_rgb": (247, 248, 250),
         "window_text_rgb": (27, 30, 34),
         "highlighted_text_rgb": (255, 255, 255),
         "window_rgb": (250, 251, 253),
@@ -58,6 +60,7 @@ SCHEMES = {
     },
     "MT-Nord-Night": {
         "page_rgb": (46, 52, 64),
+        "tooltip_rgb": (59, 66, 82),
         "window_text_rgb": (236, 239, 244),
         "highlighted_text_rgb": (46, 52, 64),
         "window_rgb": (35, 41, 50),
@@ -68,6 +71,7 @@ SCHEMES = {
     },
     "MT-Nord-Day": {
         "page_rgb": (236, 239, 244),
+        "tooltip_rgb": (247, 249, 252),
         "window_text_rgb": (46, 52, 64),
         "highlighted_text_rgb": (255, 255, 255),
         "window_rgb": (247, 249, 252),
@@ -78,6 +82,7 @@ SCHEMES = {
     },
     "MT-One-Dark-Pro": {
         "page_rgb": (40, 44, 52),
+        "tooltip_rgb": (33, 37, 43),
         "window_text_rgb": (215, 218, 224),
         "highlighted_text_rgb": (29, 31, 35),
         "window_rgb": (29, 31, 35),
@@ -370,6 +375,18 @@ def main() -> int:
     span = f"{sep_cols.min()}..{sep_cols.max()}" if len(sep_cols) else "none"
     check("menu separator inset", sep_ok,
           f"rows={sep_rows} x={span} of {sep_alpha.shape[1]}")
+
+    # A tooltip belongs to the control tier: 6px left it the sharpest rectangle
+    # on screen once the controls reached 10px.
+    tip_height, tip_taper = taper(outdir / "tooltip.png")
+    check("tooltip corner at control radius", 5 <= tip_taper <= 9,
+          f"h={tip_height} taper={tip_taper}px (5-9px for a 10px radius)")
+    tip_rgb = np.array(Image.open(outdir / "tooltip.png").convert("RGB")).astype(int)
+    tip_tones, tip_counts = np.unique(tip_rgb.reshape(-1, 3), axis=0, return_counts=True)
+    tip_fill = tip_tones[np.argmax(tip_counts)]
+    tip_role = np.array(scheme["tooltip_rgb"])
+    check("tooltip uses TooltipBase", int(np.abs(tip_fill - tip_role).sum()) <= 9,
+          f"rgb={tuple(tip_fill)} role={tuple(tip_role)}")
 
     # Hovered menu row: the highlight is a tighter interaction pill, not Breeze's flat band.
     hover_height, hover_taper = taper(outdir / "menu-hover.png")
