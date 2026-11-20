@@ -146,7 +146,7 @@ check-style: style
 			$(STYLE_CHECK_ARGS) --scheme $$scheme; \
 	done
 
-# The corner border is drawn `frame_line_arc` px thick because a 1px annulus only
+# The corner border is reinforced by a second pass on the same 1px band because a 1px annulus only
 # reaches ~half coverage per pixel at 45 degrees on a 1x display. At 2x the same
 # line covers nearly every device pixel, so 1px is correct there — this target
 # proves the artwork still holds on HiDPI with the 1px arc it should use.

@@ -144,7 +144,7 @@
     <rect x="0" y="42" width="32" height="29" fill="url(#shadow-left)"/>
     <path d="M 32,42 A 10,10 0 0 1 42,32 L 42,71 L 32,71 Z" fill="#282C34"/>
     <path d="M 32,42 A 10,10 0 0 1 42,32 L 42,33 A 9,9 0 0 0 33,42 L 33,71 L 32,71 Z" fill="#32363E"/>
-    <path d="M 33.05,41.06 A 9.00,9.00 0 0 1 41.06,33.05" fill="none" stroke="#32363E" stroke-width="2.00"/>
+    <path d="M 32.55,41.01 A 9.50,9.50 0 0 1 41.01,32.55" fill="none" stroke="#32363E" stroke-width="1.00"/>
   </g>
   <g id="decoration-top" transform="translate(42,0)">
     <rect x="0" y="0" width="64" height="71" fill="none" stroke="none"/>
@@ -158,7 +158,7 @@
     <rect x="10" y="42" width="32" height="29" fill="url(#shadow-right)"/>
     <path d="M 0,32 L 0,71 L 10,71 L 10,42 A 10,10 0 0 0 0,32 Z" fill="#282C34"/>
     <path d="M 0,32 A 10,10 0 0 1 10,42 L 10,71 L 9,71 L 9,42 A 9,9 0 0 0 0,33 L 0,32 Z" fill="#32363E"/>
-    <path d="M 0.94,33.05 A 9.00,9.00 0 0 1 8.95,41.06" fill="none" stroke="#32363E" stroke-width="2.00"/>
+    <path d="M 0.99,32.55 A 9.50,9.50 0 0 1 9.45,41.01" fill="none" stroke="#32363E" stroke-width="1.00"/>
   </g>
   <g id="decoration-left" transform="translate(0,71)">
     <rect x="0" y="0" width="42" height="64" fill="none" stroke="none"/>
@@ -181,7 +181,7 @@
     <rect x="0" y="0" width="42" height="42" fill="url(#shadow-bottomleft)"/>
     <path d="M 32,0 L 42,0 L 42,10 A 10,10 0 0 1 32,0 Z" fill="#282C34"/>
     <path d="M 32,0 A 10,10 0 0 0 42,10 L 42,9 A 9,9 0 0 1 33,0 L 32,0 Z" fill="#32363E"/>
-    <path d="M 33.05,0.94 A 9.00,9.00 0 0 0 41.06,8.95" fill="none" stroke="#32363E" stroke-width="2.00"/>
+    <path d="M 32.55,0.99 A 9.50,9.50 0 0 0 41.01,9.45" fill="none" stroke="#32363E" stroke-width="1.00"/>
   </g>
   <g id="decoration-bottom" transform="translate(42,135)">
     <rect x="0" y="0" width="64" height="42" fill="none" stroke="none"/>
@@ -194,7 +194,7 @@
     <rect x="0" y="0" width="42" height="42" fill="url(#shadow-bottomright)"/>
     <path d="M 0,0 L 10,0 A 10,10 0 0 1 0,10 L 0,0 Z" fill="#282C34"/>
     <path d="M 10,0 A 10,10 0 0 1 0,10 L 0,9 A 9,9 0 0 0 9,0 L 10,0 Z" fill="#32363E"/>
-    <path d="M 8.95,0.94 A 9.00,9.00 0 0 1 0.94,8.95" fill="none" stroke="#32363E" stroke-width="2.00"/>
+    <path d="M 9.45,0.99 A 9.50,9.50 0 0 1 0.99,9.45" fill="none" stroke="#32363E" stroke-width="1.00"/>
   </g>
 
   <!-- Inactive decoration -->
@@ -204,7 +204,7 @@
     <rect x="0" y="42" width="32" height="29" fill="url(#shadow-left)"/>
     <path d="M 32,42 A 10,10 0 0 1 42,32 L 42,71 L 32,71 Z" fill="#21252B"/>
     <path d="M 32,42 A 10,10 0 0 1 42,32 L 42,33 A 9,9 0 0 0 33,42 L 33,71 L 32,71 Z" fill="#32363E"/>
-    <path d="M 33.05,41.06 A 9.00,9.00 0 0 1 41.06,33.05" fill="none" stroke="#32363E" stroke-width="2.00"/>
+    <path d="M 32.55,41.01 A 9.50,9.50 0 0 1 41.01,32.55" fill="none" stroke="#32363E" stroke-width="1.00"/>
   </g>
   <g id="decoration-inactive-top" transform="translate(42,0)">
     <rect x="0" y="0" width="64" height="71" fill="none" stroke="none"/>
@@ -218,7 +218,7 @@
     <rect x="10" y="42" width="32" height="29" fill="url(#shadow-right)"/>
     <path d="M 0,32 L 0,71 L 10,71 L 10,42 A 10,10 0 0 0 0,32 Z" fill="#21252B"/>
     <path d="M 0,32 A 10,10 0 0 1 10,42 L 10,71 L 9,71 L 9,42 A 9,9 0 0 0 0,33 L 0,32 Z" fill="#32363E"/>
-    <path d="M 0.94,33.05 A 9.00,9.00 0 0 1 8.95,41.06" fill="none" stroke="#32363E" stroke-width="2.00"/>
+    <path d="M 0.99,32.55 A 9.50,9.50 0 0 1 9.45,41.01" fill="none" stroke="#32363E" stroke-width="1.00"/>
   </g>
   <g id="decoration-inactive-left" transform="translate(0,71)">
     <rect x="0" y="0" width="42" height="64" fill="none" stroke="none"/>
@@ -241,7 +241,7 @@
     <rect x="0" y="0" width="42" height="42" fill="url(#shadow-bottomleft)"/>
     <path d="M 32,0 L 42,0 L 42,10 A 10,10 0 0 1 32,0 Z" fill="#21252B"/>
     <path d="M 32,0 A 10,10 0 0 0 42,10 L 42,9 A 9,9 0 0 1 33,0 L 32,0 Z" fill="#32363E"/>
-    <path d="M 33.05,0.94 A 9.00,9.00 0 0 0 41.06,8.95" fill="none" stroke="#32363E" stroke-width="2.00"/>
+    <path d="M 32.55,0.99 A 9.50,9.50 0 0 0 41.01,9.45" fill="none" stroke="#32363E" stroke-width="1.00"/>
   </g>
   <g id="decoration-inactive-bottom" transform="translate(42,135)">
     <rect x="0" y="0" width="64" height="42" fill="none" stroke="none"/>
@@ -254,7 +254,7 @@
     <rect x="0" y="0" width="42" height="42" fill="url(#shadow-bottomright)"/>
     <path d="M 0,0 L 10,0 A 10,10 0 0 1 0,10 L 0,0 Z" fill="#21252B"/>
     <path d="M 10,0 A 10,10 0 0 1 0,10 L 0,9 A 9,9 0 0 0 9,0 L 10,0 Z" fill="#32363E"/>
-    <path d="M 8.95,0.94 A 9.00,9.00 0 0 1 0.94,8.95" fill="none" stroke="#32363E" stroke-width="2.00"/>
+    <path d="M 9.45,0.99 A 9.50,9.50 0 0 1 0.99,9.45" fill="none" stroke="#32363E" stroke-width="1.00"/>
   </g>
 
   <!-- Maximized header strips (no corners or shadow) -->

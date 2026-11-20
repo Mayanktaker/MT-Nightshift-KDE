@@ -13,8 +13,8 @@ needs to know.
   keep their 15px outer radius; panel and dialog frames are unchanged.
 - **Outer window corners are now 10px**, matching every control, hover pill and
   tooltip instead of sitting 5px rounder than all of them. The corner arc is
-  reinforced proportionally to the tighter radius so the frame line stays
-  continuous at any value. `Padding` is unchanged, so no compositor restart is
+  reinforced with an extra coverage pass on the same 1px band, so the frame
+  line stays continuous at any radius without getting thicker. `Padding` is unchanged, so no compositor restart is
   needed on update.
 - Fields, combo boxes and spin boxes show a quiet accent outline on hover and
   the stronger 1px ring on keyboard focus.

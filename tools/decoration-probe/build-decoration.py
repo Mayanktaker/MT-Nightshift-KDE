@@ -82,12 +82,10 @@ PARAMS = {
     # Thickness of the 1px frame line on the corner arcs. A 1px annulus spreads
     # over two pixels at ~50% coverage where the curve runs at 45 degrees, so the
     # corners read as a broken border against the crisp straight edges. The arcs
-    # are drawn heavier to compensate; the straight edges stay exactly 1px.
-    # Calibrated at "arc_calibration_radius"; a tighter arc crosses more pixels at
-    # partial coverage over the same quarter turn, so the thickness is scaled by
-    # calibration_radius / radius to hold the silhouette equally solid.
+    # get a second coverage pass, which deepens the partial alpha without widening
+    # the line. It must never exceed the 1px band: anything wider draws a 2px line
+    # that steps down to 1px at the tangent point, and that step is visible.
     "frame_line_arc": 2.0,
-    "arc_calibration_radius": 15,
 }
 
 # Palette variants: geometry is shared, only the baked surface tones differ.
@@ -178,7 +176,6 @@ VARIANTS = {
 
 P = R = H = C = 0
 W_FRAME = H_FRAME = 0
-ARC_THICKNESS = 0.0
 
 # Starved by refresh_geometry(), never a literal: a dict built at import keeps the
 # default footprint, so --radius/--padding would move the shadow square while the
@@ -192,17 +189,13 @@ def refresh_geometry() -> None:
     These used to be captured at import, which made every documented override
     (--padding, --radius, --peak, --arc) silently produce identical output.
     """
-    global P, R, H, C, W_FRAME, H_FRAME, ARC_THICKNESS, LAYOUT
+    global P, R, H, C, W_FRAME, H_FRAME, LAYOUT
     P = PARAMS["padding"]
     R = PARAMS["radius"]
     H = PARAMS["header"]
     C = PARAMS["centre"]
     W_FRAME = 2 * (P + R) + C
     H_FRAME = (P + H) + C + (P + R)
-    if PARAMS.get("arc_is_absolute"):
-        ARC_THICKNESS = PARAMS["frame_line_arc"]
-    else:
-        ARC_THICKNESS = PARAMS["frame_line_arc"] * PARAMS["arc_calibration_radius"] / R
     LAYOUT.clear()
     LAYOUT.update({
         "topleft": (0, 0, P + R, P + H),
@@ -229,9 +222,12 @@ def validate_geometry() -> None:
                          % (PARAMS["visible"], P))
     # The corner band only shows if the client's square corner stays inside the arc.
     # Its distance along the diagonal is (R - border) * sqrt2; the band's inner edge
-    # is R - frame_line_arc. Keeping 1px of air stops the client covering the band.
+    # is R - 1. Keeping 1px of air stops the client covering the band.
     client_corner = (R - PARAMS["border"]) * math.sqrt(2.0)
-    band_inner = R - PARAMS["frame_line_arc"]
+    # The drawn band is always 1px: frame_line_arc is a reinforcement weight for the
+    # corner arcs, not their width. Using it here under-stated band_inner by a pixel
+    # and reported the ceiling as 15 when the geometry allows 17.
+    band_inner = R - 1.0
     slack = band_inner - client_corner
     if slack < 0.2:
         limit = int((PARAMS["border"] * math.sqrt(2.0) - PARAMS["frame_line_arc"] - 0.2)
@@ -388,7 +384,7 @@ def arc_stroke(name: str, frame: str) -> str:
     each tangent so the stroke's butt cap cannot poke into the shadow ring, where
     an opaque pixel would read as a double-shadow artefact.
     """
-    extra = ARC_THICKNESS - 1.0
+    extra = PARAMS["frame_line_arc"] - 1.0
     if extra <= 0:
         return ""
     r = R - extra / 2.0
@@ -566,10 +562,6 @@ def main() -> int:
             key = overrides[token]
             value = argv[index + 1]
             PARAMS[key] = float(value) if key in ("peak", "frame_line_arc") else int(value)
-            if key == "frame_line_arc":
-                # An explicit --arc is an absolute width; the curvature scaling below
-                # is what fills the value in when nobody overrode it.
-                PARAMS["arc_is_absolute"] = True
             index += 2
             continue
         if token == "--variant":

@@ -52,13 +52,15 @@ def geometry(text: str) -> tuple[int, int, dict[str, tuple[int, int, int, int]]]
     height = int(re.search(r'<svg [^>]*height="(\d+)"', text).group(1))
     layout = {}
     for name in SIDES:
-        block = re.search(r'^  <g id="decoration-%s".*?^  </g>' % name, text, re.S | re.M).group(0)
-        x, y = (int(v) for v in re.search(r'transform="translate\((-?\d+),(-?\d+)\)"', block).groups())
+        block = re.search(r'^  <g id="decoration-%s".*?^  </g>' % name, text, re.S | re.M)
+        if block is None:
+            raise SystemExit("missing group decoration-%s in %s" % (name, "the document"))
+        x, y = (int(v) for v in re.search(r'transform="translate\((-?\d+),(-?\d+)\)"', block.group(0)).groups())
         # The marker rect is the slice extent; the shadow and surface elements that
         # follow it are narrower (by the radius), so matching "the first rect" would
         # silently read the wrong footprint if the emission order ever changed.
         marker = re.search(r'<rect x="0" y="0" width="(\d+)" height="(\d+)" '
-                           r'fill="none" stroke="none"/>', block).groups()
+                           r'fill="none" stroke="none"/>', block.group(0)).groups()
         w, h = (int(v) for v in marker)
         layout[name] = (x, y, w, h)
     return width, height, layout
@@ -71,6 +73,30 @@ def declared_padding(svg_path: Path) -> int | None:
         return None
     found = re.search(r'^PaddingTop=(\d+)$', rc.read_text(), re.M)
     return int(found.group(1)) if found else None
+
+
+def reinforcement(text: str, state: str) -> list[tuple[str, float, float]]:
+    """Stroke width and arc radius of each corner's reinforcement path.
+
+    The generator emits one explicitly, so the exact geometry is readable from the
+    document. A raster coverage test cannot separate "1px band plus a second pass"
+    from "2px band": both read as full coverage at 45 degrees, which is how the
+    over-thick stroke shipped in the first place.
+    """
+    found = []
+    for corner in ("topleft", "topright", "bottomleft", "bottomright"):
+        block = re.search(r'^  <g id="decoration-%s%s".*?^  </g>' % (state, corner),
+                          text, re.S | re.M)
+        if block is None:
+            raise SystemExit("missing group decoration-%s%s" % (state, corner))
+        strokes = re.findall(r'<path d="[^"]*?A ([\d.]+),[\d.]+ [^"]*?" '
+                             r'fill="none" stroke="[^"]*" stroke-width="([\d.]+)"',
+                             block.group(0))
+        if len(strokes) != 1:
+            found.append((corner, float("nan"), -1.0))
+            continue
+        found.append((corner, float(strokes[0][1]), float(strokes[0][0])))
+    return found
 
 
 def peak_alpha(text: str) -> float:
@@ -161,6 +187,40 @@ def corner_samples(alpha, ring: int, mirror: bool) -> list[float]:
     return values
 
 
+def band_width(frame, fill, line, span, cx, cy, sx, sy, angle, scale) -> float:
+    """Radial extent of the line-coloured run at one angle, in 1x pixels.
+
+    A 1px annulus measures ~1px; the over-thick reinforcement that shipped once
+    measured 2px and stepped down to 1px at the tangent. Coverage, not colour
+    distance, so this is independent of how far apart the palette's line and fill
+    tones happen to be.
+    """
+    covered = []
+    for radius in np.arange(RADIUS - 2.2, RADIUS + 0.15, 0.1):
+        x = int(round(cx + sx * radius * np.cos(angle)))
+        y = int(round(cy + sy * radius * np.sin(angle)))
+        if not (0 <= y < frame.shape[0] and 0 <= x < frame.shape[1]):
+            covered.append(0.0)
+            continue
+        # The shadow is also far from the fill, so distance alone would stretch the
+        # run straight through it. Count a pixel only when it sits on the band.
+        distance = np.hypot(x + 0.5 - cx, y + 0.5 - cy)
+        if not (RADIUS - 1.5 <= distance <= RADIUS + 0.2):
+            covered.append(0.0)
+            continue
+        # Classify by nearest reference tone instead of a coverage fraction: on a
+        # low-contrast palette (Nord Day's inactive line is 5.4 RGB from the fill)
+        # 8-bit rounding pushes a half-covered pixel over any fixed fraction.
+        pixel = frame[y, x, :3]
+        covered.append(1.0 if np.linalg.norm(pixel - line) <= np.linalg.norm(pixel - fill) else 0.0)
+    longest = run = 0
+    for score in covered:
+        run = run + 1 if score >= 0.5 else 0
+        longest = max(longest, run)
+    # Device pixels at 2x are half a 1x pixel, so the gate stays comparable.
+    return round(longest * 0.1 / scale, 2)
+
+
 def audit(frame, label, fill, ring, peak, scale) -> None:
     """Assert shadow, corner and surface invariants for one re-stitched frame."""
     alpha = frame[..., 3] / 255.0
@@ -196,26 +256,58 @@ def audit(frame, label, fill, ring, peak, scale) -> None:
     print("%s: corner border" % label)
     line = frame[ring, ring + frame.shape[1] // 2, :3]
     fill = frame[ring + 2, ring + frame.shape[1] // 2, :3]
+    # The RGB distance between the line and the fill ranges from ~5 to ~42 across the
+    # five palettes, so a fixed fraction of it is not a fixed measurement: the same
+    # 0.75 gate meant four RGB units on Nord Day and thirty-two on Nord Night.
+    # Normalise on a common scale and keep the raw span in the message instead.
     span = max(1.0, float(np.linalg.norm(line - fill)))
     for name, (cx, cy, sx, sy) in {
+        # Continuous coordinates of the arc centre: the right and bottom edges sit at
+        # (extent - ring - RADIUS), not one pixel less, or the annulus test is 1px off
+        # on two of the four corners.
         "top-left": (ring + RADIUS, ring + RADIUS, -1, -1),
-        "top-right": (frame.shape[1] - 1 - ring - RADIUS, ring + RADIUS, 1, -1),
-        "bottom-left": (ring + RADIUS, frame.shape[0] - 1 - ring - RADIUS, -1, 1),
-        "bottom-right": (frame.shape[1] - 1 - ring - RADIUS, frame.shape[0] - 1 - ring - RADIUS, 1, 1),
+        "top-right": (frame.shape[1] - ring - RADIUS, ring + RADIUS, 1, -1),
+        "bottom-left": (ring + RADIUS, frame.shape[0] - ring - RADIUS, -1, 1),
+        "bottom-right": (frame.shape[1] - ring - RADIUS, frame.shape[0] - ring - RADIUS, 1, 1),
     }.items():
-        samples = []
+        samples, widths = [], []
         for degrees in np.linspace(0, 90, 31):
             angle = np.radians(degrees)
             best = 0.0
-            for radius in np.arange(RADIUS - 2.4, RADIUS + 0.2, 0.15):
-                x = int(round(cx + sx * radius * np.cos(angle)))
-                y = int(round(cy + sy * radius * np.sin(angle)))
-                if 0 <= y < frame.shape[0] and 0 <= x < frame.shape[1]:
-                    best = max(best, float(np.linalg.norm(frame[y, x, :3] - fill)) / span)
+            for radius in np.arange(RADIUS - 1.4, RADIUS + 0.15, 0.15):
+                # Rounding x and y independently lands the sample up to half a pixel
+                # off the band, which read as a 0.35 gap at 33 and 57 degrees on a
+                # 10px corner while the 45-degree point measured 0.97. Take the best
+                # neighbour instead: a 1px annulus always covers *some* nearby pixel.
+                px = cx + sx * radius * np.cos(angle)
+                py = cy + sy * radius * np.sin(angle)
+                for dx in (-1, 0, 1):
+                    for dy in (-1, 0, 1):
+                        x, y = int(round(px)) + dx, int(round(py)) + dy
+                        if not (0 <= y < frame.shape[0] and 0 <= x < frame.shape[1]):
+                            continue
+                        # Count only neighbours whose centre sits on the band.
+                        # Pixel centres are at i+0.5, so this has to be measured in
+                        # continuous space against the arc centre; the earlier
+                        # index-space surrogate under-read the radius by half a pixel
+                        # and let the search drift into the shadow, whose distance
+                        # from the fill is far wider than the band's.
+                        distance = np.hypot(x + 0.5 - cx, y + 0.5 - cy)
+                        if not (RADIUS - 1.5 <= distance <= RADIUS + 0.2):
+                            continue
+                        best = max(best, float(np.linalg.norm(frame[y, x, :3] - fill)) / span)
             samples.append(best)
         values = np.array(samples)
-        check(values.mean() >= 0.75, "%s arc border is continuous (mean %.2f)" % (name, values.mean()))
-        check(values.min() >= 0.45, "%s arc border has no gap (min %.2f)" % (name, values.min()))
+        for degrees in (30, 45, 60):
+            angle = np.radians(degrees)
+            widths.append(band_width(frame, fill, line, span, cx, cy, sx, sy, angle, scale))
+        widest = max(widths)
+        check(values.mean() >= 0.90, "%s arc border is continuous (mean %.2f)" % (name, values.mean()))
+        check(values.min() >= 0.70, "%s arc border has no gap (min %.2f)" % (name, values.min()))
+        # The reinforcement must stay inside the 1px band. A stroke wide enough to
+        # read as a solid corner also draws a 2px line that steps down to 1px at the
+        # tangent point, which is exactly the artefact this bound exists to catch.
+        check(widest <= 1.8, "%s arc band stays 1px wide (widest %.2fpx)" % (name, widest))
 
     print("%s: surfaces" % label)
     header = frame[ring + 12 * scale, ring + 20 * scale, :3]
@@ -247,6 +339,8 @@ def main() -> int:
     # slice width minus it. Both follow the artwork instead of being duplicated,
     # then convert to device pixels so the measurements hold at any scale.
     arc = re.search(r'id="decoration-topleft".*?<path d="[^"]*A ([\d.]+),', text, re.S)
+    if arc is None:
+        raise SystemExit("cannot read the corner arc radius from decoration-topleft")
     radius_units = int(round(float(arc.group(1))))
     ring_units = layout["topleft"][2] - radius_units
     RADIUS = radius_units * scale
@@ -270,6 +364,31 @@ def main() -> int:
           "frame height is ring+header+centre+ring+corner")
     check(layout["left"][2] == layout["topleft"][2], "left slice matches the corner footprint")
     check(layout["top"][3] == layout["topleft"][3], "top slice height matches the corner footprint")
+    # The reinforcement must exist and must not widen the band. Without the first
+    # assertion the unreinforced arc (the "broken border" case) passes on the
+    # low-contrast variants; without the second the 2px band passes everywhere.
+    # `make check-dpr2` renders the deliberately unreinforced corner, so absence is
+    # legal only when it is absent everywhere. A hand-edit that leaves one corner
+    # bare is still a defect.
+    found = [(state, corner, stroke_width, arc_radius)
+             for state in ("", "inactive-")
+             for corner, stroke_width, arc_radius in reinforcement(text, state)]
+    bare = [f for f in found if f[2] != f[2]]
+    if bare and len(bare) != len(found):
+        check(False, "%d of %d corners keep their reinforcement path (a partial set "
+                     "means a hand-edited SVG)" % (len(found) - len(bare), len(found)))
+    elif bare:
+        print("  note unreinforced artwork (%d corners, the --arc 1.0 HiDPI case): "
+              "presence is not asserted, band width still is" % len(bare))
+    for state, corner, stroke_width, arc_radius in found:
+        if not (bare and len(bare) == len(found)):
+            label = "%s%s" % (state or "active", corner)
+            check(stroke_width == stroke_width, "%s has exactly one reinforcement path" % label)
+            check(stroke_width <= 1.01, "%s reinforcement is %s <= 1px (no band widening)"
+                  % (label, stroke_width))
+            check(arc_radius == arc_radius and arc_radius <= radius_units - 0.49,
+                  "%s reinforcement arc stays inside the %dpx band"
+                  % (label, radius_units))
     check("cut-" not in text, "no corner cutout masks (they erase the corner shadow)")
     check('fill="#0A0B0D"' not in text, "no #0A0B0D title divider (the client paints its own hairline)")
 

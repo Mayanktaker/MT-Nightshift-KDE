@@ -163,7 +163,7 @@ documented but silently produced identical output, because the geometry globals
 were captured from `PARAMS` at import. `refresh_geometry()` re-derives them after
 parsing, and the padding/radius guard now runs on every refresh, so an override
 cannot emit a frame the committed artwork would be rejected for. A trial radius
-is what proved the ceiling: at the default 6px border, `--radius` above 15 puts
+is what proved the ceiling: at the default 6px border, `--radius` above 17 puts
 the client's square corner over the frame-line band and is rejected.
 
 Two more captures of the same bug survived that first fix and were only exposed
@@ -185,13 +185,13 @@ a second radius is what found both.
 own qsvg plugin, re-stitches the frame and asserts the invariants that have
 broken twice: monotonic shadow ramp along every edge, shadow present in all four
 corner cutouts, no double-composited ring, the border running continuously round
-each corner (mean ≥ 0.75, min ≥ 0.45 coverage), expected fills, no title divider
+each corner (mean ≥ 0.90, min ≥ 0.70 coverage), that the drawn band stays 1px wide, that every corner group carries exactly one reinforcement path no wider than 1px, expected fills, no title divider
 row. `make check-dpr2` renders the `--arc 1.0` configuration that 2x displays
 want, so the 1x compensation is covered in both directions. `--arc` is an absolute
-stroke width; the shipped value is derived, `frame_line_arc * arc_calibration_radius
-/ radius`, because a tighter arc crosses more partially-covered pixels over the
-same quarter turn (3.0px at 10px radius, 2.0px at 15px). Passing `--arc` explicitly
-therefore renders the *unreinforced* corner the HiDPI case must also survive.
+stroke width: `frame_line_arc = 2.0` means a **1px stroke on the same 1px band**, a
+second coverage pass rather than a wider line. Passing `--arc 1.0` renders the
+*unreinforced* corner the HiDPI case must also survive, and `--arc 3.0` reproduces
+the 2px band that shipped once and is now rejected.
 
 The five button SVGs (`close`, `minimize`, `maximize`, `restore`, `menu`) are
 generated from the same per-variant palette as the decoration, so `frame_line`
