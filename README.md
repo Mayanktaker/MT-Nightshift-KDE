@@ -150,9 +150,9 @@ make package
 ```
 
 This creates:
-- **Complete Suite Tarballs**: `dist/MT-<Variant>-v1.6.1.tar.gz` (contains Look-and-Feel, desktop theme, Aurorae decoration, color scheme, all four matching wallpapers, and a standalone `install.sh` script). The Qt plugin is intentionally excluded and must be built or installed with `make style-install` on the target Qt 6 environment.
-- **KDE Store Look-and-Feel Packages**: `dist/com.mayanktaker.<style>.desktop-1.6.1.tar.gz`.
-- **KDE Store Aurorae Decoration Packages**: `dist/aurorae-<decoration>-1.6.1.tar.gz`.
+- **Complete Suite Tarballs**: `dist/MT-<Variant>-v1.7.0.tar.gz` (contains Look-and-Feel, desktop theme, Aurorae decoration, color scheme, all four matching wallpapers, and a standalone `install.sh` script). The Qt plugin is intentionally excluded and must be built or installed with `make style-install` on the target Qt 6 environment.
+- **KDE Store Look-and-Feel Packages**: `dist/com.mayanktaker.<style>.desktop-1.7.0.tar.gz`.
+- **KDE Store Aurorae Decoration Packages**: `dist/aurorae-<decoration>-1.7.0.tar.gz`.
 
 ---
 

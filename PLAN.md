@@ -14,7 +14,7 @@ the current state rather than the history.
 
 ## Five named variants (2026-11-17)
 
-Five named looks are installed and selectable: `nightshift` (default), `dayshift`, `nord-night`, `nord-day` and `one-dark-pro`. `make apply VARIANT=<name>` selects one and `make verify-live VARIANT=<name>` checks it; `apply-dayshift`, `apply-nord-night`, `apply-nord-day` and `apply-one-dark-pro` are aliases. All theme packages are 1.6.1, the Qt style plugin is unchanged at 1.4.0, and the decoration's frame line and five buttons are generated from each variant's palette. Qt Widgets menus (including submenus), their hovered rows, hovered/pressed/checked tool buttons, and QQC2 Desktop Style list/sidebar delegate rows now use the same surface language as the field family (QMenu 15px, controls and windows 10px); Plasma QML popup/menu surfaces and the notification history remain KDE-controlled. The closed Nord, One Dark Pro and rounded-menu work, with its measurements and live capture paths, is in [`plan-archive.md`](plan-archive.md).
+Five named looks are installed and selectable: `nightshift` (default), `dayshift`, `nord-night`, `nord-day` and `one-dark-pro`. `make apply VARIANT=<name>` selects one and `make verify-live VARIANT=<name>` checks it; `apply-dayshift`, `apply-nord-night`, `apply-nord-day` and `apply-one-dark-pro` are aliases. All theme packages and the Qt style plugin are 1.7.0, and the decoration's frame line and five buttons are generated from each variant's palette. Qt Widgets menus (including submenus), their hovered rows, hovered/pressed/checked tool buttons, and QQC2 Desktop Style list/sidebar delegate rows now use the same surface language as the field family (QMenu 15px, controls and windows 10px); Plasma QML popup/menu surfaces and the notification history remain KDE-controlled. The closed Nord, One Dark Pro and rounded-menu work, with its measurements and live capture paths, is in [`plan-archive.md`](plan-archive.md).
 
 ## Desktop Wallpapers (2026-11-17)
 
@@ -36,7 +36,7 @@ This plan covers the Plasma desktop theme, global color scheme, Look-and-Feel ma
 
 Closed from the improvement table:
 
-- One version: the Qt style project reports `1.6.1` and `check-theme.py` asserts it
+- One version: the Qt style project reports `1.7.0` and `check-theme.py` asserts it
   against the packages, so a plugin/package split cannot recur.
 - The style source is split into `stylepainting`, `stylerecognition`, dispatch,
   controls, fields, items and indicators; no file carries the whole implementation.

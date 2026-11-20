@@ -20,6 +20,7 @@ Exit status is 1 when a check fails.
 from __future__ import annotations
 
 import os
+import math
 import re
 import shutil
 import subprocess
@@ -37,11 +38,19 @@ RADIUS = 21                      # replaced in main() from the slice geometry
 SIDES = ("topleft", "top", "topright", "left", "center", "right", "bottomleft", "bottom", "bottomright")
 
 failures: list[str] = []
+quiet = False
+metrics: dict[str, str] = {}
+
+
+def record(key: str, value: str) -> None:
+    """Keep one measured value for the --quiet summary line."""
+    metrics[key] = value
 
 
 def check(condition: bool, message: str) -> None:
-    """Print and record one assertion."""
-    print(("  ok   " if condition else "  FAIL ") + message)
+    """Print and record one assertion; failures always print, and so does --verbose."""
+    if not condition or not quiet:
+        print(("  ok   " if condition else "  FAIL ") + message)
     if not condition:
         failures.append(message)
 
@@ -187,6 +196,29 @@ def corner_samples(alpha, ring: int, mirror: bool) -> list[float]:
     return values
 
 
+def line_coverage(frame, fill, line, span, cx, cy, sx, sy, angle) -> float:
+    """Line colour coverage at the band, 0..1, for one angle.
+
+    The reinforcement stroke deliberately stops 6 degrees short of each tangent so
+    its butt cap cannot poke into the shadow ring. This measures whether that gap
+    weakens the border: the underlying 1px path runs the full quarter turn, so the
+    band should stay covered right up to the tangent. Coverage is clamped, so the
+    shadow ring (far from both tones) scores 0 instead of dominating the maximum.
+    """
+    span = max(1.0, span)
+    best = 0.0
+    for radius in np.arange(RADIUS - 1.4, RADIUS + 0.15, 0.2):
+        x = int(round(cx + sx * radius * math.cos(angle)))
+        y = int(round(cy + sy * radius * math.sin(angle)))
+        if not (0 <= y < frame.shape[0] and 0 <= x < frame.shape[1]):
+            continue
+        if not (RADIUS - 1.5 <= np.hypot(x + 0.5 - cx, y + 0.5 - cy) <= RADIUS + 0.2):
+            continue
+        closeness = 1.0 - float(np.linalg.norm(frame[y, x, :3] - line)) / span
+        best = max(best, min(1.0, max(0.0, closeness)))
+    return best
+
+
 def band_width(frame, fill, line, span, cx, cy, sx, sy, angle, scale) -> float:
     """Radial extent of the line-coloured run at one angle, in 1x pixels.
 
@@ -226,7 +258,8 @@ def audit(frame, label, fill, ring, peak, scale) -> None:
     alpha = frame[..., 3] / 255.0
     mid = frame.shape[0] // 2
 
-    print("%s: shadow ring" % label)
+    if not quiet:
+        print("%s: shadow ring" % label)
     edge = alpha[mid, 0:ring]
     check(np.all(np.diff(edge) > -0.01), "left edge alpha never decreases toward the window")
     levels = len(np.unique(np.round(edge, 3)))
@@ -253,7 +286,8 @@ def audit(frame, label, fill, ring, peak, scale) -> None:
     # to 0.4px at the 45-degree point and read as a missing border on a light
     # wallpaper; a 1px annulus also loses ~half its coverage there, which is why
     # the arcs are drawn heavier than the straight edges.
-    print("%s: corner border" % label)
+    if not quiet:
+        print("%s: corner border" % label)
     line = frame[ring, ring + frame.shape[1] // 2, :3]
     fill = frame[ring + 2, ring + frame.shape[1] // 2, :3]
     # The RGB distance between the line and the fill ranges from ~5 to ~42 across the
@@ -295,21 +329,37 @@ def audit(frame, label, fill, ring, peak, scale) -> None:
                         distance = np.hypot(x + 0.5 - cx, y + 0.5 - cy)
                         if not (RADIUS - 1.5 <= distance <= RADIUS + 0.2):
                             continue
-                        best = max(best, float(np.linalg.norm(frame[y, x, :3] - fill)) / span)
+                        # Clamped: without it a bare band reads the black shadow,
+                        # whose distance from the fill is far larger than the line's,
+                        # and scores 10+ on a 0..1 scale.
+                        best = max(best, min(1.0, float(np.linalg.norm(frame[y, x, :3] - fill)) / span))
             samples.append(best)
         values = np.array(samples)
         for degrees in (30, 45, 60):
             angle = np.radians(degrees)
             widths.append(band_width(frame, fill, line, span, cx, cy, sx, sy, angle, scale))
         widest = max(widths)
+        # The reinforcement stops short of each tangent; prove that stub is invisible.
+        tangent = [line_coverage(frame, fill, line, span, cx, cy, sx, sy,
+                                 np.radians(d)) for d in (0, 1, 2, 4, 6, 84, 86, 88, 90)]
+        mid_arc = np.median([line_coverage(frame, fill, line, span, cx, cy, sx, sy,
+                                           np.radians(d)) for d in (25, 45, 65)])
         check(values.mean() >= 0.90, "%s arc border is continuous (mean %.2f)" % (name, values.mean()))
         check(values.min() >= 0.70, "%s arc border has no gap (min %.2f)" % (name, values.min()))
         # The reinforcement must stay inside the 1px band. A stroke wide enough to
         # read as a solid corner also draws a 2px line that steps down to 1px at the
         # tangent point, which is exactly the artefact this bound exists to catch.
+        record("band", "%.1fpx" % widest)
         check(widest <= 1.8, "%s arc band stays 1px wide (widest %.2fpx)" % (name, widest))
+        # Both bounds matter: the relative one catches a dip, the absolute one a
+        # band that is missing altogether (0 vs 0 would satisfy the relative test).
+        record("tangent", "%.2f" % min(tangent))
+        check(min(tangent) >= 0.7 and min(tangent) >= mid_arc - 0.25,
+              "%s tangent stub does not weaken the band (min %.2f vs mid-arc %.2f)"
+              % (name, min(tangent), mid_arc))
 
-    print("%s: surfaces" % label)
+    if not quiet:
+        print("%s: surfaces" % label)
     header = frame[ring + 12 * scale, ring + 20 * scale, :3]
     check(np.abs(header - fill).max() <= 1, "header fill is %s (got %s)" % (fill, header.round().astype(int)))
     divider = frame[ring + 38 * scale, ring + 20 * scale, :3]
@@ -321,6 +371,10 @@ def audit(frame, label, fill, ring, peak, scale) -> None:
 def main() -> int:
     """Render both states and run the audit, at 1x or at a device scale."""
     argv = sys.argv[1:]
+    global quiet
+    quiet = "--quiet" in argv
+    if quiet:
+        argv = [a for a in argv if a != "--quiet"]
     scale = 1
     if "--scale" in argv:
         index = argv.index("--scale")
@@ -346,7 +400,10 @@ def main() -> int:
     RADIUS = radius_units * scale
     ring = ring_units * scale
 
-    print("checking %s  (frame %dx%d at %dx, peak %.3f)" % (svg_path, width, height, scale, peak))
+    if not quiet:
+        print("checking %s  (frame %dx%d at %dx, peak %.3f)" % (svg_path, width, height, scale, peak))
+    record("corner", "%dpx" % radius_units)
+    record("ring", "%dpx" % ring_units)
     check(ring_units > 0, "top-left slice is wider than the %dpx corner (shadow ring %dpx)"
           % (radius_units, ring_units))
     # The ring is the slice footprint minus the corner, so it must match the padding
@@ -384,6 +441,7 @@ def main() -> int:
         if not (bare and len(bare) == len(found)):
             label = "%s%s" % (state or "active", corner)
             check(stroke_width == stroke_width, "%s has exactly one reinforcement path" % label)
+            record("stroke", "%gpx" % stroke_width)
             check(stroke_width <= 1.01, "%s reinforcement is %s <= 1px (no band widening)"
                   % (label, stroke_width))
             check(arc_radius == arc_radius and arc_radius <= radius_units - 0.49,
@@ -401,11 +459,20 @@ def main() -> int:
         audit(compose(text, probe, "decoration-inactive-", work, size, layout, scale),
               "inactive", inactive_fill, ring, peak, scale)
 
-    print()
     if failures:
+        print()
         print("%d check(s) failed" % len(failures))
         return 1
-    print("all decoration checks passed")
+    if quiet:
+        # One line the pre-commit hook can echo: the numbers the new assertions
+        # measure, so a reviewer sees the geometry without the full transcript.
+        detail = " ".join("%s=%s" % (k, metrics[k])
+                          for k in ("corner", "ring", "stroke", "band", "tangent")
+                          if k in metrics)
+        print("%s ok  %s" % (svg_path.name, detail))
+    else:
+        print()
+        print("all decoration checks passed")
     return 0
 
 

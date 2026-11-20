@@ -4,7 +4,7 @@ User-visible changes to the MT Nightshift theme set. The full history is in
 `git log`; this file records what someone installing or updating the theme
 needs to know.
 
-## Unreleased
+## 1.7.0
 
 ### Changed
 
@@ -12,10 +12,8 @@ needs to know.
   states — fields, buttons, tabs, chips, menu rows and item rows. QMenu windows
   keep their 15px outer radius; panel and dialog frames are unchanged.
 - **Outer window corners are now 10px**, matching every control, hover pill and
-  tooltip instead of sitting 5px rounder than all of them. The corner arc is
-  reinforced with an extra coverage pass on the same 1px band, so the frame
-  line stays continuous at any radius without getting thicker. `Padding` is unchanged, so no compositor restart is
-  needed on update.
+  tooltip instead of sitting 5px rounder than all of them. `Padding` is
+  unchanged, so no compositor restart is needed on update.
 - Fields, combo boxes and spin boxes show a quiet accent outline on hover and
   the stronger 1px ring on keyboard focus.
 - Check and radio chips use the Button tone with a quiet hairline; disabled
@@ -55,6 +53,10 @@ needs to know.
 - Item-view focus rings no longer wrap non-list widget labels in a capsule.
 - The colour-blend helper clamps its weight, so an out-of-range value can no
   longer produce an invalid colour that paints nothing.
+- The window corner border no longer draws a 2px line that stepped down to 1px
+  where the corner arc met the straight edge. The corner arc is reinforced with
+  a second coverage pass on the same 1px band, which keeps the border continuous
+  without making it thicker; the drawn band is now asserted to stay 1px wide.
 
 ### Tooling
 

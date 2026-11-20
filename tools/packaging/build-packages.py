@@ -5,14 +5,40 @@
 
 import argparse
 import hashlib
+import json
 import os
+import pathlib
+import re
 import shutil
 import subprocess
 import sys
 import tarfile
 import tempfile
 
-VERSION = "1.6.1"
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+
+
+def suite_version() -> str:
+    """The one version every package claims, read from the shipped metadata.
+
+    It used to be a literal here as well as in 15 manifests and the CMake
+    project, so a release could be cut whose archive names disagreed with the
+    metadata inside them. Reading it back and asserting the whole set agrees
+    makes that drift impossible instead of merely unlikely.
+    """
+    versions = set()
+    for meta in (ROOT / "themes").rglob("metadata.json"):
+        versions.add(json.loads(meta.read_text())["KPlugin"]["Version"])
+    for meta in (ROOT / "themes").rglob("metadata.desktop"):
+        found = re.search(r'^X-KDE-PluginInfo-Version=(\S+)$', meta.read_text(), re.M)
+        if found:
+            versions.add(found.group(1))
+    if len(versions) != 1:
+        raise SystemExit("package versions disagree: %s" % ", ".join(sorted(versions)))
+    return versions.pop()
+
+
+VERSION = suite_version()
 
 VARIANTS = {
     "nightshift": {

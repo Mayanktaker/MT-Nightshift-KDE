@@ -13,7 +13,7 @@
         "Description": "One Dark Pro identity on the MT sculpted geometry: editor-slate surfaces, restrained blue accents and crisp 1px edges. Palette derived from One Dark Pro by Binaryify (MIT, LICENSES/MIT.txt); KDE Breeze-derived assets remain LGPL. Adaptation by Mayanktaker Computers & Web Development.",
         "Id": "mt-one-dark-pro",
         "Name": "MT One Dark Pro",
-        "Version": "1.6.1",
+        "Version": "1.7.0",
         "Website": "https://mayanktaker.com/"
     },
     "X-Plasma-API": "5.0"

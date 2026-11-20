@@ -51,7 +51,7 @@ SCHEMES = {
     "one-dark-pro": "color-schemes/MT-One-Dark-Pro.colors",
 }
 # Generator token to (scheme section, role). foreground_inactive is the active
-# Header group's ForegroundInactive, the glyph tone baked in design.md §12.2;
+# Header group's ForegroundInactive, the glyph tone baked in decoration.md §2;
 # [Colors:Header][Inactive] ForegroundNormal is the dimmed *title* (§9).
 # frame_line is a documented derivation, not a scheme role, so it is not mapped.
 SCHEME_ROLES = {

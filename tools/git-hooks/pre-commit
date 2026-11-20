@@ -31,21 +31,30 @@ fi
 
 echo "pre-commit: decoration artwork changed, running checks"
 
-if ! python3 tools/decoration-probe/build-decoration.py --check; then
+if ! drift=$(python3 tools/decoration-probe/build-decoration.py --check 2>&1); then
+    printf '%s\n' "$drift"
     echo "  decoration.svg is out of date with build-decoration.py; regenerate it" >&2
     exit 1
 fi
+echo "  generator drift: $drift"
 
-if ! python3 tools/decoration-probe/check-buttons.py; then
+if ! buttons=$(python3 tools/decoration-probe/check-buttons.py 2>&1); then
+    printf '%s\n' "$buttons"
     echo "  button tones or geometry do not match the variant palettes" >&2
     exit 1
 fi
+echo "  buttons: 5 variants x 8 states match their palettes"
 
+# --quiet prints one measured line per variant and every failure, so the hook
+# summary names the geometry it verified instead of dumping the transcript.
 for svg in themes/aurorae/MT*/decoration.svg; do
-    if ! ./tools/decoration-probe/check-decoration.py "$svg"; then
+    variant=$(basename "$(dirname "$svg")")
+    if ! out=$(./tools/decoration-probe/check-decoration.py --quiet "$svg" 2>&1); then
+        printf '%s\n' "$out"
         echo "  decoration checks failed for $svg; fix the artwork before committing" >&2
         exit 1
     fi
+    printf '  %-14s %s\n' "$variant" "${out#decoration.svg ok  }"
 done
 
-echo "pre-commit: decoration checks passed"
+echo "pre-commit: decoration checks passed (shadow ramp, 1px band width, reinforcement, tangent stub)"

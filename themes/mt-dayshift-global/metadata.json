@@ -13,7 +13,7 @@
         "Description": "Dayshift light global theme for Plasma 6: selects the MT Dayshift Plasma Style, MT Dayshift color scheme and the MT Dayshift Aurorae decoration without replacing the desktop layout, icons, cursor, wallpaper or splash screen. Derived from Breeze by the KDE Visual Design Group; adaptation by Mayanktaker Computers & Web Development (https://mayanktaker.com).",
         "Id": "com.mayanktaker.mt-dayshift.desktop",
         "Name": "MT Dayshift",
-        "Version": "1.6.1",
+        "Version": "1.7.0",
         "Website": "https://mayanktaker.com/"
     }
 }
