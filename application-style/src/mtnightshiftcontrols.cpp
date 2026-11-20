@@ -209,7 +209,7 @@ bool MTNightshiftStyle::paintPushButton(const QStyleOption *option, QPainter *pa
     } else if (focused) {
         outline = readableAccent(palette.color(group, QPalette::Highlight), fill, kFocusContrast);
     } else if (hovered || button->features.testFlag(QStyleOptionButton::DefaultButton)) {
-        outline = readableAccent(palette.color(group, QPalette::Highlight), fill, kOutlineContrast);
+        outline = quietAccent(palette.color(group, QPalette::Highlight), fill);
     }
     if (!flat || active || hovered || focused) {
         paintSurface(painter, rect, radius, focused ? kFocusOutlineWidth : kOutlineWidth, fill, outline);

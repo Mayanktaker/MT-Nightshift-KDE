@@ -8,8 +8,9 @@ to this file from §12 and keeps the shape rules that are shared with the rest o
 the suite (§6) and the palette (§2).
 
 Generated, never hand-edited: every `decoration.svg` and the five button SVGs come
-from `tools/decoration-probe/build-decoration.py`; see [`validation.md`](validation.md)
-for what the probe measures and what it cannot see.
+from `tools/decoration-probe/build-decoration.py`; see
+[`validation-tools.md`](validation-tools.md) for what the probe measures and
+[`validation.md`](validation.md) for what the suite cannot see.
 
 ## Overview
 

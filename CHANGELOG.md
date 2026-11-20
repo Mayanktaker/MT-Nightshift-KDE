@@ -4,6 +4,21 @@ User-visible changes to the MT Nightshift theme set. The full history is in
 `git log`; this file records what someone installing or updating the theme
 needs to know.
 
+## Unreleased
+
+### Fixed
+
+- **Hover and focus rings were the same colour on four of the five variants.**
+  Both derived from the accent with only a contrast target, so when the accent
+  already cleared the focus target the two rings became identical and a hovered
+  field was indistinguishable from a focused one. The hover cue is now the accent
+  pulled toward the surface before its floor is applied, and the probe asserts the
+  two rings differ.
+- **Interior hairlines were drawn three times too strong.** The style used the
+  stock Breeze `frameContrast` of 0.2 while the suite ships 0.05, so app menus,
+  tooltips, status strips and button rims carried a harder border than Plasma's
+  own seams — the opposite of the documented "whispers rather than borders".
+
 ## 1.7.0
 
 ### Changed

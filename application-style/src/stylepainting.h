@@ -27,10 +27,18 @@ constexpr qreal kTipRadius = 10.0;
 // WCAG non-text contrast for state outlines; focus must read brighter than hover.
 constexpr qreal kOutlineContrast = 3.0;
 constexpr qreal kFocusContrast = 5.0;
+// How far a hover outline is pulled toward its surface before the floor is applied.
+// A bare contrast target cannot separate hover from focus: when the accent already
+// clears both, readableAccent() returns it unchanged and the two rings become the
+// same colour, which is exactly what happened on four of the five schemes.
+constexpr qreal kHoverMute = 0.45;
 // Share of the surface tone mixed in when a disabled control must look muted.
 constexpr qreal kDisabledMute = 0.65;
-// Frame-line strength: design.md section 6/8 frameContrast token.
-constexpr qreal kFrameContrast = 0.2;
+// Frame-line strength: the [KDE] frameContrast the suite actually ships (design.md
+// section 6). This was 0.2 - the stock Breeze default - which drew every interior
+// hairline three times stronger than Plasma's own seams and contradicted the
+// documented "whispers rather than borders" intent.
+constexpr qreal kFrameContrast = 0.05;
 // How far a disabled field steps off the page tone. Mixed from the *enabled*
 // Window/WindowText pair so the step points away from the surface on both
 // variants: a lift on Nightshift, a recess on Dayshift. Blending the two muted
@@ -81,6 +89,8 @@ qreal relativeLuminance(const QColor &color);
 qreal contrastRatio(const QColor &first, const QColor &second);
 QColor blend(const QColor &first, const QColor &second, qreal t);
 QColor readableAccent(const QColor &accent, const QColor &surface, qreal target);
+// Quiet variant of the accent for hover cues, guaranteed dimmer than a focus ring.
+QColor quietAccent(const QColor &accent, const QColor &surface);
 QPalette::ColorGroup colorGroup(const QStyleOption *option);
 void paintSurface(QPainter *painter, const QRectF &rect, qreal radius, qreal outlineWidth,
                   const QColor &fill, const QColor &outline);

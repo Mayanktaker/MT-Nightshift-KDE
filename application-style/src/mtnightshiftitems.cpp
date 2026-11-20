@@ -95,8 +95,8 @@ bool MTNightshiftStyle::paintFocusPill(const QStyleOption *option, QPainter *pai
     }
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing, true);
-    const QColor accent = readableAccent(option->palette.color(QPalette::Active, QPalette::Highlight),
-                                         option->palette.color(QPalette::Window), kOutlineContrast);
+    const QColor accent = quietAccent(option->palette.color(QPalette::Active, QPalette::Highlight),
+                                      option->palette.color(QPalette::Window));
     painter->setPen(QPen(accent, kOutlineWidth));
     painter->setBrush(Qt::NoBrush);
     const QRectF ring = QRectF(option->rect).adjusted(kItemInsetX, kItemInsetY,

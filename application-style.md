@@ -8,7 +8,7 @@ The Qt Widgets application style is a separate package (`application-style/`, th
 shape rules shared with the rest of the suite (§6), the palette (§2) and the
 interaction-state vocabulary (§4).
 
-Verification lives in [`validation.md`](validation.md); the offscreen probe that
+Verification lives in [`validation-tools.md`](validation-tools.md); the offscreen probe that
 renders every state through the built plugin is `tools/style-probe/check-style.py`.
 
 ## Overview

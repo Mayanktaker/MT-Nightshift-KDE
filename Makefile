@@ -50,7 +50,7 @@ QT_PLUGIN_DIR := $(shell qtpaths6 --query QT_INSTALL_PLUGINS 2>/dev/null)
 QT_INSTALL_PREFIX := $(shell qtpaths6 --query QT_INSTALL_PREFIX 2>/dev/null)
 KSTYLE_THEME_DIR := $(QT_INSTALL_PREFIX)/share/kstyle/themes
 
-.PHONY: all decoration check check-style check-dpr2 check-kpackages check-math style style-preview wallpapers package release-check apply apply-dayshift apply-nord-night apply-nord-day apply-one-dark-pro apply-install uninstall style-install style-uninstall verify-live clean
+.PHONY: all decoration check check-style check-dpr2 check-kpackages check-math style style-preview wallpapers package release-check tag pre-commit-summary apply apply-dayshift apply-nord-night apply-nord-day apply-one-dark-pro apply-install uninstall style-install style-uninstall verify-live clean
 
 all: check
 
@@ -72,12 +72,45 @@ package:
 # skip. Run this before `git tag`, so version drift is caught locally instead of
 # in the release workflow, which only learns about it after the tag is public.
 release-check: check
-	@./tools/theme-audit/check-theme.py >/dev/null
 	@$(MAKE) --no-print-directory package
 	@echo
 	@echo "release-check passed. Version: $$(./tools/packaging/build-packages.py --version)"
-	@echo "Next: git tag -a v$$(./tools/packaging/build-packages.py --version) -m '...'"
-	@echo "      git push && git push origin v$$(./tools/packaging/build-packages.py --version)"
+	@echo "Next: make tag"
+
+# Tag the current commit, but only from a clean tree on the default branch, and
+# only after release-check has proved the packages. Doing this by hand is what
+# lets an untagged-but-broken or dirty release reach GitHub.
+tag:
+	@branch=$$(git rev-parse --abbrev-ref HEAD); \
+	default=$$(git remote show origin 2>/dev/null | sed -n 's/.*HEAD branch: //p'); \
+	[ -n "$$default" ] || default=main; \
+	[ "$$branch" = "$$default" ] || { \
+		echo "refusing to tag from '$$branch' (default branch is '$$default')" >&2; exit 1; }
+	@[ -z "$$(git status --porcelain)" ] || { \
+		echo "refusing to tag a dirty tree; commit or stash first" >&2; \
+		git status --short >&2; exit 1; }
+	@version=$$(./tools/packaging/build-packages.py --version); \
+	git rev-parse -q --verify "refs/tags/v$$version" >/dev/null && { \
+		echo "tag v$$version already exists" >&2; exit 1; } || true
+	@$(MAKE) --no-print-directory release-check >/dev/null || { \
+		echo "release-check failed; not tagging" >&2; exit 1; }
+	@version=$$(./tools/packaging/build-packages.py --version); \
+	git tag -a "v$$version" -m "MT Dark KDE $$version"; \
+	echo "tagged v$$version — push it with:"; \
+	echo "  git push && git push origin v$$version"
+
+# Run the same gates the pre-commit hook runs, on demand. The hook only fires on
+# a commit and only runs the decoration checks when artwork is staged; this runs
+# everything, so a commit is never the first time you learn about a failure.
+pre-commit-summary:
+	@python3 tools/theme-audit/check-theme.py --quiet
+	@python3 tools/decoration-probe/build-decoration.py --check
+	@python3 tools/decoration-probe/check-buttons.py --quiet
+	@for svg in themes/aurorae/MT*/decoration.svg; do \
+		out=$$(./tools/decoration-probe/check-decoration.py --quiet "$$svg") || exit 1; \
+		printf '  %-14s %s\n' "$$(basename "$$(dirname "$$svg")")" \
+		"$${out#decoration.svg ok  }"; \
+	done
 
 # Fail if the committed SVG drifted from its generator, the raster invariants
 # broke, or the rendered field family regressed.

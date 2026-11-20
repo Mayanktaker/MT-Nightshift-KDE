@@ -15,7 +15,7 @@ Dayshift is the light sibling of Nightshift, the way Breeze pairs with Breeze Da
 Nord Night and Nord Day are the second pair: the same geometry, generated
 decoration and palette-driven Qt style, with the canonical Nord Polar Night /
 Snow Storm surfaces, Frost accents and Aurora semantics adjusted only where the
-audit forced a tone to move (§"Measured floors" in `validation.md`). Nord Night
+audit forced a tone to move (§"Measured floors" in `validation-tools.md`). Nord Night
 is a dark, blue-grey sibling of Nightshift (Window `#2E3440`, active header
 `#3B4252`), Nord Day a light, cool sibling of Dayshift (Window `#ECEFF4`, active
 header `#E5E9F0`). The inactive header inverts the active pair in both, and
@@ -57,7 +57,7 @@ Body text is the activity-bar foreground `#D7DAE0`. The audit rejected seven of
 the first-pass muted tones on the relatively light `#404754` button face and
 each was lifted the minimum that clears the floor while keeping its hue; the
 seven lifts, the final 4.67 text floor and the measured focus/hover/selection
-ratios are recorded in `validation.md` §"One Dark Pro lifts". The frame line is
+ratios are recorded in `validation-tools.md` §"One Dark Pro lifts". The frame line is
 an explicit per-variant `#32363E` token (`decoration.md` §2), and the decoration buttons carry a `#528BFF`
 pressed pill with dark `#1D1F23` glyphs.
 

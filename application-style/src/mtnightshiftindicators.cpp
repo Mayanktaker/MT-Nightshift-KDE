@@ -78,7 +78,7 @@ void MTNightshiftStyle::paintIndicator(const QStyleOption *option, QPainter *pai
         // Keyboard focus lives on the chip, not in a capsule around the label.
         outline = readableAccent(palette.color(group, QPalette::Highlight), fill, kFocusContrast);
     } else if (hovered) {
-        outline = readableAccent(palette.color(group, QPalette::Highlight), fill, kOutlineContrast);
+        outline = quietAccent(palette.color(group, QPalette::Highlight), fill);
     }
     paintSurface(painter, rect, radius, kOutlineWidth, fill, outline);
     if (marked) {

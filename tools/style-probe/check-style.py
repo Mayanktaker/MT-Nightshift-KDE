@@ -518,8 +518,20 @@ def main() -> int:
         check(f"{hover_name} has hover outline", edge_change > 60,
               f"left-edge RGB change={edge_change} (want > 60)")
 
+    # Hover and focus must not be the same colour. They were: both rings derived
+    # from QPalette::Highlight with only a contrast target, and on four of the five
+    # schemes the accent already cleared the focus target, so both resolved to the
+    # identical tone and the field had no way to say "hovered" versus "focused".
+    hover_ring = np.array(Image.open(outdir / "framed-lineedit-hover.png").convert("RGB")).astype(int)
+    focus_ring = np.array(Image.open(outdir / "framed-lineedit-focused.png").convert("RGB")).astype(int)
+    hy, fy = hover_ring.shape[0] // 2, focus_ring.shape[0] // 2
+    hover_tone, focus_tone = hover_ring[hy, 0], focus_ring[fy, 0]
+    ring_delta = int(np.abs(hover_tone - focus_tone).sum())
+    check("hover ring differs from focus ring", ring_delta >= 12,
+          f"RGB delta={ring_delta} (want >= 12)")
+
     # Focus ring: present, blue-family, and exactly one pixel wide at mid-height.
-    focused = np.array(Image.open(outdir / "framed-lineedit-focused.png").convert("RGB")).astype(int)
+    focused = focus_ring
     ring_row = focused[focused.shape[0] // 2]
     blues = [x for x in range(60) if ring_row[x][2] > ring_row[x][0] + 40]
     runs, current = [], 0

@@ -129,7 +129,8 @@ Release package archives are accompanied by `dist/SHA256SUMS`; verify both the a
 ├── decoration.md            # Aurorae window decoration spec
 ├── application-style.md     # Qt Widgets style spec
 ├── variants.md              # Dayshift and One Dark Pro notes
-├── validation.md            # What each check measures, and what it cannot see
+├── validation.md            # Live verification and what the suite cannot see
+├── validation-tools.md      # What each offscreen probe measures
 ├── CHANGELOG.md             # User-visible changes per release
 ├── themes/
 │   ├── aurorae/             # Aurorae window decorations (MTNightshift, MTDayshift, ...)

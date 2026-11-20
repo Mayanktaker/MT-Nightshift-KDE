@@ -56,6 +56,11 @@ QColor readableAccent(const QColor &accent, const QColor &surface, qreal target)
     return current;
 }
 
+QColor quietAccent(const QColor &accent, const QColor &surface)
+{
+    return readableAccent(blend(accent, surface, kHoverMute), surface, kOutlineContrast);
+}
+
 // Returns the palette group a control state should read its colours from.
 QPalette::ColorGroup colorGroup(const QStyleOption *option)
 {
@@ -129,7 +134,7 @@ void paintFieldSurface(QPainter *painter, const QRectF &rect, const QColor &fill
         return;
     }
     if (hovered) {
-        const QColor outline = readableAccent(palette.color(group, QPalette::Highlight), fill, kOutlineContrast);
+        const QColor outline = quietAccent(palette.color(group, QPalette::Highlight), fill);
         paintSurface(painter, rect, radius, kOutlineWidth, fill, outline);
         return;
     }
